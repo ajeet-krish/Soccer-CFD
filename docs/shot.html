@@ -81,11 +81,23 @@ $$ F_L = C_L \cdot \frac{1}{2} \rho A U^2 $$
   <div class="cap">Pressure field &mdash; rotating cylinder ($\omega = 10$ rad/s, $U = 1.0$ m/s, $Re = 4 \times 10^4$)</div>
 </div>
 
+<p>The animation uses the <strong>magma</strong> colormap: bright yellow-white means high pressure, deep purple-black means low pressure. Flow enters from the left at 1.0 m/s and passes over the black cylinder. Notice the bright spot at the front &mdash; that is the <strong>stagnation point</strong>, where the incoming flow slams into the cylinder and converts its kinetic energy into pressure.</p>
+
+<p>The key feature is the <strong>asymmetry</strong>: the side of the cylinder rotating <em>with</em> the flow (the &ldquo;advancing&rdquo; side) shows lower pressure (darker), while the side rotating <em>against</em> the flow (the &ldquo;retreating&rdquo; side) shows higher pressure (brighter). This is the Magnus effect in action &mdash; the spin creates a steady pressure difference across the cylinder, which generates a sideways (lift) force. The asymmetry is <strong>locked in place from start to finish</strong>: it never flips or oscillates because the rotation constantly reinforces it.</p>
+
+<p>Behind the cylinder, the low-pressure wake (dark zone) remains <strong>narrow and steady</strong>. The spin suppresses the natural vortex-shedding instability, keeping the wake consistent through the entire 10-second animation. This stability is why a spinning soccer ball follows a smooth, predictable curve.</p>
+
 <h4>Velocity Field</h4>
 <div class="vid-grid single">
   <video controls><source src="../assets/magnus_velocity.mp4" type="video/mp4"></video>
   <div class="cap">Velocity magnitude with streamlines &mdash; rotating cylinder ($U = 1.0$ m/s, $Re = 4 \times 10^4$)</div>
 </div>
+
+<p>The velocity field uses the <strong>inferno</strong> colormap: dark means slow-moving fluid, bright yellow-white means fast-moving fluid. Black streamlines trace the path of individual fluid particles, showing exactly where the flow is going.</p>
+
+<p>Watch the streamlines as they approach the cylinder. They split and accelerate around the sides &mdash; the bright yellow bands on either side show the flow speeding up to squeeze past the obstacle, reaching up to 1.5 times the inlet speed. The <strong>black circle</strong> is the cylinder itself, and the streamlines curve around it.</p>
+
+<p>The spinning motion creates a clear <strong>bias</strong>: the wake (the dark slow-moving region behind the cylinder) is deflected in one direction, and the streamlines angle away from centerline. The wake stays <strong>narrow and consistent</strong> throughout the animation &mdash; no flapping, no wobbling. The streamlines in the wake show smooth, ordered flow rather than chaotic eddies. This is the signature of a flow stabilized by rotation: the Magnus effect has &ldquo;killed&rdquo; the vortex street, replacing it with a steady, directed flow pattern that produces a constant side force on the cylinder.</p>
 
 <h3>Knuckleball Effect</h3>
 <p>A non-rotating cylinder generates a symmetric, unsteady von K&aacute;rm&aacute;n vortex street &mdash; the 2D analogue of a knuckleball's unpredictable drag crisis. Without spin, the wake oscillates symmetrically, causing erratic lateral forces.</p>
@@ -102,31 +114,74 @@ $$ F_L = C_L \cdot \frac{1}{2} \rho A U^2 $$
   <div class="cap">Pressure field &mdash; non-rotating cylinder ($U = 1.0$ m/s, $Re = 4 \times 10^4$)</div>
 </div>
 
+<p>This is the pressure field <em>without</em> spin &mdash; and it tells a completely different story from the Magnus case. The same magma colormap applies: bright = high pressure, dark = low pressure.</p>
+
+<p>At the start, everything looks symmetric &mdash; a bright stagnation zone at the front, and roughly equal pressure on both sides. <strong>But watch what happens</strong>. After a few seconds, the dark low-pressure zone behind the cylinder begins to <strong>wobble</strong>, then detach, then fling itself from side to side in a rhythmic pattern. Each wobble is a <strong>von K&aacute;rm&aacute;n vortex</strong> being born and shed into the wake.</p>
+
+<p>The alternating pattern is the visual signature of the knuckleball effect: low-pressure zones peel off from alternating sides of the cylinder, which means the sideways force on the cylinder <strong>flips direction with every vortex</strong>. Unlike the Magnus case where spin locks the asymmetry in place, the no-spin case cannot maintain stability. The symmetric state is inherently unstable &mdash; any tiny perturbation grows into large oscillations. This is why a knuckleball is so unpredictable: the force on the ball keeps changing direction as each vortex sheds.</p>
+
 <h4>Velocity Field</h4>
 <div class="vid-grid single">
   <video controls><source src="../assets/knuckleball_velocity.mp4" type="video/mp4"></video>
   <div class="cap">Velocity magnitude with streamlines &mdash; non-rotating cylinder ($U = 1.0$ m/s, $Re = 4 \times 10^4$)</div>
 </div>
 
+<p>The velocity field shows the flow speeding up around the cylinder (bright yellow bands) and forming a slow wake behind it (dark zone). But unlike the Magnus case, watch what the streamlines do.</p>
+
+<p>Initially the wake is <strong>symmetric and quiet</strong>. Then the white streamlines behind the cylinder begin to <strong>curl up</strong> into rolling spirals &mdash; these are the von K&aacute;rm&aacute;n vortices forming. They peel off alternately from the top and bottom of the cylinder, growing larger as they travel downstream. The wake becomes <strong>wide, chaotic, and oscillatory</strong> &mdash; completely unlike the narrow, steady wake of the Magnus case.</p>
+
+<p>The dark low-velocity zone extends far downstream (much further than in the Magnus case), which means more momentum is being drained from the flow &mdash; this is the direct visual of <strong>higher drag</strong>. The streamlines show fluid being sucked into the growing vortices rather than flowing smoothly past. This alternating vortex shedding is the root cause of the knuckleball&rsquo;s erratic behavior: each shed vortex gives the cylinder a sideways kick, and the direction of the kick alternates with every cycle.</p>
+
 <h3>Side by Side Comparison</h3>
-<p>Direct comparison of the rotating and non-rotating cases highlights the effect of spin on wake structure.</p>
+<p>Putting the two cases next to each other makes the effect of spin impossible to miss. Watch both panels simultaneously &mdash; the difference in stability, symmetry, and wake structure is dramatic.</p>
 
 <div class="vid-grid single">
   <video controls><source src="../assets/pressure_comparison.mp4" type="video/mp4"></video>
   <div class="cap">Pressure field &mdash; Left: Magnus (spinning, $\omega = 10$ rad/s) &mdash; Right: Knuckleball (no spin)  ($U = 1.0$ m/s, $Re = 4 \times 10^4$; real soccer ball: $Re \approx 2\!-\!5 \times 10^5$)</div>
 </div>
+
+<h4>What the Pressure Comparison Reveals</h4>
+
+<p>The pressure comparison tells the full story of how spin changes the flow. Here is what to look for in each panel and what it means.</p>
+
+<p><strong>Left panel &mdash; Magnus (spinning, $\omega = 10$ rad/s).</strong></p>
+
+<p>Notice two things immediately: <strong>asymmetry</strong> and <strong>stability</strong>. The pressure field is brighter (higher pressure) on the top side of the cylinder and darker (lower pressure) on the bottom side. This imbalance is the Magnus effect itself &mdash; the cylinder&rsquo;s spin accelerates the flow on one side (dropping the pressure) and decelerates it on the other (raising the pressure), creating a net sideways force. The colorbar for this panel is scaled to match the Magnus data range, so the asymmetry is visible throughout the animation.</p>
+
+<p>The wake behind the cylinder is <strong>narrow and rock-steady</strong>. The dark low-pressure region stays centered and never oscillates. Why? Because the spin acts like a gyroscope for the flow: the rotating boundary layer constantly pumps momentum in one direction, killing any instability before it can grow. The vortex street that would naturally form behind a cylinder is completely suppressed. This locked-in stability is why a spinning soccer ball curves along a smooth, predictable trajectory &mdash; the force on the ball is constant in both magnitude and direction.</p>
+
+<p><strong>Right panel &mdash; Knuckleball (no spin, $\omega = 0$).</strong></p>
+
+<p>Now look at the right panel. Initially it looks symmetric &mdash; equal pressure on top and bottom, a quiet wake. <strong>That symmetry does not last.</strong> Watch as the dark low-pressure patches behind the cylinder begin to alternate from side to side. Each dark patch is a vortex core &mdash; a region of very low pressure that pulls the cylinder toward it. Because the vortices shed alternately from the top and bottom, the sideways pull flips direction with each cycle.</p>
+
+<p>The wake grows <strong>wider and more chaotic</strong> as the simulation progresses. The pressure field starts flipping back and forth &mdash; compare this to the locked-in asymmetry of the Magnus panel. This alternating pressure pattern is the von K&aacute;rm&aacute;n vortex street, and it is the fluid-dynamic signature of the knuckleball: the force on the ball oscillates unpredictably because each shed vortex tugs the ball in a different direction.</p>
+
+<p><strong>Comparing the two side by side:</strong> The contrast is stark. The Magnus panel is <strong>stable but asymmetric</strong> &mdash; a predictable curve. The Knuckleball panel is <strong>symmetric but unstable</strong> &mdash; an unpredictable jitter. A spinning ball knows where it is going; a knuckleball does not, and neither does anyone watching.</p>
+
 <div class="vid-grid single">
   <video controls><source src="../assets/velocity_comparison.mp4" type="video/mp4"></video>
   <div class="cap">Velocity field with streamlines &mdash; Left: Magnus (spinning) &mdash; Right: Knuckleball (no spin)  ($U = 1.0$ m/s, $Re = 4 \times 10^4$; real soccer ball: $Re \approx 2\!-\!5 \times 10^5$)</div>
 </div>
 
-<h4>What the Pressure Field Reveals</h4>
+<h4>What the Velocity Comparison Reveals</h4>
 
-<p>The evolution of each pressure field tells the full story of how spin changes the flow.</p>
+<p>The velocity comparison shows the flow pattern directly &mdash; where the fluid is moving fast (bright), where it is moving slow (dark), and the streamlines trace the path every particle follows. This is the most intuitive way to see the difference between a spinning and non-spinning wake.</p>
 
-<p><strong>Left &mdash; Magnus (spinning).</strong> The rotation imposes a steady asymmetric pressure distribution from the very first frame. The side where the cylinder rotates <em>with</em> the freestream accelerates the flow, dropping the pressure (darker region); the opposite side decelerates it, raising the pressure (lighter region). This locked-in asymmetry suppresses the von K&aacute;rm&aacute;n instability &mdash; alternating vortices cannot grow because the pressure field never flips. The wake remains <strong>consistent, narrow, and uniformly shaped</strong> throughout the entire simulation. The vortex street is effectively killed by the spin.</p>
+<p><strong>Left panel &mdash; Magnus (spinning).</strong></p>
 
-<p><strong>Right &mdash; Knuckleball (no spin).</strong> The pressure field begins symmetric and quiescent &mdash; initially less pressure variation behind the cylinder than in the Magnus case, and a narrower wake. This symmetric state is <strong>intrinsically unstable</strong>. Tiny numerical perturbations grow via the Kelvin-Helmholtz instability, rolling up into alternating vortices that flip the pressure field left and right on each shedding cycle. Once established, the von K&aacute;rm&aacute;n street broadens the wake and lowers the base pressure (darker low-pressure zones extending far downstream), making the wake <strong>wider, more chaotic, and oscillatory</strong> compared to the Magnus side. The transition from uniform to chaotic is the signature of an unforced, naturally unstable wake.</p>
+<p>The flow approaches from the left, splits around the cylinder, and forms a <strong>narrow, steady wake</strong>. The black streamlines show smooth, organized flow that bends consistently in one direction. There is a clear asymmetry: the wake is displaced off-center, and the streamlines do not cross back and forth. The dark slow region behind the cylinder is compact and does not grow over time. The bright acceleration zones on either side of the cylinder are stable &mdash; they do not pulse or shift.</p>
+
+<p>The streamlines are the key visual. Behind the cylinder, they converge into a steady, narrow band rather than forming large loops. They show fluid moving smoothly downstream without being entrained into rotating structures. This is the velocity signature of the Magnus effect: the flow is organized, directed, and constant. The cylinder experiences a steady sideways force (lift), which in soccer produces the familiar curling shot.</p>
+
+<p><strong>Right panel &mdash; Knuckleball (no spin).</strong></p>
+
+<p>Now look at the right panel. The flow starts symmetric &mdash; and then <strong>breaks apart</strong>. Watch the streamlines behind the cylinder: they begin to roll up into large spiraling structures that grow in size as they travel downstream. These are the von K&aacute;rm&aacute;n vortices, and they completely transform the wake.</p>
+
+<p>The dark low-velocity zone behind the cylinder is <strong>much wider and extends much further downstream</strong> than in the Magnus case &mdash; a direct visual of higher drag (the cylinder is pulling more fluid along with it, draining energy from the flow). The streamlines form large alternating loops that flip from side to side with each vortex shed. The bright acceleration zones on the sides of the cylinder pulse back and forth as the shedding cycle progresses.</p>
+
+<p>The chaos is not random &mdash; it is a highly organized alternating pattern. But from the cylinder&rsquo;s perspective, the effect is random: each shed vortex gives the cylinder a sideways push, and the direction changes with every cycle. This is why a knuckleball jerks unpredictably in flight.</p>
+
+<p><strong>Comparing the two side by side:</strong> The Magnus wake is <strong>thin</strong>, the Knuckleball wake is <strong>wide</strong>. The Magnus streamlines are <strong>smooth and steady</strong>, the Knuckleball streamlines form <strong>rolling vortices</strong>. The Magnus flow is <strong>stable</strong>, the Knuckleball flow is <strong>oscillatory</strong>. One produces a predictable curve; the other produces erratic jitter. The physics is the same in both &mdash; incompressible Navier-Stokes flow past a cylinder &mdash; but the boundary condition (spinning vs non-spinning surface) changes everything about the resulting flow pattern.</p>
 
 <h4>What This Means for the Game</h4>
 

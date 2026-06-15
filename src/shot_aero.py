@@ -63,8 +63,8 @@ def animate_velocity_comparison(frames_magnus, frames_knuckle):
     for ax, title, frames in zip([ax1, ax2], titles, frames_list):
         ax.set_facecolor("#111111")
         ax.set_title(title, color="white", fontsize=11)
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
+        ax.set_xticks([])
+        ax.set_yticks([])
         ax.set_xlim(0.5, 7.5)
         ax.set_ylim(0.5, 3.5)
 
@@ -73,17 +73,17 @@ def animate_velocity_comparison(frames_magnus, frames_knuckle):
             origin="lower", cmap="inferno", aspect="auto",
             extent=[0, 8, 0, 4], vmin=0, vmax=1.5,
         )
-        ax.add_patch(Circle(CENTER, RADIUS, color="white", fill=False, lw=2.0))
+        ax.add_patch(Circle(CENTER, RADIUS, facecolor="black", edgecolor="white", linewidth=2.0))
         ax.streamplot(
             x_s, y_s, frames[0]["u"].T, frames[0]["v"].T,
-            color="white",
+            color="black",
             linewidth=0.8, density=1.5, arrowstyle="->", arrowsize=0.6,
         )
         imgs.append(im)
 
     fig.tight_layout(rect=[0, 0, 1, 0.93])
     cbar = fig.colorbar(imgs[0], ax=[ax1, ax2], fraction=0.04, pad=0.02)
-    cbar.set_label("Velocity magnitude", color="white")
+    cbar.set_label("Velocity magnitude (m/s)", color="white")
     cbar.ax.yaxis.set_tick_params(color="white")
     plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
 
@@ -93,24 +93,19 @@ def animate_velocity_comparison(frames_magnus, frames_knuckle):
             ax.set_facecolor("#111111")
             ax.set_xlim(0.5, 7.5)
             ax.set_ylim(0.5, 3.5)
-            ax.set_xlabel("x")
-            ax.set_ylabel("y")
+            ax.set_xticks([])
+            ax.set_yticks([])
             ax.imshow(
                 frames[idx]["velocity"].T,
                 origin="lower", cmap="inferno", aspect="auto",
                 extent=[0, 8, 0, 4], vmin=0, vmax=1.5,
             )
-            ax.add_patch(Circle(CENTER, RADIUS, color="white", fill=False, lw=2.0))
+            ax.add_patch(Circle(CENTER, RADIUS, facecolor="black", edgecolor="white", linewidth=2.0))
             ax.streamplot(
                 x_s, y_s, frames[idx]["u"].T, frames[idx]["v"].T,
-                color="white",
+                color="black",
                 linewidth=0.8, density=1.5, arrowstyle="->", arrowsize=0.6,
             )
-        fig.suptitle(
-            f"Velocity Field — Step {frames_list[0][idx]['step']}"
-            f"  (t = {frames_list[0][idx]['step'] * 0.3:.1f}s)",
-            color="white", fontsize=14, y=0.98,
-        )
         return (ax1, ax2)
 
     anim = FuncAnimation(fig, update, frames=n_frames, interval=80, blit=False)
@@ -138,19 +133,19 @@ def animate_pressure_comparison(frames_magnus, frames_knuckle):
     for ax, title, frames in zip([ax1, ax2], titles, frames_list):
         ax.set_facecolor("#111111")
         ax.set_title(title, color="white", fontsize=11)
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
+        ax.set_xticks([])
+        ax.set_yticks([])
         ax.set_xlim(0.5, 7.5)
         ax.set_ylim(0.5, 3.5)
 
         p0 = frames[0]["pressure"]
         im = ax.imshow(p0.T, origin="lower", cmap="magma", aspect="auto", extent=[0, 8, 0, 4])
-        ax.add_patch(Circle(CENTER, RADIUS, color="white", fill=False, lw=2.0))
+        ax.add_patch(Circle(CENTER, RADIUS, facecolor="black", edgecolor="white", linewidth=2.0))
         imgs.append(im)
 
     fig.tight_layout(rect=[0, 0, 1, 0.93])
     cbar = fig.colorbar(imgs[0], ax=[ax1, ax2], fraction=0.04, pad=0.02)
-    cbar.set_label("Pressure", color="white")
+    cbar.set_label("Pressure (Pa)", color="white")
     cbar.ax.yaxis.set_tick_params(color="white")
     plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
 
@@ -159,11 +154,6 @@ def animate_pressure_comparison(frames_magnus, frames_knuckle):
             data = frames[idx]["pressure"]
             im.set_data(data.T)
             im.set_clim(data.min(), data.max())
-        fig.suptitle(
-            f"Pressure Field — Step {frames_list[0][idx]['step']}"
-            f"  (t = {frames_list[0][idx]['step'] * 0.3:.1f}s)",
-            color="white", fontsize=14, y=0.98,
-        )
         return imgs
 
     anim = FuncAnimation(fig, update, frames=n_frames, interval=80, blit=True)
@@ -184,14 +174,13 @@ def _animate_single(frames, output_path, *, title, cmap, vmin, vmax, cbar_label,
     ax.set_facecolor("#111111")
     ax.set_xlim(0.5, 7.5)
     ax.set_ylim(0.5, 3.5)
-    ax.set_xlabel("x", color="white")
-    ax.set_ylabel("y", color="white")
-    ax.tick_params(colors="white")
+    ax.set_xticks([])
+    ax.set_yticks([])
 
     d0 = data_fn(frames[0])
     im = ax.imshow(d0.T, origin="lower", cmap=cmap, aspect="auto",
                    extent=[0, 8, 0, 4], vmin=vmin, vmax=vmax)
-    ax.add_patch(Circle(CENTER, RADIUS, color="white", fill=False, lw=2.0))
+    ax.add_patch(Circle(CENTER, RADIUS, facecolor="black", edgecolor="white", linewidth=2.0))
     if streamlines_fn:
         streamlines_fn(ax, frames[0])
 
@@ -206,14 +195,13 @@ def _animate_single(frames, output_path, *, title, cmap, vmin, vmax, cbar_label,
         ax.set_facecolor("#111111")
         ax.set_xlim(0.5, 7.5)
         ax.set_ylim(0.5, 3.5)
-        ax.set_xlabel("x", color="white")
-        ax.set_ylabel("y", color="white")
-        ax.tick_params(colors="white")
+        ax.set_xticks([])
+        ax.set_yticks([])
 
         d = data_fn(frames[idx])
         ax.imshow(d.T, origin="lower", cmap=cmap, aspect="auto",
                    extent=[0, 8, 0, 4], vmin=vmin, vmax=vmax)
-        ax.add_patch(Circle(CENTER, RADIUS, color="white", fill=False, lw=2.0))
+        ax.add_patch(Circle(CENTER, RADIUS, facecolor="black", edgecolor="white", linewidth=2.0))
         if streamlines_fn:
             streamlines_fn(ax, frames[idx])
         return (ax,)
@@ -225,11 +213,11 @@ def _animate_single(frames, output_path, *, title, cmap, vmin, vmax, cbar_label,
 
 
 def animate_magnus_pressure(frames):
-    all_p = np.concatenate([f["pressure"].ravel() for f in frames])
+    all_p = np.concatenate([f["pressure"].ravel() for f in frames[1:]])
     _animate_single(frames, ASSETS / "magnus_pressure.mp4",
                     title="Magnus Effect — Pressure Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
                     cmap="magma", vmin=float(all_p.min()), vmax=float(all_p.max()),
-                    cbar_label="Pressure",
+                    cbar_label="Pressure (Pa)",
                     data_fn=lambda f: f["pressure"])
 
 
@@ -239,11 +227,11 @@ def animate_magnus_velocity(frames):
     _animate_single(frames, ASSETS / "magnus_velocity.mp4",
                     title="Magnus Effect — Velocity Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
                     cmap="inferno", vmin=0, vmax=1.5,
-                    cbar_label="Velocity magnitude",
+                    cbar_label="Velocity magnitude (m/s)",
                     data_fn=lambda f: f["velocity"],
                     streamlines_fn=lambda ax, f: ax.streamplot(
                         x_s, y_s, f["u"].T, f["v"].T,
-                        color="white",
+                        color="black",
                         linewidth=0.8, density=1.5, arrowstyle="->", arrowsize=0.6))
 
 
@@ -256,11 +244,11 @@ def animate_magnus_vorticity(frames):
 
 
 def animate_knuckle_pressure(frames):
-    all_p = np.concatenate([f["pressure"].ravel() for f in frames])
+    all_p = np.concatenate([f["pressure"].ravel() for f in frames[1:]])
     _animate_single(frames, ASSETS / "knuckleball_pressure_individual.mp4",
                     title="Knuckleball — Pressure Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
                     cmap="magma", vmin=float(all_p.min()), vmax=float(all_p.max()),
-                    cbar_label="Pressure",
+                    cbar_label="Pressure (Pa)",
                     data_fn=lambda f: f["pressure"])
 
 
@@ -270,7 +258,7 @@ def animate_knuckle_velocity(frames):
     _animate_single(frames, ASSETS / "knuckleball_velocity.mp4",
                     title="Knuckleball — Velocity Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
                     cmap="inferno", vmin=0, vmax=1.5,
-                    cbar_label="Velocity magnitude",
+                    cbar_label="Velocity magnitude (m/s)",
                     data_fn=lambda f: f["velocity"],
                     streamlines_fn=lambda ax, f: ax.streamplot(
                         x_s, y_s, f["u"].T, f["v"].T,
