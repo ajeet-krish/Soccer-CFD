@@ -4,7 +4,7 @@
 
 A dual-layer CFD portfolio combining fast ΦFlow (JAX) prototyping with SU2 (RANS) high-fidelity validation, built as a standalone HTML website.
 
-[**View the portfolio site →**](https://ajeet-krish.github.io/Sports-Aerodynamics/)
+[**View the portfolio site →**](https://ajeet-krish.github.io/Soccer-CFD/)
 
 ## Project Overview
 

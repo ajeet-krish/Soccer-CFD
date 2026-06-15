@@ -67,9 +67,7 @@ class SU2Config:
         lines = [
             f"% ------- CONFIG FILE (auto-generated) --------",
             f"SOLVER= {self.solver}",
-            f"{f'KIND_TURB_MODEL= {self.turbulence_model}' if 'RANS' in self.solver or 'rans' in self.solver else 
-               f'KIND_TURB_MODEL= NONE' if self.turbulence_model == 'NONE' else 
-               '% No turbulence model (laminar)'}",
+            f"{('KIND_TURB_MODEL= ' + self.turbulence_model) if ('RANS' in self.solver or 'rans' in self.solver) else ('KIND_TURB_MODEL= NONE' if self.turbulence_model == 'NONE' else '% No turbulence model (laminar)')}",
             f"MATH_PROBLEM= DIRECT",
             f"RESTART_SOL= NO",
             f"SYSTEM_MEASUREMENTS= SI",

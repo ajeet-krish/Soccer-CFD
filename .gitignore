@@ -12,8 +12,9 @@ wheels/
 # Jupyter
 *.ipynb
 
-# Generated GIFs (regeneratable, not tracked)
+# Generated assets (regeneratable, not tracked)
 assets/*.gif
+assets/*.pkl
 
 # OS files
 .DS_Store
@@ -26,11 +27,11 @@ assets/*.gif
 # Graphify output
 graphify-out/
 
-# Old Quarto artifacts
-/.quarto/
-**/*.quarto_ipynb
-docs/site_libs
-docs/search.json
+# Old Quarto artifacts (project migrated to plain HTML)
+# /.quarto/
+# **/*.quarto_ipynb
+# docs/site_libs
+# docs/search.json
 
 # SU2 run artifacts — regeneratable by re-running scripts
 su2_runs/**/*.vtu

@@ -75,7 +75,7 @@ def make_config(reynolds: int, rotation_rate: float, dt: float,
         txt = cfg_path.read_text()
         txt = txt.replace("SLOPE_LIMITER_FLOW= VENKATAKRISHNAN", "SLOPE_LIMITER_FLOW= NONE")
         txt += "\n% Low Mach preconditioner for ROE\n"
-        txt += "LOW_MACH_PRECONDITIONER= YES\n"
+        txt += "LOW_MACH_PREC= YES\n"
         cfg_path.write_text(txt)
     return cfg_path
 
