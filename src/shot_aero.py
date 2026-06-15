@@ -1,6 +1,7 @@
 """Shot Aerodynamics — Magnus vs Knuckleball cylinder simulation."""
 
 import sys, os
+from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from phi.jax.flow import Obstacle, StaggeredGrid, CenteredGrid, fluid, advect, vec, field, ZERO_GRADIENT
@@ -50,10 +51,10 @@ def animate_velocity_comparison(frames_magnus, frames_knuckle):
     y_s = np.linspace(0, 4.0, 128)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), facecolor="#111111")
-    fig.suptitle("Knuckleball vs Regular Shot — Wake Comparison", color="white", fontsize=14, y=0.98)
+    fig.suptitle("Velocity Field — Magnus vs Knuckleball  (U = 1.0 m/s, Re = 4\u00d710\u2074)", color="white", fontsize=14, y=0.98)
 
     titles = [
-        "Magnus Effect (\u03c9 = 10 rad/s)",
+        "Magnus (\u03c9 = 10 rad/s)",
         "Knuckleball (\u03c9 = 0 rad/s)",
     ]
     frames_list = [fm, fk]
@@ -75,7 +76,7 @@ def animate_velocity_comparison(frames_magnus, frames_knuckle):
         ax.add_patch(Circle(CENTER, RADIUS, color="white", fill=False, lw=2.0))
         ax.streamplot(
             x_s, y_s, frames[0]["u"].T, frames[0]["v"].T,
-            color=frames[0]["velocity"].T, cmap="inferno",
+            color="white",
             linewidth=0.8, density=1.5, arrowstyle="->", arrowsize=0.6,
         )
         imgs.append(im)
@@ -102,13 +103,18 @@ def animate_velocity_comparison(frames_magnus, frames_knuckle):
             ax.add_patch(Circle(CENTER, RADIUS, color="white", fill=False, lw=2.0))
             ax.streamplot(
                 x_s, y_s, frames[idx]["u"].T, frames[idx]["v"].T,
-                color=frames[idx]["velocity"].T, cmap="inferno",
+                color="white",
                 linewidth=0.8, density=1.5, arrowstyle="->", arrowsize=0.6,
             )
+        fig.suptitle(
+            f"Velocity Field — Step {frames_list[0][idx]['step']}"
+            f"  (t = {frames_list[0][idx]['step'] * 0.3:.1f}s)",
+            color="white", fontsize=14, y=0.98,
+        )
         return (ax1, ax2)
 
     anim = FuncAnimation(fig, update, frames=n_frames, interval=80, blit=False)
-    path = ASSETS / "knuckleball_comparison.mp4"
+    path = ASSETS / "velocity_comparison.mp4"
     anim.save(str(path), writer="ffmpeg", fps=10, dpi=150)
     print(f"Saved {path}")
     plt.close(fig)
@@ -120,10 +126,10 @@ def animate_pressure_comparison(frames_magnus, frames_knuckle):
     fk = frames_knuckle[:n_frames]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), facecolor="#111111")
-    fig.suptitle("Knuckleball vs Magnus — Pressure Field", color="white", fontsize=14, y=0.98)
+    fig.suptitle("Pressure Field — Magnus vs Knuckleball  (U = 1.0 m/s, Re = 4\u00d710\u2074)", color="white", fontsize=14, y=0.98)
 
     titles = [
-        "Magnus Effect (\u03c9 = 10 rad/s)",
+        "Magnus (\u03c9 = 10 rad/s)",
         "Knuckleball (\u03c9 = 0 rad/s)",
     ]
     frames_list = [fm, fk]
@@ -154,31 +160,172 @@ def animate_pressure_comparison(frames_magnus, frames_knuckle):
             im.set_data(data.T)
             im.set_clim(data.min(), data.max())
         fig.suptitle(
-            f"Knuckleball vs Magnus — Step {frames_list[0][idx]['step']}"
+            f"Pressure Field — Step {frames_list[0][idx]['step']}"
             f"  (t = {frames_list[0][idx]['step'] * 0.3:.1f}s)",
             color="white", fontsize=14, y=0.98,
         )
         return imgs
 
     anim = FuncAnimation(fig, update, frames=n_frames, interval=80, blit=True)
-    path = ASSETS / "knuckleball_pressure.mp4"
+    path = ASSETS / "pressure_comparison.mp4"
     anim.save(str(path), writer="ffmpeg", fps=10, dpi=150)
     print(f"Saved {path}")
     plt.close(fig)
+
+
+def _animate_single(frames, output_path, *, title, cmap, vmin, vmax, cbar_label,
+                    data_fn, streamlines_fn=None):
+    """Generic single-panel animation for pressure, velocity, or vorticity."""
+    n = len(frames)
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 4), facecolor="#111111")
+    fig.suptitle(title, color="white", fontsize=13, y=0.96)
+
+    ax.set_facecolor("#111111")
+    ax.set_xlim(0.5, 7.5)
+    ax.set_ylim(0.5, 3.5)
+    ax.set_xlabel("x", color="white")
+    ax.set_ylabel("y", color="white")
+    ax.tick_params(colors="white")
+
+    d0 = data_fn(frames[0])
+    im = ax.imshow(d0.T, origin="lower", cmap=cmap, aspect="auto",
+                   extent=[0, 8, 0, 4], vmin=vmin, vmax=vmax)
+    ax.add_patch(Circle(CENTER, RADIUS, color="white", fill=False, lw=2.0))
+    if streamlines_fn:
+        streamlines_fn(ax, frames[0])
+
+    fig.tight_layout(rect=[0, 0, 1, 0.92])
+    cbar = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+    cbar.set_label(cbar_label, color="white")
+    cbar.ax.yaxis.set_tick_params(color="white")
+    plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
+
+    def update(idx):
+        ax.clear()
+        ax.set_facecolor("#111111")
+        ax.set_xlim(0.5, 7.5)
+        ax.set_ylim(0.5, 3.5)
+        ax.set_xlabel("x", color="white")
+        ax.set_ylabel("y", color="white")
+        ax.tick_params(colors="white")
+
+        d = data_fn(frames[idx])
+        ax.imshow(d.T, origin="lower", cmap=cmap, aspect="auto",
+                   extent=[0, 8, 0, 4], vmin=vmin, vmax=vmax)
+        ax.add_patch(Circle(CENTER, RADIUS, color="white", fill=False, lw=2.0))
+        if streamlines_fn:
+            streamlines_fn(ax, frames[idx])
+        return (ax,)
+
+    anim = FuncAnimation(fig, update, frames=n, interval=80, blit=False)
+    anim.save(str(output_path), writer="ffmpeg", fps=10, dpi=150)
+    print(f"Saved {output_path}")
+    plt.close(fig)
+
+
+def animate_magnus_pressure(frames):
+    all_p = np.concatenate([f["pressure"].ravel() for f in frames])
+    _animate_single(frames, ASSETS / "magnus_pressure.mp4",
+                    title="Magnus Effect — Pressure Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
+                    cmap="magma", vmin=float(all_p.min()), vmax=float(all_p.max()),
+                    cbar_label="Pressure",
+                    data_fn=lambda f: f["pressure"])
+
+
+def animate_magnus_velocity(frames):
+    x_s = np.linspace(0, 8.0, 256)
+    y_s = np.linspace(0, 4.0, 128)
+    _animate_single(frames, ASSETS / "magnus_velocity.mp4",
+                    title="Magnus Effect — Velocity Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
+                    cmap="inferno", vmin=0, vmax=1.5,
+                    cbar_label="Velocity magnitude",
+                    data_fn=lambda f: f["velocity"],
+                    streamlines_fn=lambda ax, f: ax.streamplot(
+                        x_s, y_s, f["u"].T, f["v"].T,
+                        color="white",
+                        linewidth=0.8, density=1.5, arrowstyle="->", arrowsize=0.6))
+
+
+def animate_magnus_vorticity(frames):
+    _animate_single(frames, ASSETS / "magnus_vorticity.mp4",
+                    title="Magnus Effect — Vorticity Field",
+                    cmap="RdBu", vmin=-4, vmax=4,
+                    cbar_label="Vorticity ω_z",
+                    data_fn=lambda f: np.gradient(f["v"], axis=1) - np.gradient(f["u"], axis=0))
+
+
+def animate_knuckle_pressure(frames):
+    all_p = np.concatenate([f["pressure"].ravel() for f in frames])
+    _animate_single(frames, ASSETS / "knuckleball_pressure_individual.mp4",
+                    title="Knuckleball — Pressure Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
+                    cmap="magma", vmin=float(all_p.min()), vmax=float(all_p.max()),
+                    cbar_label="Pressure",
+                    data_fn=lambda f: f["pressure"])
+
+
+def animate_knuckle_velocity(frames):
+    x_s = np.linspace(0, 8.0, 256)
+    y_s = np.linspace(0, 4.0, 128)
+    _animate_single(frames, ASSETS / "knuckleball_velocity.mp4",
+                    title="Knuckleball — Velocity Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
+                    cmap="inferno", vmin=0, vmax=1.5,
+                    cbar_label="Velocity magnitude",
+                    data_fn=lambda f: f["velocity"],
+                    streamlines_fn=lambda ax, f: ax.streamplot(
+                        x_s, y_s, f["u"].T, f["v"].T,
+                        color="white",
+                        linewidth=0.8, density=1.5, arrowstyle="->", arrowsize=0.6))
+
+
+def animate_knuckle_vorticity(frames):
+    _animate_single(frames, ASSETS / "knuckleball_vorticity.mp4",
+                    title="Knuckleball — Vorticity Field",
+                    cmap="RdBu", vmin=-4, vmax=4,
+                    cbar_label="Vorticity ω_z",
+                    data_fn=lambda f: np.gradient(f["v"], axis=1) - np.gradient(f["u"], axis=0))
+
+
+CACHE_FILE = Path(__file__).parent.parent / "assets" / "_frames_cache.pkl"
 
 
 if __name__ == "__main__":
     obstacle_spin = Obstacle(CYLINDER, velocity=vec(x=0.0, y=0.0), angular_velocity=10.0)
     obstacle_nospin = Obstacle(CYLINDER, velocity=vec(x=0.0, y=0.0), angular_velocity=0.0)
 
-    print("Magnus (ω = 10 rad/s)")
-    frames_magnus = run_cylinder(obstacle_spin, "Magnus")
+    cache = Path(CACHE_FILE)
+    if cache.exists():
+        import pickle
+        with open(cache, "rb") as f:
+            data = pickle.load(f)
+        frames_magnus = data["Magnus"]
+        frames_knuckle = data["Knuckleball"]
+        print(f"Loaded {len(frames_magnus)} Magnus + {len(frames_knuckle)} Knuckleball frames from cache")
+    else:
+        print("Magnus (ω = 10 rad/s)")
+        frames_magnus = run_cylinder(obstacle_spin, "Magnus")
 
-    print("\nKnuckleball (ω = 0 rad/s)")
-    frames_knuckle = run_cylinder(obstacle_nospin, "Knuckleball")
+        print("\nKnuckleball (ω = 0 rad/s)")
+        frames_knuckle = run_cylinder(obstacle_nospin, "Knuckleball")
 
-    print(f"\nCaptured {len(frames_magnus)} frames each")
-    print(f"  u shape: {frames_magnus[0]['u'].shape}")
+        import pickle
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache, "wb") as f:
+            pickle.dump({"Magnus": frames_magnus, "Knuckleball": frames_knuckle}, f)
+        print(f"Cached frames to {cache}")
 
+    print(f"\nFrames: {len(frames_magnus)} each, u shape: {frames_magnus[0]['u'].shape}")
+
+    # Individual animations
+    print("\n--- Individual Magnus animations ---")
+    animate_magnus_pressure(frames_magnus)
+    animate_magnus_velocity(frames_magnus)
+
+    print("\n--- Individual Knuckleball animations ---")
+    animate_knuckle_pressure(frames_knuckle)
+    animate_knuckle_velocity(frames_knuckle)
+
+    # Side-by-side comparisons
+    print("\n--- Side-by-side comparisons ---")
     animate_velocity_comparison(frames_magnus, frames_knuckle)
     animate_pressure_comparison(frames_magnus, frames_knuckle)

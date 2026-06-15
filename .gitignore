@@ -17,14 +17,26 @@ assets/*.gif
 
 # OS files
 .DS_Store
+
+# IDE config
+.opencode/
 .opencode/opencode.json
 .opencode/plugins/graphify.js
 
+# Graphify output
 graphify-out/
+
+# Old Quarto artifacts
 /.quarto/
 **/*.quarto_ipynb
-
 docs/site_libs
 docs/search.json
 
-.opencode/
+# SU2 run artifacts — regeneratable by re-running scripts
+su2_runs/**/*.vtu
+su2_runs/**/*.dat
+su2_runs/**/*.csv
+su2_runs/**/*.cfg
+su2_runs/**/*.su2
+su2_runs/**/results*.json
+su2_runs/**/surface.vtu

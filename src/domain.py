@@ -18,5 +18,5 @@ CYLINDER = geom.Sphere(x=2.0, y=2.0, radius=RADIUS)
 CENTERED = CenteredGrid(0, x=NX, y=NY, bounds=BOX)
 
 DT = 0.3
-N_STEPS = 160
-SAVE_EVERY = 4
+N_STEPS = 300
+SAVE_EVERY = 3

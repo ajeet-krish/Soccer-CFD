@@ -12,4 +12,6 @@ dependencies = [
     "tqdm",
     "jupyter>=1.1.1",
     "svg-path>=7.0",
+    "pyvista>=0.48.4",
+    "gmsh>=4.15.2",
 ]

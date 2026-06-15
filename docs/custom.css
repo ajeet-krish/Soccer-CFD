@@ -1,3 +1,159 @@
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #0d0d0d;
+  color: #ccc;
+  line-height: 1.65;
+}
+
+/* ── Site nav ── */
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #111;
+  border-bottom: 1px solid #222;
+}
+.nav-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px;
+  height: 52px;
+}
+.nav-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-brand .highlight { color: #f5a623; }
+.nav-brand:hover { opacity: 0.85; }
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1.4rem;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 4px 8px;
+}
+.nav-entries {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.nav-entries a {
+  color: #888;
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.nav-entries a:hover {
+  color: #fff;
+  background: #1a1a1a;
+}
+.nav-entries a.active {
+  color: #f5a623;
+  background: #1a1a1a;
+}
+
+@media (max-width: 680px) {
+  .nav-toggle { display: block; }
+  .nav-entries {
+    display: none;
+    position: absolute;
+    top: 52px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background: #111;
+    border-bottom: 1px solid #222;
+    padding: 8px;
+    gap: 2px;
+  }
+  .nav-inner.open .nav-entries { display: flex; }
+}
+
+/* ── Main content ── */
+.main-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 20px 4rem;
+}
+.main-content h2 {
+  color: #fff;
+  font-size: 1.6rem;
+  margin-top: 2.5rem;
+  border-bottom: 1px solid #222;
+  padding-bottom: 0.4rem;
+}
+.main-content h3 {
+  color: #eee;
+  font-size: 1.15rem;
+  margin-top: 1.75rem;
+}
+.main-content h4 {
+  color: #f5a623;
+  font-size: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.main-content a { color: #6af; }
+.main-content a:hover { color: #8cf; }
+.main-content p { margin: 0.75rem 0; }
+.main-content img { max-width: 100%; border-radius: 8px; }
+
+/* ── Footer ── */
+.site-footer {
+  text-align: center;
+  padding: 1.5rem 20px;
+  border-top: 1px solid #222;
+  font-size: 0.8rem;
+  color: #555;
+}
+.site-footer a { color: #888; }
+
+/* ── Code blocks (Prism overrides) ── */
+.main-content pre {
+  border-radius: 8px;
+  border: 1px solid #222;
+}
+.main-content code {
+  font-size: 0.85rem;
+}
+.main-content :not(pre) > code {
+  background: #1a1a1a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #f5a623;
+}
+
+/* ── Tables ── */
+.main-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+.main-content th, .main-content td {
+  padding: 8px 12px;
+  border: 1px solid #222;
+  text-align: left;
+}
+.main-content th {
+  background: #1a1a1a;
+  color: #f5a623;
+}
+
 /* ── Project-specific overrides for darkly theme ── */
 
 /* Video containers */

@@ -1,950 +1,314 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
-
-<meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-
-<meta name="description" content="Magnus effect vs Knuckleball — how spin and its absence shape the flight of a soccer ball">
-
-<title>Aerodynamics of a Shot – The Physics of Play</title>
-<style>
-/* Default styles provided by pandoc.
-** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-*/
-code{white-space: pre-wrap;}
-span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
-div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-ul.task-list{list-style: none;}
-ul.task-list li input[type="checkbox"] {
-  width: 0.8em;
-  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
-  vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
-</style>
-
-
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-d0ae9245876894da5ac7e18953ecc5cc.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-6c36e5a1b501362abc61597a8e3c382f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="dark">
-<script id="quarto-search-options" type="application/json">{
-  "location": "navbar",
-  "copy-button": false,
-  "collapse-after": 3,
-  "panel-placement": "end",
-  "type": "overlay",
-  "limit": 50,
-  "keyboard-shortcut": [
-    "f",
-    "/",
-    "s"
-  ],
-  "show-item-context": false,
-  "language": {
-    "search-no-results-text": "No results",
-    "search-matching-documents-text": "matching documents",
-    "search-copy-link-title": "Copy link to search",
-    "search-hide-matches-text": "Hide additional matches",
-    "search-more-match-text": "more match in this document",
-    "search-more-matches-text": "more matches in this document",
-    "search-clear-button-title": "Clear",
-    "search-text-placeholder": "",
-    "search-detached-cancel-button-title": "Cancel",
-    "search-submit-button-title": "Submit",
-    "search-label": "Search"
-  }
-}</script>
-<style>html{ scroll-behavior: smooth; }</style>
-
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
-
-<link rel="stylesheet" href="custom.css">
-<meta name="twitter:title" content="The Physics of Play">
-<meta name="twitter:description" content="Aerodynamics in Summer Sports &amp; FIFA World Cup 2026">
-<meta name="twitter:card" content="summary">
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Magnus effect vs Knuckleball — spin and its absence in soccer ball flight">
+  <title>Aerodynamics of a Shot &mdash; The Physics of Play</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="custom.css">
 </head>
+<body>
 
-<body class="floating nav-fixed quarto-light">
-
-<div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
-    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
-      <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
-    <span class="navbar-title">The Physics of Play</span>
-    </a>
-  </div>
-            <div id="quarto-search" class="" title="Search"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
-  <span class="navbar-toggler-icon"></span>
-</button>
-          <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav navbar-nav-scroll me-auto">
-  <li class="nav-item">
-    <a class="nav-link" href="./index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./theory.html"> 
-<span class="menu-text">Theory</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./tactical.html"> 
-<span class="menu-text">Tactical</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link active" href="./shot.html" aria-current="page"> 
-<span class="menu-text">Shot Aerodynamics</span></a>
-  </li>  
-</ul>
-          </div> <!-- /navcollapse -->
-            <div class="quarto-navbar-tools">
-</div>
-      </div> <!-- /container-fluid -->
-    </nav>
-</header>
-<!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
-<!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
-    <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
-  <li><a href="#simulation-setup" id="toc-simulation-setup" class="nav-link" data-scroll-target="#simulation-setup">Simulation Setup</a>
-  <ul class="collapse">
-  <li><a href="#computational-domain" id="toc-computational-domain" class="nav-link" data-scroll-target="#computational-domain">Computational Domain</a></li>
-  <li><a href="#solver-configuration" id="toc-solver-configuration" class="nav-link" data-scroll-target="#solver-configuration">Solver Configuration</a></li>
-  </ul></li>
-  <li><a href="#the-magnus-effect" id="toc-the-magnus-effect" class="nav-link" data-scroll-target="#the-magnus-effect">The Magnus Effect</a></li>
-  </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/ajeetdash/Sports-Aerodynamics/blob/main/shot.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></nav>
-</nav>
-<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
-<!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="./index.html">The Physics of <span class="highlight">Play</span></a>
+    <button class="nav-toggle" aria-label="Toggle navigation" onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
+    <div class="nav-entries">
+      <a href="./index.html">Home</a>
+      <a href="./theory.html">Theory</a>
+      <a href="./shot.html">Shot Aerodynamics</a>
+      <a href="./tactical.html">Tactical</a>
+      <a href="./su2-validation.html">SU2 Validation</a>
     </div>
-<!-- main -->
-<main class="content" id="quarto-document-content">
-
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">Aerodynamics of a Shot</h1>
-</div>
-
-<div>
-  <div class="description">
-    Magnus effect vs Knuckleball — how spin and its absence shape the flight of a soccer ball
   </div>
-</div>
+</nav>
 
+<main class="main-content">
 
-<div class="quarto-title-meta">
+<h2>Overview</h2>
+<p>This module simulates the aerodynamics of a soccer ball in flight using two complementary methods:</p>
+<ol>
+  <li><strong>&Phi;Flow (fast 2D prototyping)</strong> &mdash; cylinder in crossflow with rotating boundary conditions</li>
+  <li><strong>SU2 (high-fidelity 3D validation)</strong> &mdash; sphere RANS with SST $k$-$\omega$ turbulence model</li>
+</ol>
+<p>The engineering workflow: &Phi;Flow runs 100+ trajectory variations in seconds. The most interesting cases are exported to SU2 for high-fidelity verification.</p>
 
-    
-  
-    
-  </div>
-  
+<hr>
 
+<h2>Module 1: &Phi;Flow Simulation</h2>
+<p>A 2D cylinder in crossflow at $Re \approx 4 \times 10^4$, comparing a rotating case ($\omega = 10$ rad/s) with a non-rotating case ($\omega = 0$).</p>
 
-</header>
-
-
-<section id="overview" class="level2">
-<h2 class="anchored" data-anchor-id="overview">Overview</h2>
-<p>A cylinder in crossflow as a model for a spinning soccer ball.</p>
-<p>When a soccer player strikes the ball with spin — as in a curling free kick — the ball’s trajectory curves through the air. This is the <strong>Magnus effect</strong>, and it is a direct consequence of the asymmetric pressure field created by the ball’s rotation. At the other extreme, a <strong>knuckleball</strong> shot with minimal spin produces an erratic, unpredictable trajectory as the ball undergoes unsteady vortex shedding.</p>
-<p>To study these effects computationally, we model the ball as a <strong>2D cylinder in crossflow</strong>. While a real soccer ball is a 3D sphere, the 2D cylinder cross-section captures the essential physics: boundary-layer separation, wake formation, pressure asymmetry, and the Magnus lift.</p>
 <div class="stats">
 <div class="stat">
-<div class="num">
-256×128
-</div>
-<div class="lbl">
-Grid resolution
-</div>
+  <div class="num">256 &times; 128</div>
+  <div class="lbl">Grid resolution</div>
 </div>
 <div class="stat">
-<div class="num">
-0.3 m
-</div>
-<div class="lbl">
-Cylinder radius
-</div>
+  <div class="num">8.0 &times; 4.0 m</div>
+  <div class="lbl">Domain size</div>
 </div>
 <div class="stat">
-<div class="num">
-1.0 m/s
-</div>
-<div class="lbl">
-Inlet velocity
-</div>
+  <div class="num">0.3 m</div>
+  <div class="lbl">Cylinder radius</div>
 </div>
 <div class="stat">
-<div class="num">
-0.3
-</div>
-<div class="lbl">
-Time step <span class="math inline">\(\Delta t\)</span>
+  <div class="num">1.0 m/s</div>
+  <div class="lbl">Inlet velocity</div>
 </div>
 </div>
-<div class="stat">
-<div class="num">
-160
+
+<h3>Magnus Effect</h3>
+<p>A rotating cylinder deflects the flow asymmetrically. The spin accelerates the boundary layer on one side and decelerates it on the other, creating a pressure differential via Bernoulli's principle &mdash; lower pressure on the fast side, higher pressure on the slow side. This net pressure imbalance generates a lift force perpendicular to the freestream, known as the <strong>Magnus force</strong>:</p>
+
+<div class="eq-box">
+$$ F_L = C_L \cdot \frac{1}{2} \rho A U^2 $$
+<div class="eq-label">Magnus lift force</div>
 </div>
-<div class="lbl">
-Steps per run
+
+<p>Below, the rotating cylinder at $\omega = 10$ rad/s shows an asymmetric wake biased downward, consistent with upward (positive) Magnus lift.</p>
+
+<h4>Real-World Footage</h4>
+<div class="vid-grid single">
+  <video controls preload="none"><source src="../assets/magnus_real.mp4" type="video/mp4"></video>
+  <div class="cap">Real-world Magnus effect in soccer &mdash; curved ball trajectory (supply your own footage)</div>
 </div>
+
+<h4>Pressure Field</h4>
+<div class="vid-grid single">
+  <video controls><source src="../assets/magnus_pressure.mp4" type="video/mp4"></video>
+  <div class="cap">Pressure field &mdash; rotating cylinder ($\omega = 10$ rad/s)</div>
 </div>
+
+<h4>Velocity Field</h4>
+<div class="vid-grid single">
+  <video controls><source src="../assets/magnus_velocity.mp4" type="video/mp4"></video>
+  <div class="cap">Velocity magnitude with streamlines &mdash; rotating cylinder</div>
 </div>
-</section>
-<section id="simulation-setup" class="level2">
-<h2 class="anchored" data-anchor-id="simulation-setup">Simulation Setup</h2>
-<p>Domain, boundary conditions, and solver configuration.</p>
-<section id="computational-domain" class="level3">
-<h3 class="anchored" data-anchor-id="computational-domain">Computational Domain</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 37%">
-<col style="width: 24%">
-<col style="width: 37%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Parameter</th>
-<th>Value</th>
-<th>Rationale</th>
+
+<h3>Knuckleball Effect</h3>
+<p>A non-rotating cylinder generates a symmetric, unsteady von K&aacute;rm&aacute;n vortex street &mdash; the 2D analogue of a knuckleball's unpredictable drag crisis. Without spin, the wake oscillates symmetrically, causing erratic lateral forces.</p>
+
+<h4>Real-World Footage</h4>
+<div class="vid-grid single">
+  <video controls preload="none"><source src="../assets/knuckleball_real.mp4" type="video/mp4"></video>
+  <div class="cap">Real-world knuckleball in soccer &mdash; unpredictable, low-spin trajectory (supply your own footage)</div>
+</div>
+
+<h4>Pressure Field</h4>
+<div class="vid-grid single">
+  <video controls><source src="../assets/knuckleball_pressure_individual.mp4" type="video/mp4"></video>
+  <div class="cap">Pressure field &mdash; non-rotating cylinder</div>
+</div>
+
+<h4>Velocity Field</h4>
+<div class="vid-grid single">
+  <video controls><source src="../assets/knuckleball_velocity.mp4" type="video/mp4"></video>
+  <div class="cap">Velocity magnitude with streamlines &mdash; non-rotating cylinder</div>
+</div>
+
+<h3>Side by Side Comparison</h3>
+<p>Direct comparison of the rotating and non-rotating cases highlights the effect of spin on wake structure.</p>
+
+<div class="vid-grid single">
+  <video controls><source src="../assets/knuckleball_pressure.mp4" type="video/mp4"></video>
+  <div class="cap">Pressure field &mdash; Left: Magnus (spinning, $\omega = 10$ rad/s) &mdash; Right: Knuckleball (no spin)</div>
+</div>
+<div class="vid-grid single">
+  <video controls><source src="../assets/knuckleball_comparison.mp4" type="video/mp4"></video>
+  <div class="cap">Velocity field with streamlines &mdash; Left: Magnus (spinning) &mdash; Right: Knuckleball (no spin)</div>
+</div>
+
+<h4>What the Pressure Field Reveals</h4>
+
+<p>The evolution of each pressure field tells the full story of how spin changes the flow.</p>
+
+<p><strong>Left &mdash; Magnus (spinning).</strong> The rotation imposes a steady asymmetric pressure distribution from the very first frame. The side where the cylinder rotates <em>with</em> the freestream accelerates the flow, dropping the pressure (darker region); the opposite side decelerates it, raising the pressure (lighter region). This locked-in asymmetry suppresses the von K&aacute;rm&aacute;n instability &mdash; alternating vortices cannot grow because the pressure field never flips. The wake remains <strong>consistent, narrow, and uniformly shaped</strong> throughout the entire simulation. The vortex street is effectively killed by the spin.</p>
+
+<p><strong>Right &mdash; Knuckleball (no spin).</strong> The pressure field begins symmetric and quiescent &mdash; initially less pressure variation behind the cylinder than in the Magnus case, and a narrower wake. This symmetric state is <strong>intrinsically unstable</strong>. Tiny numerical perturbations grow via the Kelvin-Helmholtz instability, rolling up into alternating vortices that flip the pressure field left and right on each shedding cycle. Once established, the von K&aacute;rm&aacute;n street broadens the wake and lowers the base pressure (darker low-pressure zones extending far downstream), making the wake <strong>wider, more chaotic, and oscillatory</strong> compared to the Magnus side. The transition from uniform to chaotic is the signature of an unforced, naturally unstable wake.</p>
+
+<h4>What This Means for the Game</h4>
+
+<table class="param-table">
+<tr>
+  <th>Property</th>
+  <th>Magnus (spinning shot)</th>
+  <th>Knuckleball (no spin)</th>
 </tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Domain size</td>
-<td>8.0 × 4.0 m</td>
-<td>Sufficient wake development with 6.0 m downstream of cylinder</td>
+<tr>
+  <td>Side force</td>
+  <td><strong>Steady</strong> &mdash; predictable curve</td>
+  <td><strong>Oscillating</strong> &mdash; erratic jitter</td>
 </tr>
-<tr class="even">
-<td>Cylinder position</td>
-<td>(2.0, 2.0) m</td>
-<td>Centred vertically, offset 2.0 m from inlet</td>
+<tr>
+  <td>Trajectory</td>
+  <td>Consistent, learnable</td>
+  <td>Unpredictable, hard to save &amp; hard to repeat</td>
 </tr>
-<tr class="odd">
-<td>Cylinder radius</td>
-<td>0.3 m</td>
-<td>~10% of domain height — good blockage ratio</td>
+<tr>
+  <td>Goalkeeper challenge</td>
+  <td>Read the spin axis &amp; anticipate the curve</td>
+  <td>Cannot predict which way the ball will jerk</td>
 </tr>
-<tr class="even">
-<td>Grid</td>
-<td>256 × 128 cells</td>
-<td>~85 cells across cylinder diameter</td>
+<tr>
+  <td>When to use</td>
+  <td>Free kicks, corners, crosses &mdash; any situation needing placement</td>
+  <td>Long-range shots where unpredictability beats precision</td>
 </tr>
-<tr class="odd">
-<td>Inlet (x⁻)</td>
-<td><span class="math inline">\(u = 1.0\)</span> m/s, <span class="math inline">\(v = 0\)</span></td>
-<td>Dirichlet condition</td>
-</tr>
-<tr class="even">
-<td>Outlet (x⁺)</td>
-<td>ZERO_GRADIENT</td>
-<td>Zero-Neumann — allows flow to exit freely</td>
-</tr>
-<tr class="odd">
-<td>Walls (y)</td>
-<td><span class="math inline">\(u = 1.0\)</span>, <span class="math inline">\(v = 0\)</span> (slip)</td>
-<td>Free-slip top/bottom to avoid wall BLs</td>
-</tr>
-<tr class="even">
-<td>Reynolds number</td>
-<td>~4 × 10⁴</td>
-<td>Based on cylinder diameter <span class="math inline">\(D = 0.6\)</span> m, <span class="math inline">\(U = 1.0\)</span> m/s</td>
-</tr>
-</tbody>
 </table>
-</section>
-<section id="solver-configuration" class="level3">
-<h3 class="anchored" data-anchor-id="solver-configuration">Solver Configuration</h3>
-<ul>
-<li><strong>Advection</strong>: Semi-Lagrangian (unconditionally stable, allows <span class="math inline">\(\Delta t = 0.3\)</span>)</li>
-<li><strong>Pressure solve</strong>: Conjugate gradient on the Poisson equation</li>
-<li><strong>Obstacle</strong>: Embedded solid cylinder; <span class="math inline">\(\omega = 10\)</span> rad/s for Magnus case, 0 for knuckleball</li>
-<li><strong>Output frequency</strong>: Every 4th step saved (40 frames total per run)</li>
-</ul>
-</section>
-</section>
-<section id="the-magnus-effect" class="level2">
-<h2 class="anchored" data-anchor-id="the-magnus-effect">The Magnus Effect</h2>
-<p><span class="math inline">\(\omega = 10\)</span> rad/s — how spin bends the trajectory.</p>
-<p><span class="math display">\[ F_L = \rho \times (\omega \times u) \times V \]</span></p>
-<p>Kutta-Joukowski lift theorem (simplified). When the cylinder rotates at <span class="math inline">\(\omega = 10\)</span> rad/s, its surface speed at the equator is <span class="math inline">\(v_s = \omega R = 3.0\)</span> m/s. The no-slip condition accelerates the fluid on the side moving <em>with</em> the free stream and decelerates it on the opposing side:</p>
-<ul>
-<li><strong>Higher velocity</strong> on the co-moving side <span class="math inline">\(\rightarrow\)</span> lower pressure</li>
-<li><strong>Lower velocity</strong> on the opposing side <span class="math inline">\(\rightarrow\)</span> higher pressure</li>
-<li>The resulting <strong>pressure differential</strong> produces a net force perpendicular to the flow — the Magnus lift.</li>
-</ul>
-<div class="vid-grid">
-<div>
-<video controls="" loop="" muted="">
-<source src="../assets/magnus_effect.mp4" type="video/mp4">
-</video>
-<div class="cap">
-Pressure field evolution around the rotating cylinder (<span class="math inline">\(\omega = 10\)</span> rad/s)
-</div>
-</div>
-<div>
-<video controls="" loop="" muted="">
-<source src="../assets/magnus_streamlines.mp4" type="video/mp4">
-</video>
-<div class="cap">
-Streamlines coloured by velocity magnitude — wake deflected downward
-</div>
-</div>
-</div>
-<section id="what-to-observe" class="level3">
-<h3 class="anchored" data-anchor-id="what-to-observe">What to Observe</h3>
-<ul>
-<li><strong>Asymmetric pressure field</strong>: The low-pressure region is shifted to one side of the cylinder, creating the lift force.</li>
-<li><strong>Wake deflection</strong>: The streamline pattern shows the wake is pushed downward, consistent with a net lift.</li>
-<li><strong>Stabilised wake</strong>: Spin energises the boundary layer on one side, delaying separation and narrowing the wake.</li>
-</ul>
-<div class="callout-box">
-<p><strong>Real-world connection:</strong> In a curling free kick, the ball is struck off-centre to impart spin. The Magnus force can deflect the ball by 1–2 m over a 25 m free kick — enough to bend it around a wall and away from the goalkeeper.</p>
-</div>
-</section>
-<section id="the-knuckleball-effect" class="level2">
-<h2 class="anchored" data-anchor-id="the-knuckleball-effect">The Knuckleball Effect</h2>
-<p><span class="math inline">\(\omega = 0\)</span> rad/s — the unpredictable no-spin shot.</p>
-<p>A knuckleball shot is struck with minimal spin, often by hitting the ball’s centre with the laces. Without spin, there is no Magnus force to stabilise the wake. Instead, the flow separates asymmetrically and the wake undergoes unsteady <strong>vortex shedding</strong>.</p>
-<p>The key difference: the separation point on a non-rotating cylinder varies in time due to the inherent instability of the wake. This causes the pressure field to fluctuate, making the instantaneous <strong>drag and lift coefficients</strong> time-dependent.</p>
-<div class="vid-grid">
-<div>
-<video controls="" loop="" muted="">
-<source src="../assets/knuckleball_comparison.mp4" type="video/mp4">
-</video>
-<div class="cap">
-Side-by-side: Magnus (left) vs Knuckleball (right) — velocity + streamlines
-</div>
-</div>
-<div>
-<video controls="" loop="" muted="">
-<source src="../assets/knuckleball_pressure.mp4" type="video/mp4">
-</video>
-<div class="cap">
-Pressure comparison — spinning case has a stable dipole; no-spin case fluctuates
-</div>
-</div>
-</div>
-<section id="what-to-observe-1" class="level3">
-<h3 class="anchored" data-anchor-id="what-to-observe-1">What to Observe</h3>
-<ul>
-<li><strong>Unsteady wake</strong>: The non-rotating cylinder sheds alternating vortices (von Kármán vortex street).</li>
-<li><strong>Fluctuating pressure</strong>: Unlike the Magnus case’s stable low-pressure dipole, the knuckleball’s pressure field changes from frame to frame.</li>
-<li><strong>Wider wake</strong>: Without spin to energise the boundary layer, separation occurs earlier, producing a wider wake and higher pressure drag.</li>
-</ul>
-<div class="callout-box">
-<p><strong>Real-world connection:</strong> A knuckleball is notoriously difficult for goalkeepers because its trajectory changes unpredictably in flight. The fluctuating pressure field means the ball can “wobble” or dip suddenly.</p>
-</div>
-</section>
-<section id="side-by-side-magnus-vs-knuckleball" class="level2">
-<h2 class="anchored" data-anchor-id="side-by-side-magnus-vs-knuckleball">Side-by-Side: Magnus vs Knuckleball</h2>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 16%">
-<col style="width: 38%">
-<col style="width: 45%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Property</th>
-<th>Magnus (<span class="math inline">\(\omega = 10\)</span>)</th>
-<th>Knuckleball (<span class="math inline">\(\omega = 0\)</span>)</th>
+
+<p>A spinning shot produces a <strong>steady Magnus lift</strong> that deflects the ball along a smooth parabolic curve. Players like Roberto Carlos or Beckham mastered this: the goalkeeper sees the spin, reads the curve, and dives. It is predictable &mdash; hard to save, but learnable.</p>
+
+<p>A knuckleball produces <strong>no steady lift</strong>. Instead, the oscillating wake jerks the ball left and right with each shed vortex, creating a seemingly random trajectory. The pressure field video shows exactly why: the alternating low-pressure zones behind the ball mean the lateral force flips sign repeatedly. The goalkeeper cannot anticipate the direction. But the shooter also cannot control it &mdash; the knuckleball is as unpredictable for the taker as it is for the keeper, which is why it is reserved for long-range efforts where brute unpredictability outweighs the lack of placement.</p>
+
+<p>The SU2 URANS data quantifies this: the non-rotating cylinder&rsquo;s lift coefficient oscillates between $C_l = -0.108$ and $+0.145$ (standard deviation 0.05), while the Magnus case holds a steady $C_l \approx -0.172$. The mean offset is the Magnus lift; the oscillations are the knuckleball&rsquo;s jitter.</p>
+
+<h3>Comparison to SU2 &amp; Literature</h3>
+
+<p>Taken together, the &Phi;Flow and SU2 simulations bracket the real physics of a cylinder in crossflow at $Re = 4 \times 10^4$. The tables below compare the key metrics across both solvers and classical experimental data.</p>
+
+<h4>No-Spin (Knuckleball)</h4>
+
+<table class="param-table">
+<tr>
+  <th>Metric</th>
+  <th>&Phi;Flow (Laminar)</th>
+  <th>SU2 RANS SST</th>
+  <th>SU2 URANS SST</th>
+  <th>Literature</th>
 </tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Pressure field</td>
-<td>Stable asymmetric dipole</td>
-<td>Fluctuating, symmetric in mean</td>
+<tr>
+  <td>Drag coefficient $C_d$</td>
+  <td>~1.2</td>
+  <td>0.683</td>
+  <td>0.639</td>
+  <td>1.0&ndash;1.2</td>
 </tr>
-<tr class="even">
-<td>Wake structure</td>
-<td>Deflected, narrower, stable</td>
-<td>Straight, wider, unsteady vortex street</td>
+<tr>
+  <td>Separation angle</td>
+  <td>~80&deg;</td>
+  <td>~110&deg;</td>
+  <td>~110&deg;</td>
+  <td>~80&deg; (lam) / ~120&deg; (turb)</td>
 </tr>
-<tr class="odd">
-<td>Lift force</td>
-<td>Significant (steady, perpendicular)</td>
-<td>Near-zero mean (fluctuating instantaneous)</td>
+<tr>
+  <td>Wake character</td>
+  <td>Wide, unsteady vortex street</td>
+  <td>Narrow, steady</td>
+  <td>Narrow, oscillating</td>
+  <td>Wide von K&aacute;rm&aacute;n street</td>
 </tr>
-<tr class="even">
-<td>Drag</td>
-<td>Moderate (stabilised wake recovers pressure)</td>
-<td>Higher (early separation, wide wake)</td>
-</tr>
-<tr class="odd">
-<td>Boundary layer</td>
-<td>Asymmetric separation</td>
-<td>Symmetric mean separation</td>
-</tr>
-<tr class="even">
-<td>Trajectory</td>
-<td>Curved, predictable</td>
-<td>Erratic, hard to read</td>
-</tr>
-</tbody>
 </table>
-</section>
-<section id="physical-mechanism-why-spin-changes-everything" class="level2">
-<h2 class="anchored" data-anchor-id="physical-mechanism-why-spin-changes-everything">Physical Mechanism: Why Spin Changes Everything</h2>
-<section id="step-1-no-slip-condition" class="level3">
-<h3 class="anchored" data-anchor-id="step-1-no-slip-condition">Step 1: No-slip condition</h3>
-<p>The fluid in contact with the rotating cylinder surface moves at the surface speed <span class="math inline">\(v_s = \omega R\)</span>. On the top of the cylinder (if spinning clockwise), the surface velocity opposes the free stream; on the bottom, it aligns with the free stream.</p>
-</section>
-<section id="step-2-boundary-layer-energisation" class="level3">
-<h3 class="anchored" data-anchor-id="step-2-boundary-layer-energisation">Step 2: Boundary layer energisation</h3>
-<p>The co-moving side receives an extra momentum boost from the rotating wall. This energised boundary layer can overcome the adverse pressure gradient on the rear surface and remain attached longer. On the opposing side, the boundary layer is starved of momentum and separates earlier.</p>
-</section>
-<section id="step-3-asymmetric-wake" class="level3">
-<h3 class="anchored" data-anchor-id="step-3-asymmetric-wake">Step 3: Asymmetric wake</h3>
-<p>Later separation = narrower wake on the co-moving side. The result is a deflected wake and, by conservation of momentum, a net lift force on the cylinder.</p>
-<p><span class="math display">\[ \Delta p = \frac{1}{2} \rho (v_{\text{top}}^2 - v_{\text{bottom}}^2) \]</span></p>
-<p>Bernoulli estimate of the pressure difference across the cylinder.</p>
-</section>
-</section>
-<section id="computational-implementation" class="level2">
-<h2 class="anchored" data-anchor-id="computational-implementation">Computational Implementation</h2>
-<p>How this is modelled in ΦFlow. The simulation is defined in <code>src/shot_aero.py</code> and <code>src/domain.py</code>. Two obstacles are created — one with <code>angular_velocity = 10.0</code> and one with <code>angular_velocity = 0.0</code> — and each is run through the same <code>run_cylinder()</code> function:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>obstacle_spin   <span class="op">=</span> Obstacle(CYLINDER, velocity<span class="op">=</span>vec(x<span class="op">=</span><span class="dv">0</span>, y<span class="op">=</span><span class="dv">0</span>), angular_velocity<span class="op">=</span><span class="fl">10.0</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>obstacle_nospin <span class="op">=</span> Obstacle(CYLINDER, velocity<span class="op">=</span>vec(x<span class="op">=</span><span class="dv">0</span>, y<span class="op">=</span><span class="dv">0</span>), angular_velocity<span class="op">=</span><span class="fl">0.0</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>frames_magnus  <span class="op">=</span> run_cylinder(obstacle_spin,   <span class="st">"Magnus"</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>frames_knuckle <span class="op">=</span> run_cylinder(obstacle_nospin, <span class="st">"Knuckleball"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Each frame captures the pressure field (<span class="math inline">\(p\)</span>), velocity components (<span class="math inline">\(u\)</span>, <span class="math inline">\(v\)</span>), and velocity magnitude for post-processing. Two animation functions generate the output videos:</p>
+
+<h4>With Spin (Magnus)</h4>
+
+<table class="param-table">
+<tr>
+  <th>Metric</th>
+  <th>&Phi;Flow (Laminar, $S = 3.0$)</th>
+  <th>SU2 RANS SST ($S = 0.2$)</th>
+  <th>SU2 URANS SST ($S = 0.2$)</th>
+  <th>Soccer ball ($S \approx 0.2$)</th>
+</tr>
+<tr>
+  <td>Drag coefficient $C_d$</td>
+  <td>~1.2</td>
+  <td>0.688</td>
+  <td>0.628</td>
+  <td>~0.3&ndash;0.5</td>
+</tr>
+<tr>
+  <td>Lift coefficient $C_l$</td>
+  <td>Visual only</td>
+  <td>&minus;0.172</td>
+  <td>&minus;0.122 (mean)</td>
+  <td>~0.2&ndash;0.3</td>
+</tr>
+</table>
+
+<p style="color: #888; font-size: 0.85rem;">Note: &Phi;Flow uses $S = \omega R / U = 3.0$ (exaggerated for visual clarity) while SU2 and real soccer balls operate at $S \approx 0.2$. Direct force comparison of the Magnus case is therefore qualitative.</p>
+
+<div class="callout-box">
+  <strong>Physical interpretation:</strong> The 43% $C_d$ difference between &Phi;Flow (~1.2) and SU2 (0.683) is <em>not</em> a bug &mdash; it is the difference between laminar and fully turbulent boundary layer separation. &Phi;Flow separates at ~80&deg;, producing a wide wake and high pressure drag (matching the classical sub-critical cylinder benchmark). SU2 SST forces transition to turbulence, keeping the boundary layer attached to ~110&deg;, which narrows the wake and reduces $C_d$. Real soccer balls ($Re \approx 2\!-\!4 \times 10^5$) operate near the drag crisis regime, where surface texture and spin determine whether the boundary layer is laminar or turbulent &mdash; and therefore whether $C_d$ is closer to 0.5 or 0.1. Neither 2D simulation captures this 3D transition physics, but together they define the empirical bounds of the real behavior.
+</div>
+
+<h3>Implementation</h3>
+<pre><code class="language-python">from phi.jax.flow import Obstacle, StaggeredGrid, fluid, advect, vec
+
+v0 = StaggeredGrid((1.0, 0.0), BOUNDARY, x=256, y=128, bounds=BOX)
+obstacle = Obstacle(CYLINDER, angular_velocity=10.0)
+
+for i in range(N_STEPS):
+    v = advect.semi_lagrangian(v, v, dt=DT)
+    v, p = fluid.make_incompressible(v, obstacle)
+</code></pre>
+
+<hr>
+
+<h2>Module 2: SU2 Validation</h2>
+
+<h3>2D Cylinder Cross-Validation</h3>
+<p>Before moving to 3D spheres, we validate the 2D cylinder case in SU2 to understand the bias of the &Phi;Flow approximation.</p>
+
+<div class="callout-box">
+  <strong>Key result:</strong> &Phi;Flow (2D, laminar) predicts $C_d \approx 1.2$ for a cylinder at $Re \approx 4 \times 10^4$, matching the classical sub-critical benchmark. SU2 (2D, RANS SST) predicts $C_d = 0.683$ &mdash; a 43% difference. This is physically meaningful: laminar flow separates at ~80&deg; (wide wake, high drag), while a fully turbulent boundary layer separates at ~110&deg; (narrow wake, lower drag). Real soccer balls span both regimes depending on surface texture, spin, and Reynolds number.
+</div>
+
+<h3>3D Sphere: Drag Crisis (Re Sweep)</h3>
+<p>A smooth sphere is simulated across $10^4 \leq Re \leq 10^6$ using steady RANS (SST $k$-$\omega$). The drag crisis &mdash; the sudden drop in $C_d$ from $\sim 0.5$ to $\sim 0.1$ &mdash; is captured and compared against experimental data (Achenbach, 1972).</p>
+<p><em>SU2 pressure contours and $C_d(Re)$ plot will be generated in Phase 4.</em></p>
+
+<h3>3D Sphere: Smooth vs Textured</h3>
+<p>Modern World Cup balls feature panel seams that act as boundary layer trippers. SU2 compares:</p>
 <ul>
-<li><code>animate_velocity_comparison()</code> — streamlines coloured by velocity on a side-by-side panel</li>
-<li><code>animate_pressure_comparison()</code> — pressure contours, also side-by-side</li>
-</ul>
-</section>
-<section id="further-reading" class="level2">
-<h2 class="anchored" data-anchor-id="further-reading">Further Reading</h2>
-<ul>
-<li><a href="./theory.html">Background Theory</a> — full derivation of Navier-Stokes, Reynolds number, boundary layers</li>
-<li>ΦFlow documentation: <a href="https://github.com/tum-pbs/PhiFlow">github.com/tum-pbs/PhiFlow</a></li>
-<li>Bush, J. W. M. (2013). “The aerodynamics of the beautiful game.” <em>Physics Today</em>, 66(7), 42–47.</li>
+  <li><strong>Smooth sphere</strong> &mdash; drag crisis at $Re \approx 3 \times 10^5$</li>
+  <li><strong>Textured sphere</strong> (with seam geometry) &mdash; earlier transition, lower post-crisis drag</li>
 </ul>
 
+<div class="callout-box">
+  <strong>Aerospace insight:</strong> Panel seams are vortex generators. They force laminar-to-turbulent transition at lower Re, keeping flow attached longer and reducing pressure drag. This explains why textured match balls fly further and truer.
+</div>
 
-</section>
-</section></section></main></div>
+<p><em>SU2 textured-ball comparison will be generated in Phase 5.</em></p>
 
+<h3>Mesh Generation (gmsh)</h3>
+<pre><code class="language-python">import gmsh
 
+gmsh.initialize()
+gmsh.model.add("sphere")
+gmsh.model.occ.addSphere(0, 0, 0, 0.11)
+gmsh.model.occ.synchronize()
+gmsh.model.mesh.generate(3)
+gmsh.write("sphere.su2")
+gmsh.finalize()
+</code></pre>
 
+<h3>Running SU2</h3>
+<pre><code class="language-bash">SU2_CFD sphere.cfg
+</code></pre>
+<p>Configuration specifies freestream conditions, turbulence model, and solver settings. Results (Cl, Cd, convergence) are parsed from the history file.</p>
 
+</main>
 
-
-
-
- <!-- /main -->
-<script id="quarto-html-after-body" type="application/javascript">
-  window.document.addEventListener("DOMContentLoaded", function (event) {
-    const icon = "";
-    const anchorJS = new window.AnchorJS();
-    anchorJS.options = {
-      placement: 'right',
-      icon: icon
-    };
-    anchorJS.add('.anchored');
-    const isCodeAnnotation = (el) => {
-      for (const clz of el.classList) {
-        if (clz.startsWith('code-annotation-')) {                     
-          return true;
-        }
-      }
-      return false;
-    }
-    const onCopySuccess = function(e) {
-      // button target
-      const button = e.trigger;
-      // don't keep focus
-      button.blur();
-      // flash "checked"
-      button.classList.add('code-copy-button-checked');
-      var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
-      let tooltip;
-      if (window.bootstrap) {
-        button.setAttribute("data-bs-toggle", "tooltip");
-        button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
-        tooltip = new bootstrap.Tooltip(button, 
-          { trigger: "manual", 
-            customClass: "code-copy-button-tooltip",
-            offset: [0, -8]});
-        tooltip.show();    
-      }
-      setTimeout(function() {
-        if (tooltip) {
-          tooltip.hide();
-          button.removeAttribute("data-bs-title");
-          button.removeAttribute("data-bs-toggle");
-          button.removeAttribute("data-bs-placement");
-        }
-        button.setAttribute("title", currentTitle);
-        button.classList.remove('code-copy-button-checked');
-      }, 1000);
-      // clear code selection
-      e.clearSelection();
-    }
-    const getTextToCopy = function(trigger) {
-      const outerScaffold = trigger.parentElement.cloneNode(true);
-      const codeEl = outerScaffold.querySelector('code');
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-      text: getTextToCopy
-    });
-    clipboard.on('success', onCopySuccess);
-    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-        text: getTextToCopy,
-        container: window.document.getElementById('quarto-embedded-source-code-modal')
-      });
-      clipboardModal.on('success', onCopySuccess);
-    }
-      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
-      var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
-      var isInternal = (href) => {
-          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
-      }
-      // Inspect non-navigation links and adorn them if external
-     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
-      for (var i=0; i<links.length; i++) {
-        const link = links[i];
-        if (!isInternal(link.href)) {
-          // undo the damage that might have been done by quarto-nav.js in the case of
-          // links that we want to consider external
-          if (link.dataset.originalHref !== undefined) {
-            link.href = link.dataset.originalHref;
-          }
-            // default icon
-            link.classList.add("external");
-        }
-      }
-    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
-      const config = {
-        allowHTML: true,
-        maxWidth: 500,
-        delay: 100,
-        arrow: false,
-        appendTo: function(el) {
-            return el.parentElement;
-        },
-        interactive: true,
-        interactiveBorder: 10,
-        theme: 'quarto',
-        placement: 'bottom-start',
-      };
-      if (contentFn) {
-        config.content = contentFn;
-      }
-      if (onTriggerFn) {
-        config.onTrigger = onTriggerFn;
-      }
-      if (onUntriggerFn) {
-        config.onUntrigger = onUntriggerFn;
-      }
-      window.tippy(el, config); 
-    }
-    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
-    for (var i=0; i<noterefs.length; i++) {
-      const ref = noterefs[i];
-      tippyHover(ref, function() {
-        // use id or data attribute instead here
-        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
-        try { href = new URL(href).hash; } catch {}
-        const id = href.replace(/^#\/?/, "");
-        const note = window.document.getElementById(id);
-        if (note) {
-          return note.innerHTML;
-        } else {
-          return "";
-        }
-      });
-    }
-    const xrefs = window.document.querySelectorAll('a.quarto-xref');
-    const processXRef = (id, note) => {
-      // Strip column container classes
-      const stripColumnClz = (el) => {
-        el.classList.remove("page-full", "page-columns");
-        if (el.children) {
-          for (const child of el.children) {
-            stripColumnClz(child);
-          }
-        }
-      }
-      stripColumnClz(note)
-      if (id === null || id.startsWith('sec-')) {
-        // Special case sections, only their first couple elements
-        const container = document.createElement("div");
-        if (note.children && note.children.length > 2) {
-          container.appendChild(note.children[0].cloneNode(true));
-          for (let i = 1; i < note.children.length; i++) {
-            const child = note.children[i];
-            if (child.tagName === "P" && child.innerText === "") {
-              continue;
-            } else {
-              container.appendChild(child.cloneNode(true));
-              break;
-            }
-          }
-          if (window.Quarto?.typesetMath) {
-            window.Quarto.typesetMath(container);
-          }
-          return container.innerHTML
-        } else {
-          if (window.Quarto?.typesetMath) {
-            window.Quarto.typesetMath(note);
-          }
-          return note.innerHTML;
-        }
-      } else {
-        // Remove any anchor links if they are present
-        const anchorLink = note.querySelector('a.anchorjs-link');
-        if (anchorLink) {
-          anchorLink.remove();
-        }
-        if (window.Quarto?.typesetMath) {
-          window.Quarto.typesetMath(note);
-        }
-        if (note.classList.contains("callout")) {
-          return note.outerHTML;
-        } else {
-          return note.innerHTML;
-        }
-      }
-    }
-    for (var i=0; i<xrefs.length; i++) {
-      const xref = xrefs[i];
-      tippyHover(xref, undefined, function(instance) {
-        instance.disable();
-        let url = xref.getAttribute('href');
-        let hash = undefined; 
-        if (url.startsWith('#')) {
-          hash = url;
-        } else {
-          try { hash = new URL(url).hash; } catch {}
-        }
-        if (hash) {
-          const id = hash.replace(/^#\/?/, "");
-          const note = window.document.getElementById(id);
-          if (note !== null) {
-            try {
-              const html = processXRef(id, note.cloneNode(true));
-              instance.setContent(html);
-            } finally {
-              instance.enable();
-              instance.show();
-            }
-          } else {
-            // See if we can fetch this
-            fetch(url.split('#')[0])
-            .then(res => res.text())
-            .then(html => {
-              const parser = new DOMParser();
-              const htmlDoc = parser.parseFromString(html, "text/html");
-              const note = htmlDoc.getElementById(id);
-              if (note !== null) {
-                const html = processXRef(id, note);
-                instance.setContent(html);
-              } 
-            }).finally(() => {
-              instance.enable();
-              instance.show();
-            });
-          }
-        } else {
-          // See if we can fetch a full url (with no hash to target)
-          // This is a special case and we should probably do some content thinning / targeting
-          fetch(url)
-          .then(res => res.text())
-          .then(html => {
-            const parser = new DOMParser();
-            const htmlDoc = parser.parseFromString(html, "text/html");
-            const note = htmlDoc.querySelector('main.content');
-            if (note !== null) {
-              // This should only happen for chapter cross references
-              // (since there is no id in the URL)
-              // remove the first header
-              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
-                note.children[0].remove();
-              }
-              const html = processXRef(null, note);
-              instance.setContent(html);
-            } 
-          }).finally(() => {
-            instance.enable();
-            instance.show();
-          });
-        }
-      }, function(instance) {
-      });
-    }
-        let selectedAnnoteEl;
-        const selectorForAnnotation = ( cell, annotation) => {
-          let cellAttr = 'data-code-cell="' + cell + '"';
-          let lineAttr = 'data-code-annotation="' +  annotation + '"';
-          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
-          return selector;
-        }
-        const selectCodeLines = (annoteEl) => {
-          const doc = window.document;
-          const targetCell = annoteEl.getAttribute("data-target-cell");
-          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
-          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
-          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
-          const lineIds = lines.map((line) => {
-            return targetCell + "-" + line;
-          })
-          let top = null;
-          let height = null;
-          let parent = null;
-          if (lineIds.length > 0) {
-              //compute the position of the single el (top and bottom and make a div)
-              const el = window.document.getElementById(lineIds[0]);
-              top = el.offsetTop;
-              height = el.offsetHeight;
-              parent = el.parentElement.parentElement;
-            if (lineIds.length > 1) {
-              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
-              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
-              height = bottom - top;
-            }
-            if (top !== null && height !== null && parent !== null) {
-              // cook up a div (if necessary) and position it 
-              let div = window.document.getElementById("code-annotation-line-highlight");
-              if (div === null) {
-                div = window.document.createElement("div");
-                div.setAttribute("id", "code-annotation-line-highlight");
-                div.style.position = 'absolute';
-                parent.appendChild(div);
-              }
-              div.style.top = top - 2 + "px";
-              div.style.height = height + 4 + "px";
-              div.style.left = 0;
-              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
-              if (gutterDiv === null) {
-                gutterDiv = window.document.createElement("div");
-                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
-                gutterDiv.style.position = 'absolute';
-                const codeCell = window.document.getElementById(targetCell);
-                const gutter = codeCell.querySelector('.code-annotation-gutter');
-                gutter.appendChild(gutterDiv);
-              }
-              gutterDiv.style.top = top - 2 + "px";
-              gutterDiv.style.height = height + 4 + "px";
-            }
-            selectedAnnoteEl = annoteEl;
-          }
-        };
-        const unselectCodeLines = () => {
-          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
-          elementsIds.forEach((elId) => {
-            const div = window.document.getElementById(elId);
-            if (div) {
-              div.remove();
-            }
-          });
-          selectedAnnoteEl = undefined;
-        };
-          // Handle positioning of the toggle
-      window.addEventListener(
-        "resize",
-        throttle(() => {
-          elRect = undefined;
-          if (selectedAnnoteEl) {
-            selectCodeLines(selectedAnnoteEl);
-          }
-        }, 10)
-      );
-      function throttle(fn, ms) {
-      let throttle = false;
-      let timer;
-        return (...args) => {
-          if(!throttle) { // first call gets through
-              fn.apply(this, args);
-              throttle = true;
-          } else { // all the others get throttled
-              if(timer) clearTimeout(timer); // cancel #2
-              timer = setTimeout(() => {
-                fn.apply(this, args);
-                timer = throttle = false;
-              }, ms);
-          }
-        };
-      }
-        // Attach click handler to the DT
-        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
-        for (const annoteDlNode of annoteDls) {
-          annoteDlNode.addEventListener('click', (event) => {
-            const clickedEl = event.target;
-            if (clickedEl !== selectedAnnoteEl) {
-              unselectCodeLines();
-              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
-              if (activeEl) {
-                activeEl.classList.remove('code-annotation-active');
-              }
-              selectCodeLines(clickedEl);
-              clickedEl.classList.add('code-annotation-active');
-            } else {
-              // Unselect the line
-              unselectCodeLines();
-              clickedEl.classList.remove('code-annotation-active');
-            }
-          });
-        }
-    const findCites = (el) => {
-      const parentEl = el.parentElement;
-      if (parentEl) {
-        const cites = parentEl.dataset.cites;
-        if (cites) {
-          return {
-            el,
-            cites: cites.split(' ')
-          };
-        } else {
-          return findCites(el.parentElement)
-        }
-      } else {
-        return undefined;
-      }
-    };
-    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
-    for (var i=0; i<bibliorefs.length; i++) {
-      const ref = bibliorefs[i];
-      const citeInfo = findCites(ref);
-      if (citeInfo) {
-        tippyHover(citeInfo.el, function() {
-          var popup = window.document.createElement('div');
-          citeInfo.cites.forEach(function(cite) {
-            var citeDiv = window.document.createElement('div');
-            citeDiv.classList.add('hanging-indent');
-            citeDiv.classList.add('csl-entry');
-            var biblioDiv = window.document.getElementById('ref-' + cite);
-            if (biblioDiv) {
-              citeDiv.innerHTML = biblioDiv.innerHTML;
-            }
-            popup.appendChild(citeDiv);
-          });
-          return popup.innerHTML;
-        });
-      }
-    }
-  });
-  </script>
- <!-- /content -->
-<footer class="footer">
-  <div class="nav-footer">
-    <div class="nav-footer-left">
-      &nbsp;
-    </div>   
-    <div class="nav-footer-center">
-<p>© 2026 · The Physics of Play · Built with <a href="https://quarto.org">Quarto</a> and <a href="https://github.com/tum-pbs/PhiFlow">ΦFlow</a></p>
-<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/ajeetdash/Sports-Aerodynamics/blob/main/shot.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li></ul></div></div>
-    <div class="nav-footer-right">
-      &nbsp;
-    </div>
-  </div>
+<footer class="site-footer">
+  <p>&copy; 2026 &middot; The Physics of Play &middot; Built with <a href="https://github.com/tum-pbs/PhiFlow">&Phi;Flow</a>, <a href="https://su2code.github.io/">SU2</a>, and <a href="https://pyvista.org/">PyVista</a></p>
 </footer>
 
-
-
-
-<script src="site_libs/quarto-html/zenscroll-min.js"></script>
-</body></html>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  renderMathInElement(document.body, {
+    delimiters: [
+      {left: "$$", right: "$$", display: true},
+      {left: "$", right: "$", display: false}
+    ],
+    throwOnError: false
+  });
+});
+</script>
+</body>
+</html>
