@@ -13,8 +13,7 @@ wheels/
 *.ipynb
 
 # Generated assets (regeneratable, not tracked)
-assets/*.gif
-assets/*.pkl
+assets/
 
 # OS files
 .DS_Store
@@ -41,3 +40,4 @@ su2_runs/**/*.cfg
 su2_runs/**/*.su2
 su2_runs/**/results*.json
 su2_runs/**/surface.vtu
+docs/linkedin_draft_01.md

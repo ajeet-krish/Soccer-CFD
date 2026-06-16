@@ -4,7 +4,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.shot_aero import run_cylinder, animate_velocity_comparison, animate_pressure_comparison
-from src.tactical import run_tactical, run_macro_stress, run_team_heatmaps
+from src.tactical import run_tactical, run_macro_stress, run_team_heatmaps, run_formation_fluid_arrays, run_lateral_shift, run_up_back_through, run_rapid_circulation
 from phi.jax.flow import Obstacle, vec
 
 from src.domain import CYLINDER
@@ -48,6 +48,30 @@ def main():
     print("TEAM HEATMAPS — 11v11 Defensive Influence & Passing Lanes")
     print("=" * 60)
     run_team_heatmaps()
+
+    # ── Formations as Fluid Arrays ──
+    print("\n" + "=" * 60)
+    print("FORMATIONS AS STRUCTURAL FLUID ARRAYS")
+    print("=" * 60)
+    run_formation_fluid_arrays()
+
+    # ── Lateral Shifting Mechanics ──
+    print("\n" + "=" * 60)
+    print("LATERAL SHIFTING MECHANICS")
+    print("=" * 60)
+    run_lateral_shift()
+
+    # ── Up-Back-Through ──
+    print("\n" + "=" * 60)
+    print("UP-BACK-THROUGH — TRANSIENT CAVITATION")
+    print("=" * 60)
+    run_up_back_through()
+
+    # ── Rapid Circulation ──
+    print("\n" + "=" * 60)
+    print("RAPID CIRCULATION — VISCOELASTIC RELAXATION")
+    print("=" * 60)
+    run_rapid_circulation()
 
     print("\n" + "=" * 60)
     print("ALL SIMULATIONS COMPLETE")

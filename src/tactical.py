@@ -704,6 +704,528 @@ def animate_team_collapse():
     plt.close(fig)
 
 
+# ═══════════════════════════════════════════════════════════
+# Section 3 — Formations as Structural Fluid Arrays
+# ═══════════════════════════════════════════════════════════
+
+F442_LOW = np.array([
+    [10.2, 3.4],   # GK
+    [9.0, 1.6],    # LB
+    [9.2, 2.8],    # LCB
+    [9.2, 4.0],    # RCB
+    [9.0, 5.2],    # RB
+    [8.2, 1.8],    # LM
+    [8.4, 2.8],    # LCM
+    [8.4, 4.0],    # RCM
+    [8.2, 5.0],    # RM
+    [7.0, 2.8],    # ST1
+    [7.0, 4.0],    # ST2
+])
+
+F433_ATT = np.array([
+    [10.2, 3.4],   # GK
+    [8.0, 0.3],    # LB — pushed high, hugging touchline
+    [8.8, 2.6],    # LCB — spread into half-space
+    [8.8, 4.2],    # RCB
+    [8.0, 6.5],    # RB — pushed high
+    [6.5, 0.5],    # LW — wide, hugging touchline
+    [6.5, 3.4],    # CM — central advanced
+    [6.5, 6.3],    # RW — wide, hugging touchline
+    [5.0, 1.2],    # LF — half-space forward
+    [5.0, 3.4],    # ST — central striker
+    [5.0, 5.6],    # RF — half-space forward
+])
+
+
+def plot_formation_fluid_arrays():
+    """11v11 formation comparison framed as structural fluid arrays.
+    Low block = choked flow (low permeability).
+    Expansive block = Darcy regime (high permeability)."""
+    print("── Formations as Fluid Arrays — Static Comparison ──")
+    x = np.linspace(0, PITCH_W_T, NX_T)
+    y = np.linspace(0, PITCH_H_T, NY_T)
+    XX, YY = np.meshgrid(x, y, indexing="ij")
+
+    formations = [
+        (F442_LOW, "4-4-2 Low Block — Choked Flow",
+         "Low permeability porous media — overlapping Gaussians form a continuous defensive barrier. "
+         "No passing vector finds I_d \\approx 0 through the compact core."),
+        (F433_ATT, "4-3-3 Attacking — Darcy Regime",
+         "High-permeability expansion chamber — isolated high-intensity nodes separated by wide "
+         "influence valleys. Passing channels open where the medium yields."),
+    ]
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6), facecolor="#111111")
+    fig.suptitle("Team Formations as Structural Fluid Arrays",
+                 color="white", fontsize=14, y=0.98)
+
+    levels = np.linspace(0, 4, 50)
+
+    for ax, (pos, label, caption) in zip(axes, formations):
+        field = compute_influence_field(XX, YY, pos)
+        half_mask = XX > PITCH_W_T / 2
+        perm = np.sum(field[half_mask] < INFLUENCE_THRESHOLD) / np.sum(half_mask) * 100
+
+        ax.set_facecolor("#111111")
+        draw_pitch(ax)
+
+        cf = ax.contourf(x, y, field.T, levels=levels, cmap="plasma", vmin=0, vmax=4, extend="max")
+        cs = ax.contour(x, y, field.T, levels=[INFLUENCE_THRESHOLD],
+                        colors="cyan", linewidths=1.5, alpha=0.8, linestyles="dashed")
+        ax.clabel(cs, fmt="%.2f", colors="cyan", fontsize=7, inline=True)
+
+        ax.scatter(pos[1:, 0], pos[1:, 1], c="white", s=35,
+                   edgecolors="black", linewidths=0.5, zorder=5)
+        ax.scatter([pos[0, 0]], [pos[0, 1]], c="gold", s=30,
+                   marker="*", edgecolors="black", linewidths=0.5, zorder=5)
+
+        ax.text(0.5, 0.02, caption, color="lime", fontsize=7.5, alpha=0.95,
+                transform=ax.transAxes, va="bottom", ha="center")
+        ax.text(0.02, 0.92, f"Permeability $k = {perm:.0f}\\%$ open space",
+                color="white", fontsize=9, transform=ax.transAxes, va="top",
+                bbox=dict(facecolor="#222222", alpha=0.7, pad=2))
+
+        ax.set_xlim(0, PITCH_W_T)
+        ax.set_ylim(0, PITCH_H_T)
+        ax.set_aspect("equal")
+        ax.set_title(label, color="white", fontsize=11)
+
+    fig.tight_layout(rect=[0, 0, 0.92, 0.93])
+    cbar_ax = fig.add_axes([0.93, 0.12, 0.012, 0.76])
+    cbar = fig.colorbar(cf, cax=cbar_ax)
+    cbar.set_label("Defensive Influence $\\phi$", color="white")
+    cbar.ax.yaxis.set_tick_params(color="white")
+    plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
+
+    path = ASSETS / "formation_fluid_arrays.png"
+    fig.savefig(str(path), dpi=150, bbox_inches="tight", facecolor="#111111")
+    print(f"Saved {path}")
+    plt.close(fig)
+
+
+# ═══════════════════════════════════════════════════════════
+# Section 4 — Lateral Shifting Mechanics
+# ═══════════════════════════════════════════════════════════
+
+N_LAT_FRAMES = 150
+LAT_FPS = 12
+CENTER_X = PITCH_W_T / 2.0
+MAX_SHIFT = 1.8
+DAMPING_LAT = 0.15
+
+# Passing sequence: (frame, (x, y))
+LAT_PASSES = [
+    (0, (1.5, 2.0)),
+    (25, (3.5, 2.5)),
+    (50, (5.0, 3.4)),
+    (75, (7.0, 4.5)),
+    (100, (9.0, 5.0)),
+    (125, (5.0, 3.4)),
+    (149, (1.5, 2.0)),
+]
+
+
+def animate_lateral_shift():
+    """Defensive block slides laterally in response to ball position.
+    Ball follows a realistic passing sequence left-to-right.
+    Defenders lag via exponential decay — trailing-edge gaps open."""
+    print("── Lateral Shifting Mechanics — Animation ──")
+    x = np.linspace(0, PITCH_W_T, NX_T)
+    y = np.linspace(0, PITCH_H_T, NY_T)
+    XX, YY = np.meshgrid(x, y, indexing="ij")
+
+    # Interpolate ball path
+    frames_idx = np.array([p[0] for p in LAT_PASSES])
+    ball_x = np.interp(np.arange(N_LAT_FRAMES), frames_idx, [p[1][0] for p in LAT_PASSES])
+    ball_y = np.interp(np.arange(N_LAT_FRAMES), frames_idx, [p[1][1] for p in LAT_PASSES])
+
+    # Defender tracking
+    base_pos = F442_LOW[1:].copy()  # 10 outfield players
+    actual_pos = base_pos.copy()
+
+    pos_seq = []  # store positions per frame for update
+    fields = []
+    shear_fields = []
+    mean_actual_x = []
+    mean_target_x = []
+
+    for frame in range(N_LAT_FRAMES):
+        shift = (ball_x[frame] - CENTER_X) / CENTER_X * MAX_SHIFT
+        target_x = base_pos[:, 0] + shift
+        actual_pos[:, 0] += (target_x - actual_pos[:, 0]) * DAMPING_LAT
+
+        pos_seq.append(actual_pos.copy())
+        field = compute_influence_field(XX, YY, actual_pos)
+        fields.append(field)
+
+        shear = np.abs(np.gradient(field, x, axis=0))
+        shear_fields.append(shear)
+
+        mean_actual_x.append(np.mean(actual_pos[:, 0]))
+        mean_target_x.append(np.mean(target_x))
+
+    vmin, vmax = 0, 4
+    levels = np.linspace(vmin, vmax, 50)
+    shear_vmin, shear_vmax = 0, np.percentile(np.concatenate([s.ravel() for s in shear_fields]), 98)
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6), facecolor="#111111",
+                             gridspec_kw={"width_ratios": [1.6, 1]})
+    fig.suptitle("Lateral Shifting Mechanics — Dynamic Flow Obstruction",
+                 color="white", fontsize=14, y=0.98)
+
+    def update(idx):
+        for ax in axes:
+            ax.clear()
+            ax.set_facecolor("#111111")
+
+        ax0 = axes[0]
+        draw_pitch(ax0)
+        ax0.contourf(x, y, fields[idx].T, levels=levels,
+                     cmap="plasma", vmin=vmin, vmax=vmax, extend="max")
+        cs = ax0.contour(x, y, fields[idx].T, levels=[INFLUENCE_THRESHOLD],
+                         colors="cyan", linewidths=1.5, alpha=0.8, linestyles="dashed")
+        ax0.clabel(cs, fmt="%.2f", colors="cyan", fontsize=6, inline=True)
+
+        pos = pos_seq[idx]
+
+        ax0.scatter(pos[:, 0], pos[:, 1], c="white", s=30,
+                    edgecolors="black", linewidths=0.5, zorder=5)
+
+        ax0.scatter([ball_x[idx]], [ball_y[idx]], c="white", s=100,
+                    edgecolors="lime", linewidths=2.5, zorder=6)
+        ax0.plot(ball_x[:idx + 1], ball_y[:idx + 1],
+                 color="lime", linewidth=0.8, linestyle=":", alpha=0.5)
+
+        lag = mean_target_x[idx] - mean_actual_x[idx]
+        lag_color = "lime" if lag > 0.3 else "gray"
+        ax0.text(0.02, 0.02, f"Block lag: {lag:.2f} units",
+                 color=lag_color, fontsize=9, transform=ax0.transAxes, va="bottom",
+                 bbox=dict(facecolor="#111111", alpha=0.7, pad=2, edgecolor=lag_color))
+        ax0.text(0.02, 0.10, f"Frame {idx}/{N_LAT_FRAMES - 1}",
+                 color="white", fontsize=8, transform=ax0.transAxes, va="bottom", alpha=0.6)
+
+        if lag > 0.5:
+            ax0.annotate("Trailing gap\n(open passing lane)",
+                         xy=(ball_x[idx], ball_y[idx]),
+                         xytext=(ball_x[idx] + 1.0, ball_y[idx] + 0.8),
+                         color="lime", fontsize=8, weight="bold",
+                         arrowprops=dict(color="lime", width=1.5, headwidth=6, alpha=0.7),
+                         bbox=dict(facecolor="#111111", edgecolor="lime", alpha=0.6, pad=2))
+
+        ax0.set_xlim(0, PITCH_W_T)
+        ax0.set_ylim(0, PITCH_H_T)
+        ax0.set_aspect("equal")
+        ax0.set_title("Influence Field & Ball Progression", color="white", fontsize=11)
+
+        ax1 = axes[1]
+        f_arr = np.arange(N_LAT_FRAMES)
+        ax1.plot(f_arr[:idx + 1], ball_x[:idx + 1], color="lime", lw=2, label="Ball x")
+        ax1.plot(f_arr[:idx + 1], np.array(mean_target_x[:idx + 1]),
+                 color="cyan", lw=1.5, linestyle="--", label="Block target")
+        ax1.plot(f_arr[:idx + 1], np.array(mean_actual_x[:idx + 1]),
+                 color="magenta", lw=2, label="Block actual")
+        ax1.axvline(idx, color="white", lw=0.5, alpha=0.4)
+        ax1.set_xlim(0, N_LAT_FRAMES - 1)
+        ax1.set_ylim(2, 9)
+        ax1.set_xlabel("Frame", color="white")
+        ax1.set_ylabel("x Position (pitch units)", color="white")
+        ax1.set_title("Defensive Block Tracking — Exponential Decay Lag",
+                      color="white", fontsize=10)
+        ax1.legend(loc="upper right", fontsize=7)
+        ax1.grid(alpha=0.2)
+        ax1.set_facecolor("#1a1a1a")
+
+        fig.suptitle(f"Lateral Shift — Frame {idx}  (t = {idx / LAT_FPS:.1f}s)",
+                     color="white", fontsize=14, y=0.98)
+        return axes
+
+    anim = FuncAnimation(fig, update, frames=N_LAT_FRAMES, interval=80, blit=False)
+    path = ASSETS / "lateral_shift.mp4"
+    anim.save(str(path), writer="ffmpeg", fps=LAT_FPS, dpi=150)
+    print(f"Saved {path}")
+    plt.close(fig)
+
+
+# ═══════════════════════════════════════════════════════════
+# Section 5 — Ball Movement Strategies: Up-Back-Through
+# ═══════════════════════════════════════════════════════════
+
+N_UBT_FRAMES = 90
+UBT_FPS = 12
+DAMPING_UBT = 0.04  # slower decay = visible momentum lag
+
+
+def animate_up_back_through():
+    """3-pass combination: UP → BACK → THROUGH.
+    Defenders compress on UP, lag on BACK, gap opens on THROUGH.
+    Visualized as transient cavitation in the stress field."""
+    print("── Ball Movement — Up-Back-Through ──")
+    PW, PH = PITCH_W_T, PITCH_H_T
+    nx, ny = NX_T, NY_T
+    x = np.linspace(0, PW, nx)
+    y = np.linspace(0, PH, ny)
+    XX, YY = np.meshgrid(x, y, indexing="ij")
+
+    # Phase boundaries
+    P1_END = 25     # UP: frames 0-25
+    P2_END = 50     # BACK: frames 25-50
+    P3_END = N_UBT_FRAMES  # THROUGH: frames 50-90
+
+    # ── Attacker trajectories ──
+    # A0: passer (midfielder) — (3.5, 3.4) static
+    # A1: striker — (6.0, 3.4) during UP, drops to (5.0, 3.4) after
+    # A2: runner — (3.0, 1.5) → (7.5, 1.5) making the run
+
+    att_pos = np.zeros((N_UBT_FRAMES, 3, 2))
+    att_pos[:, 0] = [3.5, 3.4]  # passer stays
+
+    # Striker (index 1)
+    s_x = [6.0] * P1_END + list(np.linspace(6.0, 5.0, P2_END - P1_END)) + [5.0] * (N_UBT_FRAMES - P2_END)
+    s_y = [3.4] * N_UBT_FRAMES
+    att_pos[:, 1, 0] = s_x
+    att_pos[:, 1, 1] = s_y
+
+    # Runner (index 2)
+    r_x = list(np.linspace(3.0, 7.5, N_UBT_FRAMES))
+    r_y = [1.5] * N_UBT_FRAMES
+    att_pos[:, 2, 0] = r_x
+    att_pos[:, 2, 1] = r_y
+
+    # ── Defender states ──
+    def_normal = np.array([
+        [6.8, 3.4],   # marks striker
+        [7.2, 1.8],   # marks runner
+        [7.2, 5.0],   # spare / covers space
+    ])
+    def_compressed = np.array([
+        [5.8, 3.4],   # compressed toward striker
+        [6.2, 1.8],   # compressed inward
+        [6.2, 5.0],   # compressed inward
+    ])
+
+    # Impulse: fully compressed during UP, then exponential decay during BACK/THROUGH
+    impulse = np.ones(N_UBT_FRAMES)
+    impulse[P1_END:] = np.exp(-np.arange(N_UBT_FRAMES - P1_END) / 12.0)
+
+    def_pos = np.zeros((N_UBT_FRAMES, 3, 2))
+    actual = def_normal.copy()
+    for frame in range(N_UBT_FRAMES):
+        target = def_normal + impulse[frame] * (def_compressed - def_normal)
+        actual += (target - actual) * DAMPING_UBT
+        def_pos[frame] = actual.copy()
+
+    # ── Compute stress fields ──
+    fields = []
+    yield_pts = []
+    for frame in range(N_UBT_FRAMES):
+        a_field = compute_influence_field(XX, YY, att_pos[frame], sigma_x=0.6, sigma_y=0.4)
+        d_field = compute_influence_field(XX, YY, def_pos[frame], sigma_x=0.6, sigma_y=0.4)
+        stress = np.tanh((a_field - d_field) / 2.5)
+        fields.append(stress)
+        yield_pts.append(detect_yield_points(stress, threshold=0.5))
+
+    vmin, vmax = -1, 1
+    levels = np.linspace(vmin, vmax, 40)
+
+    # ── Render ──
+    fig, ax = plt.subplots(1, 1, figsize=(10, 6), facecolor="#111111")
+
+    def update(idx):
+        ax.clear()
+        ax.set_facecolor("#111111")
+        draw_pitch(ax)
+
+        cf = ax.contourf(x, y, fields[idx].T, levels=levels,
+                         cmap="coolwarm", vmin=vmin, vmax=vmax, extend="both")
+        ax.contour(x, y, fields[idx].T, levels=[0.0], colors="white", linewidths=2.0)
+
+        # Attackers (red edge)
+        ax.scatter(att_pos[idx, :, 0], att_pos[idx, :, 1], c="white", s=50,
+                   edgecolors="#e74c3c", linewidths=1.5, zorder=5)
+        # Defenders (blue edge)
+        ax.scatter(def_pos[idx, :, 0], def_pos[idx, :, 1], c="white", s=50,
+                   edgecolors="#3498db", linewidths=1.5, zorder=5)
+
+        # Ball
+        if idx < P1_END:
+            ball_xy = (np.interp(idx / P1_END, [0, 1], [3.5, 6.0]), 3.4)
+        elif idx < P2_END:
+            t2 = (idx - P1_END) / (P2_END - P1_END)
+            ball_xy = (np.interp(t2, [0, 1], [6.0, 3.5]), 3.4)
+        else:
+            t3 = (idx - P2_END) / (P3_END - P2_END)
+            ball_xy = (np.interp(t3, [0, 1], [3.5, 7.5]),
+                       np.interp(t3, [0, 1], [3.4, 1.5]))
+
+        ax.scatter([ball_xy[0]], [ball_xy[1]], c="white", s=120,
+                   edgecolors="#f1c40f", linewidths=2.5, zorder=6)
+
+        # Yield points
+        if len(yield_pts[idx]) > 0:
+            yx = x[yield_pts[idx][:, 0]]
+            yy_p = y[yield_pts[idx][:, 1]]
+            ax.scatter(yx, yy_p, c="none", s=90, marker="X",
+                       edgecolors="#f1c40f", linewidths=1.8, zorder=6)
+
+        # Phase annotation
+        if idx < P1_END:
+            phase = f"Phase 1 — UP (Pass to Striker)  [{idx}/{P1_END}]"
+            note = "Compression: defenders converge on striker"
+        elif idx < P2_END:
+            phase = f"Phase 2 — BACK (Layoff)  [{idx - P1_END}/{P2_END - P1_END}]"
+            note = "Lag: defenders still compressing — momentum delays recovery"
+        else:
+            phase = f"Phase 3 — THROUGH (Into the Gap)  [{idx - P2_END}/{P3_END - P2_END}]"
+            note = "Cavitation: structural vacuum opens behind the defensive line"
+
+        ax.set_title(phase, color="white", fontsize=12)
+        ax.text(0.02, 0.02, note, color="#f1c40f", fontsize=9,
+                transform=ax.transAxes, va="bottom",
+                bbox=dict(facecolor="#111111", alpha=0.7, pad=2, edgecolor="#f1c40f"))
+
+        # Legend
+        ax.text(0.75, 0.02, "○ Attack   ○ Defence   ● Ball   ✗ Yield",
+                color="white", fontsize=7, transform=ax.transAxes, va="bottom",
+                bbox=dict(facecolor="#111111", alpha=0.5, pad=2))
+
+        ax.set_xlim(0, PW)
+        ax.set_ylim(0, PH)
+        ax.set_aspect("equal")
+
+        fig.suptitle("Up-Back-Through — Transient Cavitation Analogy",
+                     color="white", fontsize=14, y=0.98)
+        return ax,
+
+    anim = FuncAnimation(fig, update, frames=N_UBT_FRAMES, interval=80, blit=False)
+    path = ASSETS / "up_back_through.mp4"
+    anim.save(str(path), writer="ffmpeg", fps=UBT_FPS, dpi=150)
+    print(f"Saved {path}")
+    plt.close(fig)
+
+
+# ═══════════════════════════════════════════════════════════
+# Section 6 — Quick Circulation (Viscoelastic Stretch)
+# ═══════════════════════════════════════════════════════════
+
+N_QCR_FRAMES = 120
+QCR_FPS = 12
+DAMPING_QCR = 0.12
+
+
+def animate_rapid_circulation():
+    """Rapid L↔R ball circulation stretches the defensive block.
+    Trailing-edge gaps accumulate with each cycle (viscoelastic relaxation)."""
+    print("── Ball Movement — Rapid Circulation ──")
+    x = np.linspace(0, PITCH_W_T, NX_T)
+    y = np.linspace(0, PITCH_H_T, NY_T)
+    XX, YY = np.meshgrid(x, y, indexing="ij")
+
+    # Fast alternating passes: left wing → center → right wing → center → ...
+    n_passes = 9
+    pass_frames = np.linspace(0, N_QCR_FRAMES - 1, n_passes)
+    pass_x = [1.5, 5.0, 9.0, 5.0, 1.5, 5.0, 9.0, 5.0, 1.5]
+    pass_y = [2.0, 3.4, 5.0, 3.4, 2.0, 3.4, 5.0, 3.4, 2.0]
+    ball_x = np.interp(np.arange(N_QCR_FRAMES), pass_frames, pass_x)
+    ball_y = np.interp(np.arange(N_QCR_FRAMES), pass_frames, pass_y)
+
+    base_pos = F442_LOW[1:].copy()
+    actual_pos = base_pos.copy()
+
+    pos_seq = []
+    fields = []
+    lag_metric = []
+
+    for frame in range(N_QCR_FRAMES):
+        shift = (ball_x[frame] - CENTER_X) / CENTER_X * 2.2
+        target_x = base_pos[:, 0] + shift
+        actual_pos[:, 0] += (target_x - actual_pos[:, 0]) * DAMPING_QCR
+
+        pos_seq.append(actual_pos.copy())
+        field = compute_influence_field(XX, YY, actual_pos)
+        fields.append(field)
+
+        center_lag = np.mean(target_x) - np.mean(actual_pos[:, 0])
+        lag_metric.append(center_lag)
+
+    vmin, vmax = 0, 4
+    levels = np.linspace(vmin, vmax, 50)
+    max_lag = max(abs(l) for l in lag_metric)
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6), facecolor="#111111",
+                             gridspec_kw={"width_ratios": [1.6, 1]})
+    fig.suptitle("Rapid Circulation — Viscoelastic Stress Relaxation",
+                 color="white", fontsize=14, y=0.98)
+
+    def update(idx):
+        for ax in axes:
+            ax.clear()
+            ax.set_facecolor("#111111")
+
+        ax0 = axes[0]
+        draw_pitch(ax0)
+        ax0.contourf(x, y, fields[idx].T, levels=levels,
+                     cmap="plasma", vmin=vmin, vmax=vmax, extend="max")
+        cs = ax0.contour(x, y, fields[idx].T, levels=[INFLUENCE_THRESHOLD],
+                         colors="cyan", linewidths=1.5, alpha=0.8, linestyles="dashed")
+
+        pos = pos_seq[idx]
+
+        # Gap indicator — check for low-influence regions behind the block
+        trailing_edge_x = np.max(pos[:, 0])
+        gap_region = (XX > trailing_edge_x - 0.8) & (XX < trailing_edge_x + 0.3) & (YY > 1.0) & (YY < 5.8)
+        if gap_region.any():
+            ax0.scatter(XX[gap_region], YY[gap_region], c="lime", s=1, alpha=0.15, zorder=1)
+
+        ax0.scatter(pos[:, 0], pos[:, 1], c="white", s=30,
+                    edgecolors="black", linewidths=0.5, zorder=5)
+        ax0.scatter([ball_x[idx]], [ball_y[idx]], c="white", s=100,
+                    edgecolors="#e74c3c", linewidths=2.5, zorder=6)
+        ax0.plot(ball_x[:idx + 1], ball_y[:idx + 1],
+                 color="#e74c3c", linewidth=0.6, linestyle=":", alpha=0.4)
+
+        ax0.set_xlim(0, PITCH_W_T)
+        ax0.set_ylim(0, PITCH_H_T)
+        ax0.set_aspect("equal")
+        ax0.set_title(f"Rapid Circulation — Frame {idx}  (t = {idx / QCR_FPS:.1f}s)",
+                      color="white", fontsize=11)
+
+        lag_now = lag_metric[idx]
+        ax0.text(0.02, 0.02, f"Lag: {lag_now:.3f} units" + (" (gap forming)" if abs(lag_now) > 0.4 else ""),
+                 color="lime" if abs(lag_now) > 0.4 else "gray",
+                 fontsize=9, transform=ax0.transAxes, va="bottom",
+                 bbox=dict(facecolor="#111111", alpha=0.7, pad=2,
+                           edgecolor="lime" if abs(lag_now) > 0.4 else "gray"))
+
+        ax1 = axes[1]
+        f_arr = np.arange(N_QCR_FRAMES)
+        ax1.plot(f_arr[:idx + 1], np.array(lag_metric[:idx + 1]), color="cyan", lw=2)
+        ax1.axhline(0, color="white", lw=0.5, alpha=0.3)
+        ax1.fill_between(f_arr[:idx + 1], 0, lag_metric[:idx + 1],
+                         where=np.array(lag_metric[:idx + 1]) > 0,
+                         color="lime", alpha=0.15)
+        ax1.fill_between(f_arr[:idx + 1], 0, lag_metric[:idx + 1],
+                         where=np.array(lag_metric[:idx + 1]) < 0,
+                         color="red", alpha=0.15)
+        ax1.axvline(idx, color="white", lw=0.5, alpha=0.4)
+        ax1.set_xlim(0, N_QCR_FRAMES - 1)
+        y_lim = max_lag * 1.3
+        ax1.set_ylim(-y_lim, y_lim)
+        ax1.set_xlabel("Frame", color="white")
+        ax1.set_ylabel("Block Lag (units)", color="white")
+        ax1.set_title("Accumulating Lag — Viscoelastic Analog",
+                      color="white", fontsize=10)
+        ax1.grid(alpha=0.2)
+        ax1.set_facecolor("#1a1a1a")
+
+        return axes
+
+    anim = FuncAnimation(fig, update, frames=N_QCR_FRAMES, interval=80, blit=False)
+    path = ASSETS / "rapid_circulation.mp4"
+    anim.save(str(path), writer="ffmpeg", fps=QCR_FPS, dpi=150)
+    print(f"Saved {path}")
+    plt.close(fig)
+
+
 # ── Orchestrator ──
 
 def run_team_heatmaps():
@@ -711,7 +1233,27 @@ def run_team_heatmaps():
     animate_team_collapse()
 
 
+def run_formation_fluid_arrays():
+    plot_formation_fluid_arrays()
+
+
+def run_lateral_shift():
+    animate_lateral_shift()
+
+
+def run_up_back_through():
+    animate_up_back_through()
+
+
+def run_rapid_circulation():
+    animate_rapid_circulation()
+
+
 if __name__ == "__main__":
     run_tactical()
     run_macro_stress()
     run_team_heatmaps()
+    run_formation_fluid_arrays()
+    run_lateral_shift()
+    run_up_back_through()
+    run_rapid_circulation()
