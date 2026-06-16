@@ -1,7 +1,8 @@
-"""Generate visualizations from unsteady laminar Re=120 cylinder runs.
-Produces: mesh PNG, static 2D field plots PNG, animated 2D MP4, 3D interactive HTML.
+"""Generate visualizations from unsteady laminar Re sweep (120, 200, 500).
+Produces: mesh PNG, static 2D field plots PNG, full-length animated MP4,
+multi-Re comparison MP4s, 3D interactive HTML. All plots match ΦFlow style.
 """
-import sys, os
+import sys, os, re as re_mod
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from pathlib import Path
@@ -14,21 +15,37 @@ from matplotlib.contour import QuadContourSet
 import pyvista as pv
 
 WORKDIR = Path(__file__).parent
-IMAGES = WORKDIR.parent.parent / "docs" / "images"
+IMAGES = WORKDIR.parent.parent / "docs" / "images" / "su2_cylinder_2d"
 DT = 0.15
 CYL_R = 0.3
-FS = 1.0  # uniform farfield stream
+FPS = 10  # match ΦFlow → 200 frames = 20s video = full 30s sim at 1.5x
 
-# ── Helpers ──
+# ΦFlow-matched viewport (tight zoom around cylinder, ~6D × 3D)
+XLIM = (-1.0, 5.0)
+YLIM = (-1.5, 1.5)
+
+# ── Discover output directories ──
+def discover_cases():
+    """Return list of (case_dir, spin_name, re) for all output_*_lam_re* dirs."""
+    cases = []
+    pattern = re_mod.compile(r"output_(nospin|magnus)_lam_re(\d+)")
+    for d in sorted(WORKDIR.iterdir()):
+        if not d.is_dir():
+            continue
+        m = pattern.match(d.name)
+        if m:
+            cases.append((d.name, m.group(1), int(m.group(2))))
+    return cases
+
+
+# ── VTU helpers ──
 
 def load_vtu(step: int, case_dir: str) -> pv.DataSet:
-    """Load a VTU file for a given time step and case."""
     path = WORKDIR / case_dir / f"vol_solution_{step:05d}.vtu"
     return pv.read(str(path))
 
 
 def get_2d_data(vtu: pv.DataSet) -> tuple:
-    """Extract 2D coordinates, pressure, velocity from VTU."""
     pts = vtu.points
     x, y = pts[:, 0], pts[:, 1]
     p = vtu["Pressure"]
@@ -39,7 +56,6 @@ def get_2d_data(vtu: pv.DataSet) -> tuple:
 
 
 def make_regular_grid(x, y, nx=200, ny=100):
-    """Create a regular grid for streamplot, clipped to domain bounds."""
     margin = 0.5
     xs = np.linspace(x.min() + margin, x.max() - margin, nx)
     ys = np.linspace(y.min() + margin, y.max() - margin, ny)
@@ -47,54 +63,17 @@ def make_regular_grid(x, y, nx=200, ny=100):
 
 
 def interp_to_grid(x, y, values, Xg, Yg):
-    """Linear interpolation of scattered data to a regular grid via PyVista."""
-    # Build a temporary mesh from points for griddata
     from scipy.interpolate import griddata
     points = np.column_stack([x, y])
     return griddata(points, values, (Xg, Yg), method="linear")
 
 
 def _mask_cylinder(xg, yg):
-    """Mask points inside the cylinder."""
     r = np.sqrt(xg**2 + yg**2)
     return r < CYL_R * 1.05
 
 
-def plot_2d_pressure(ax, x, y, p, xg, yg, pg, title="", cmap="RdBu_r"):
-    """Pressure contourf on an axis."""
-    pg_masked = np.ma.masked_where(_mask_cylinder(xg, yg), pg)
-    cntr = ax.contourf(xg, yg, pg_masked, levels=40, cmap=cmap, extend="both")
-    ax.contour(xg, yg, pg_masked, levels=10, colors="k", linewidths=0.3, alpha=0.3)
-    # Cylinder
-    circle = plt.Circle((0, 0), CYL_R, color="0.85", ec="k", lw=1.5, zorder=5)
-    ax.add_patch(circle)
-    ax.set_aspect("equal")
-    ax.set_xlim(-2, 10)
-    ax.set_ylim(-3, 3)
-    ax.set_title(title, fontsize=11)
-    return cntr
-
-
-def plot_2d_velocity(ax, x, y, vel_mag, u, v, xg, yg, ug, vg, title="", cmap="viridis"):
-    """Velocity magnitude contourf + streamlines on an axis."""
-    vg_masked = np.ma.masked_where(_mask_cylinder(xg, yg), np.sqrt(ug**2 + vg**2))
-    cntr = ax.contourf(xg, yg, vg_masked, levels=40, cmap=cmap, extend="both")
-    # Streamlines — use finer stride for sparser lines
-    stride = 3
-    ax.streamplot(xg[::stride, ::stride], yg[::stride, ::stride],
-                  ug[::stride, ::stride], vg[::stride, ::stride],
-                  color="white", linewidth=0.6, density=0.8, arrowsize=0.6)
-    circle = plt.Circle((0, 0), CYL_R, color="0.85", ec="k", lw=1.5, zorder=5)
-    ax.add_patch(circle)
-    ax.set_aspect("equal")
-    ax.set_xlim(-2, 10)
-    ax.set_ylim(-3, 3)
-    ax.set_title(title, fontsize=11)
-    return cntr
-
-
 def get_step_range(case_dir: str, start=0, end=200):
-    """List of available VTU step numbers."""
     steps = []
     for s in range(start, end):
         path = WORKDIR / case_dir / f"vol_solution_{s:05d}.vtu"
@@ -103,163 +82,186 @@ def get_step_range(case_dir: str, start=0, end=200):
     return steps
 
 
+def _setup_ax(ax, title=""):
+    """Apply ΦFlow-matched dark styling."""
+    fig = ax.figure
+    fig.patch.set_facecolor("#111111")
+    ax.set_facecolor("#111111")
+    ax.set_xlim(XLIM)
+    ax.set_ylim(YLIM)
+    ax.set_aspect("equal")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title(title, fontsize=11, color="white")
+    return fig, ax
+
+
 # ═══════════════════════════════════════════════════════════
 # 1. MESH VISUALIZATION
 # ═══════════════════════════════════════════════════════════
 
 def plot_mesh():
     print("--- Mesh visualization ---")
-    # Load a VTU to get the mesh geometry (first step of any case)
-    vtu = load_vtu(0, "output_nospin_lam")
+    # Use first available case
+    cases = discover_cases()
+    if not cases:
+        print("  [SKIP] No cases found")
+        return
+    case_dir = cases[0][0]
+    vtu = load_vtu(0, case_dir)
 
-    # Full domain view
-    plotter = pv.Plotter(off_screen=True, window_size=(1200, 800))
-    plotter.add_mesh(vtu, show_edges=True, color="lightblue", opacity=0.6,
-                     lighting=False, label="Mesh")
-    edges = vtu.separate_cells().extract_feature_edges()
-    plotter.add_mesh(edges, color="grey", line_width=0.3)
-    plotter.view_xy()
-    plotter.camera.zoom(0.6)
-    plotter.screenshot(str(IMAGES / "cylinder_mesh.png"))
-    print(f"  Saved: cylinder_mesh.png")
-    plotter.close()
-
-    # Zoom to cylinder
-    plotter = pv.Plotter(off_screen=True, window_size=(1200, 800))
-    plotter.add_mesh(vtu, show_edges=True, color="lightblue", opacity=0.6,
-                     lighting=False, label="Mesh")
-    edges = vtu.separate_cells().extract_feature_edges()
-    plotter.add_mesh(edges, color="grey", line_width=0.3)
-    plotter.view_xy()
-    plotter.camera.zoom(6.0)
-    plotter.screenshot(str(IMAGES / "cylinder_mesh_zoom.png"))
-    print(f"  Saved: cylinder_mesh_zoom.png")
-    plotter.close()
+    for zoom_name, zoom_factor, filename in [
+        ("Full domain", 0.6, "cylinder_mesh.png"),
+        ("Zoomed", 6.0, "cylinder_mesh_zoom.png"),
+    ]:
+        plotter = pv.Plotter(off_screen=True, window_size=(1200, 800))
+        plotter.add_mesh(vtu, show_edges=True, color="lightblue", opacity=0.6,
+                         lighting=False, label="Mesh")
+        edges = vtu.separate_cells().extract_feature_edges()
+        plotter.add_mesh(edges, color="grey", line_width=0.3)
+        plotter.view_xy()
+        plotter.camera.zoom(zoom_factor)
+        plotter.screenshot(str(IMAGES / filename))
+        print(f"  Saved: {filename}")
+        plotter.close()
 
 
 # ═══════════════════════════════════════════════════════════
-# 2. STATIC 2D FIELD PLOTS
+# 2. STATIC 2D FIELD PLOTS (last timestep of each case)
 # ═══════════════════════════════════════════════════════════
 
 def static_plots():
     print("\n--- Static 2D field plots ---")
-    # Use last timestep for each case
-    case_steps = [("output_nospin_lam", "No Spin"),
-                  ("output_magnus_lam", "Magnus")]
-    data = {}
-    for case_dir, label in case_steps:
+    cases = discover_cases()
+    if not cases:
+        print("  [SKIP] No cases found")
+        return
+
+    # Pressure: individual per (spin, re)
+    for case_dir, spin_name, re in cases:
         steps = get_step_range(case_dir)
-        vtu = load_vtu(steps[-1], case_dir) if steps else load_vtu(0, case_dir)
+        if not steps:
+            continue
+        step = min(150, max(steps))
+        vtu = load_vtu(step, case_dir)
         x, y, p, u, v, vm = get_2d_data(vtu)
         Xg, Yg = make_regular_grid(x, y)
         Pg = interp_to_grid(x, y, p, Xg, Yg)
+
+        fig, ax = plt.subplots(figsize=(8, 4))
+        _setup_ax(ax, title=f"{'No Spin' if spin_name == 'nospin' else 'Magnus'} — Pressure @ Re={re} (t={step*DT:.1f}s)")
+        pg_masked = np.ma.masked_where(_mask_cylinder(Xg, Yg), Pg)
+        cntr = ax.contourf(Xg, Yg, pg_masked, levels=40, cmap="magma", extend="both")
+        ax.contour(Xg, Yg, pg_masked, levels=10, colors="k", linewidths=0.3, alpha=0.3)
+        circle = plt.Circle((0, 0), CYL_R, color="0.85", ec="k", lw=1.5, zorder=5)
+        ax.add_patch(circle)
+        cbar = fig.colorbar(cntr, ax=ax, label="Pressure (Pa)", shrink=0.85)
+        cbar.ax.yaxis.set_tick_params(color="white")
+        plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
+        cbar.outline.set_edgecolor("white")
+        fig.tight_layout()
+        out = IMAGES / f"cylinder_{spin_name}_pressure_re{re}.png"
+        fig.savefig(out, dpi=150, facecolor="#111111")
+        print(f"  Saved: {out.name}")
+        plt.close()
+
+    # Velocity: individual per (spin, re) with streamlines
+    for case_dir, spin_name, re in cases:
+        steps = get_step_range(case_dir)
+        if not steps:
+            continue
+        step = min(150, max(steps))
+        vtu = load_vtu(step, case_dir)
+        x, y, p, u, v, vm = get_2d_data(vtu)
+        Xg, Yg = make_regular_grid(x, y)
         Ug = interp_to_grid(x, y, u, Xg, Yg)
         Vg = interp_to_grid(x, y, v, Xg, Yg)
-        data[label] = (x, y, p, u, v, vm, Xg, Yg, Pg, Ug, Vg)
 
-    # ── Pressure: individual + side-by-side ──
-    for label, suffix in [("No Spin", "nospin"), ("Magnus", "magnus")]:
-        d = data[label]
         fig, ax = plt.subplots(figsize=(8, 4))
-        cntr = plot_2d_pressure(ax, d[0], d[1], d[2], d[6], d[7], d[8],
-                                title=f"{label} — Pressure Field (Re=120)")
-        cbar = fig.colorbar(cntr, ax=ax, label="Pressure (Pa)", shrink=0.85)
-        fig.tight_layout()
-        fig.savefig(IMAGES / f"cylinder_{suffix}_pressure.png", dpi=150)
-        plt.close()
-        print(f"  Saved: cylinder_{suffix}_pressure.png")
-
-    # Side-by-side pressure
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 4.5))
-    d1 = data["No Spin"]
-    d2 = data["Magnus"]
-    c1 = plot_2d_pressure(ax1, d1[0], d1[1], d1[2], d1[6], d1[7], d1[8],
-                          title="No Spin — Pressure")
-    c2 = plot_2d_pressure(ax2, d2[0], d2[1], d2[2], d2[6], d2[7], d2[8],
-                          title="Magnus (S=0.2) — Pressure")
-    fig.colorbar(c1, ax=[ax1, ax2], label="Pressure (Pa)", shrink=0.85)
-    fig.suptitle("Pressure Field Comparison @ Re=120", fontsize=13, y=1.02)
-    fig.tight_layout()
-    fig.savefig(IMAGES / "cylinder_compare_pressure.png", dpi=150)
-    plt.close()
-    print(f"  Saved: cylinder_compare_pressure.png")
-
-    # ── Velocity: individual + side-by-side ──
-    for label, suffix in [("No Spin", "nospin"), ("Magnus", "magnus")]:
-        d = data[label]
-        fig, ax = plt.subplots(figsize=(8, 4))
-        cntr = plot_2d_velocity(ax, d[0], d[1], d[5], d[3], d[4],
-                                d[6], d[7], d[9], d[10],
-                                title=f"{label} — Velocity + Streamlines")
+        label = "No Spin" if spin_name == "nospin" else "Magnus"
+        _setup_ax(ax, title=f"{label} — Velocity @ Re={re} (t={step*DT:.1f}s)")
+        vg_masked = np.ma.masked_where(_mask_cylinder(Xg, Yg), np.sqrt(Ug**2 + Vg**2))
+        cntr = ax.contourf(Xg, Yg, vg_masked, levels=40, cmap="inferno", extend="both")
+        stride = 3
+        streamline_color = "white" if spin_name == "nospin" else "black"
+        ax.streamplot(Xg[::stride, ::stride], Yg[::stride, ::stride],
+                      Ug[::stride, ::stride], Vg[::stride, ::stride],
+                      color=streamline_color, linewidth=0.6, density=0.8, arrowsize=0.6)
+        circle = plt.Circle((0, 0), CYL_R, color="0.85", ec="k", lw=1.5, zorder=5)
+        ax.add_patch(circle)
         cbar = fig.colorbar(cntr, ax=ax, label="Velocity (m/s)", shrink=0.85)
+        cbar.ax.yaxis.set_tick_params(color="white")
+        plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
+        cbar.outline.set_edgecolor("white")
         fig.tight_layout()
-        fig.savefig(IMAGES / f"cylinder_{suffix}_velocity.png", dpi=150)
+        out = IMAGES / f"cylinder_{spin_name}_velocity_re{re}.png"
+        fig.savefig(out, dpi=150, facecolor="#111111")
+        print(f"  Saved: {out.name}")
         plt.close()
-        print(f"  Saved: cylinder_{suffix}_velocity.png")
-
-    # Side-by-side velocity
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 4.5))
-    c1 = plot_2d_velocity(ax1, d1[0], d1[1], d1[5], d1[3], d1[4],
-                           d1[6], d1[7], d1[9], d1[10],
-                           title="No Spin — Velocity + Streamlines")
-    c2 = plot_2d_velocity(ax2, d2[0], d2[1], d2[5], d2[3], d2[4],
-                           d2[6], d2[7], d2[9], d2[10],
-                           title="Magnus (S=0.2) — Velocity + Streamlines")
-    fig.colorbar(c1, ax=[ax1, ax2], label="Velocity (m/s)", shrink=0.85)
-    fig.suptitle("Velocity Field Comparison @ Re=120", fontsize=13, y=1.02)
-    fig.tight_layout()
-    fig.savefig(IMAGES / "cylinder_compare_velocity.png", dpi=150)
-    plt.close()
-    print(f"  Saved: cylinder_compare_velocity.png")
 
 
 # ═══════════════════════════════════════════════════════════
-# 3. ANIMATED 2D PHIFLOW-STYLE (MP4, 10s each)
+# 3. ANIMATED MP4 — Full-length (200 frames, 20s @ 10fps)
 # ═══════════════════════════════════════════════════════════
 
-def animate_flow(case_dir: str, label: str, suffix: str,
-                 field: str = "pressure", fps: int = 20):
-    """Generate a 10s MP4 animation of pressure or velocity field."""
+def animate_flow(case_dir: str, spin_name: str, re: int,
+                 field: str = "pressure"):
+    """Full-length animation of pressure or velocity field."""
     steps = get_step_range(case_dir)
     if len(steps) < 2:
-        print(f"  [SKIP] Not enough steps for {label}")
+        print(f"  [SKIP] {case_dir} ({field}) — not enough steps")
         return
     N = len(steps)
-    duration = N * DT
-    print(f"\n  Animating {label} ({field}, {N} frames, {duration:.1f}s @ {fps}fps)")
+    label = "No Spin" if spin_name == "nospin" else "Magnus"
+    print(f"\n  Animating {label} Re={re} ({field}) — {N} frames @ {FPS}fps = {N/FPS:.0f}s")
 
-    # Pre-load all VTU data (or load on-demand for memory)
     vtu0 = load_vtu(steps[0], case_dir)
     x0, y0, p0, u0, v0, vm0 = get_2d_data(vtu0)
     Xg, Yg = make_regular_grid(x0, y0)
     cyl_mask = _mask_cylinder(Xg, Yg)
 
-    fig, ax = plt.subplots(figsize=(8, 4))
-    cmap = "RdBu_r" if field == "pressure" else "viridis"
+    cmap = "magma" if field == "pressure" else "inferno"
     cbar_label = "Pressure (Pa)" if field == "pressure" else "Velocity (m/s)"
 
-    # First frame
+    fig, ax = plt.subplots(figsize=(8, 4))
+    _setup_ax(ax, title=f"{label} — {field.title()} Field @ Re={re}")
+
+    # First frame data
     vtu = load_vtu(steps[0], case_dir)
     x, y, p, u, v, vm = get_2d_data(vtu)
     if field == "pressure":
         vals = interp_to_grid(x, y, p, Xg, Yg)
+        do_streamlines = False
     else:
         vals = interp_to_grid(x, y, np.sqrt(u**2 + v**2), Xg, Yg)
+        Ug = interp_to_grid(x, y, u, Xg, Yg)
+        Vg = interp_to_grid(x, y, v, Xg, Yg)
+        do_streamlines = True
+        sl_color = "white" if spin_name == "nospin" else "black"
+
     vals_masked = np.ma.masked_where(cyl_mask, vals)
     cntr = ax.contourf(Xg, Yg, vals_masked, levels=40, cmap=cmap, extend="both")
     circle = plt.Circle((0, 0), CYL_R, color="0.85", ec="k", lw=1.5, zorder=5)
     ax.add_patch(circle)
-    ax.set_aspect("equal")
-    ax.set_xlim(-2, 10)
-    ax.set_ylim(-3, 3)
-    ax.set_title(f"{label} — {'Pressure' if field == 'pressure' else 'Velocity'} Field", fontsize=11)
+
+    if do_streamlines:
+        stride = 3
+        sl = ax.streamplot(Xg[::stride, ::stride], Yg[::stride, ::stride],
+                           Ug[::stride, ::stride], Vg[::stride, ::stride],
+                           color=sl_color, linewidth=0.6, density=0.8, arrowsize=0.6)
+
     cbar = fig.colorbar(cntr, ax=ax, label=cbar_label, shrink=0.85)
+    cbar.ax.yaxis.set_tick_params(color="white")
+    plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
+    cbar.outline.set_edgecolor("white")
+
     time_text = ax.text(0.02, 0.95, "", transform=ax.transAxes, fontsize=9,
                         color="white", bbox=dict(boxstyle="round", fc="0.2", ec="none"))
     fig.tight_layout()
 
-    writer = FFMpegWriter(fps=fps, bitrate=3000)
-    out_path = IMAGES / f"cylinder_{suffix}_{field}.mp4"
+    suffix = f"{spin_name}_{field}_re{re}"
+    out_path = IMAGES / f"cylinder_{suffix}.mp4"
+    writer = FFMpegWriter(fps=FPS, bitrate=3000)
 
     with writer.saving(fig, str(out_path), dpi=150):
         for i, step in enumerate(steps):
@@ -269,123 +271,164 @@ def animate_flow(case_dir: str, label: str, suffix: str,
                 vals = interp_to_grid(x, y, p, Xg, Yg)
             else:
                 vals = interp_to_grid(x, y, np.sqrt(u**2 + v**2), Xg, Yg)
+                Ug = interp_to_grid(x, y, u, Xg, Yg)
+                Vg = interp_to_grid(x, y, v, Xg, Yg)
             vals_masked = np.ma.masked_where(cyl_mask, vals)
 
-            # Remove previous contour
             for c in ax.collections[:]:
                 if isinstance(c, QuadContourSet):
                     c.remove()
+
             cntr = ax.contourf(Xg, Yg, vals_masked, levels=40, cmap=cmap, extend="both")
+
+            # Re-draw streamlines each frame (remove old line collections)
+            if do_streamlines:
+                for coll in ax.lines[:]:
+                    coll.remove()
+                stride = 3
+                sl = ax.streamplot(Xg[::stride, ::stride], Yg[::stride, ::stride],
+                                   Ug[::stride, ::stride], Vg[::stride, ::stride],
+                                   color=sl_color, linewidth=0.6, density=0.8, arrowsize=0.6)
 
             t = step * DT
             time_text.set_text(f"t = {t:.1f} s")
-
             writer.grab_frame()
 
     plt.close()
     print(f"  Saved: {out_path.name}")
 
 
-def animate_comparison(fps: int = 20):
-    """Side-by-side MP4: no-spin vs magnus pressure field."""
-    steps_ns = get_step_range("output_nospin_lam")
-    steps_mg = get_step_range("output_magnus_lam")
-    steps = sorted(set(steps_ns) & set(steps_mg))
-    if len(steps) < 2:
-        print("  [SKIP] Not enough overlapping steps")
-        return
-    N = len(steps)
-    print(f"\n  Animating side-by-side comparison ({N} frames @ {fps}fps)")
+# ═══════════════════════════════════════════════════════════
+# 4. RE COMPARISON ANIMATION — 3-panel (Re=120 | 200 | 500)
+# ═══════════════════════════════════════════════════════════
 
-    vtu0 = load_vtu(steps[0], "output_nospin_lam")
+def animate_re_comparison(spin_name: str, field: str = "pressure"):
+    """3-panel side-by-side animation comparing Re=120, 200, 500."""
+    label = "No Spin" if spin_name == "nospin" else "Magnus"
+    cases = []
+    for re in [120, 200, 500]:
+        dir_name = f"output_{spin_name}_lam_re{re}"
+        steps = get_step_range(dir_name)
+        if len(steps) > 1:
+            cases.append((dir_name, re, steps))
+
+    if len(cases) < 2:
+        print(f"  [SKIP] Re comparison {label} ({field}) — < 2 cases available")
+        return
+
+    # Use common steps across all cases
+    common_steps = sorted(set.intersection(*[set(s) for _, _, s in cases]))
+    if len(common_steps) < 2:
+        print(f"  [SKIP] Re comparison {label} ({field}) — no common steps")
+        return
+    N = len(common_steps)
+    print(f"\n  Re comparison: {label} ({field}) — {len(cases)} Re values, {N} frames @ {FPS}fps")
+
+    # Pre-compute grid from first available case
+    vtu0 = load_vtu(common_steps[0], cases[0][0])
     x0, y0, p0, u0, v0, vm0 = get_2d_data(vtu0)
     Xg, Yg = make_regular_grid(x0, y0)
     cyl_mask = _mask_cylinder(Xg, Yg)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 4.5))
-    fig.suptitle("Pressure Field: No Spin vs Magnus (S=0.2) @ Re=120", fontsize=13, y=1.02)
+    cmap = "magma" if field == "pressure" else "inferno"
+    cbar_label = "Pressure (Pa)" if field == "pressure" else "Velocity (m/s)"
+    re_colors = {120: "#ff6b6b", 200: "#ffd93d", 500: "#6bcb77"}
 
-    cmap = "RdBu_r"
+    fig, axes = plt.subplots(1, 3, figsize=(18, 4.5))
+    fig.patch.set_facecolor("#111111")
+    fig.suptitle(f"{label} — Re Sweep: {field.title()} Field", fontsize=14,
+                 color="white", y=1.02)
 
-    def init_ax(ax, idx):
-        d = load_vtu(steps[0], ["output_nospin_lam", "output_magnus_lam"][idx])
-        x, y, p, u, v, vm = get_2d_data(d)
-        pg = interp_to_grid(x, y, p, Xg, Yg)
-        vals = np.ma.masked_where(cyl_mask, pg)
-        cntr = ax.contourf(Xg, Yg, vals, levels=40, cmap=cmap, extend="both")
+    # Pre-load first frame for each panel
+    data_2d = {}
+    for dir_name, re, steps in cases:
+        vtu = load_vtu(common_steps[0], dir_name)
+        x, y, p, u, v, vm = get_2d_data(vtu)
+        if field == "pressure":
+            vals = interp_to_grid(x, y, p, Xg, Yg)
+            us, vs = None, None
+        else:
+            vals = interp_to_grid(x, y, np.sqrt(u**2 + v**2), Xg, Yg)
+            us = interp_to_grid(x, y, u, Xg, Yg)
+            vs = interp_to_grid(x, y, v, Xg, Yg)
+        data_2d[re] = (vals, us, vs)
+
+    # Initialize axes
+    time_texts = []
+    for idx, (dir_name, re, steps) in enumerate(cases):
+        ax = axes[idx]
+        ax.set_facecolor("#111111")
+        ax.set_xlim(XLIM)
+        ax.set_ylim(YLIM)
+        ax.set_aspect("equal")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(f"Re = {re}", fontsize=12, color=re_colors[re])
+
+        vals_masked = np.ma.masked_where(cyl_mask, data_2d[re][0])
+        cntr = ax.contourf(Xg, Yg, vals_masked, levels=40, cmap=cmap, extend="both")
         circle = plt.Circle((0, 0), CYL_R, color="0.85", ec="k", lw=1.5, zorder=5)
         ax.add_patch(circle)
-        ax.set_aspect("equal")
-        ax.set_xlim(-2, 10)
-        ax.set_ylim(-3, 3)
-        ax.set_title(["No Spin", "Magnus (S=0.2)"][idx], fontsize=11)
-        return cntr
 
-    c1 = init_ax(ax1, 0)
-    c2 = init_ax(ax2, 1)
-    fig.colorbar(c1, ax=[ax1, ax2], label="Pressure (Pa)", shrink=0.85)
-    time_text = fig.text(0.5, 0.01, "", ha="center", fontsize=10,
-                         color="white", bbox=dict(boxstyle="round", fc="0.2", ec="none"))
+        if field == "velocity":
+            stride = 3
+            sl_color = "white" if spin_name == "nospin" else "black"
+            ax.streamplot(Xg[::stride, ::stride], Yg[::stride, ::stride],
+                          data_2d[re][1][::stride, ::stride],
+                          data_2d[re][2][::stride, ::stride],
+                          color=sl_color, linewidth=0.6, density=0.8, arrowsize=0.6)
+
+        tt = ax.text(0.02, 0.95, "", transform=ax.transAxes, fontsize=8,
+                     color="white", bbox=dict(boxstyle="round", fc="0.2", ec="none"))
+        time_texts.append(tt)
+
     fig.tight_layout()
+    # Add single colorbar
+    cbar = fig.colorbar(axes[0].collections[0] if axes[0].collections else cntr,
+                        ax=axes, label=cbar_label, shrink=0.85)
+    cbar.ax.yaxis.set_tick_params(color="white")
+    plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
+    cbar.outline.set_edgecolor("white")
 
-    writer = FFMpegWriter(fps=fps, bitrate=4000)
-    out_path = IMAGES / "cylinder_compare_flow.mp4"
+    suffix = f"{spin_name}_{field}_re_comparison"
+    out_path = IMAGES / f"cylinder_{suffix}.mp4"
+    writer = FFMpegWriter(fps=FPS, bitrate=5000)
 
     with writer.saving(fig, str(out_path), dpi=150):
-        for i, step in enumerate(steps):
-            for idx, (case_dir, ax) in enumerate([
-                ("output_nospin_lam", ax1), ("output_magnus_lam", ax2)
-            ]):
-                vtu = load_vtu(step, case_dir)
+        for i, step in enumerate(common_steps):
+            for idx, (dir_name, re, steps) in enumerate(cases):
+                ax = axes[idx]
+                vtu = load_vtu(step, dir_name)
                 x, y, p, u, v, vm = get_2d_data(vtu)
-                pg = interp_to_grid(x, y, p, Xg, Yg)
-                vals = np.ma.masked_where(cyl_mask, pg)
+                if field == "pressure":
+                    vals = interp_to_grid(x, y, p, Xg, Yg)
+                else:
+                    vals = interp_to_grid(x, y, np.sqrt(u**2 + v**2), Xg, Yg)
+                vals_masked = np.ma.masked_where(cyl_mask, vals)
+
                 for c in ax.collections[:]:
                     if isinstance(c, QuadContourSet):
                         c.remove()
-                ax.contourf(Xg, Yg, vals, levels=40, cmap=cmap, extend="both")
-            time_text.set_text(f"t = {step * DT:.1f} s")
+                ax.contourf(Xg, Yg, vals_masked, levels=40, cmap=cmap, extend="both")
+
+                if field == "velocity":
+                    for coll in ax.lines[:]:
+                        coll.remove()
+                    us = interp_to_grid(x, y, u, Xg, Yg)
+                    vs = interp_to_grid(x, y, v, Xg, Yg)
+                    stride = 3
+                    sl_color = "white" if spin_name == "nospin" else "black"
+                    ax.streamplot(Xg[::stride, ::stride], Yg[::stride, ::stride],
+                                  us[::stride, ::stride], vs[::stride, ::stride],
+                                  color=sl_color, linewidth=0.6, density=0.8, arrowsize=0.6)
+
+                t = step * DT
+                time_texts[idx].set_text(f"t = {t:.1f} s")
+
             writer.grab_frame()
 
     plt.close()
-    print(f"  Saved: cylinder_compare_flow.mp4")
-
-
-# ═══════════════════════════════════════════════════════════
-# 4. 3D INTERACTIVE HTML (PyVista → Three.js)
-# ═══════════════════════════════════════════════════════════
-
-def export_3d_html(case_dir: str, label: str, suffix: str):
-    """Export a 3D interactive HTML view of the pressure field."""
-    print(f"\n--- 3D interactive: {label} ---")
-    steps = get_step_range(case_dir)
-    if not steps:
-        print(f"  [SKIP] No VTU files for {label}")
-        return
-    vtu = load_vtu(steps[-1], case_dir)  # last timestep
-
-    # Create a copy with pressure as the warp scalar
-    mesh = vtu.copy()
-    # Warp by pressure (height) for visual impact
-    warp = mesh.warp_by_scalar("Pressure", factor=0.001)
-
-    plotter = pv.Plotter(off_screen=True, window_size=(1200, 800))
-    plotter.add_mesh(warp, scalars="Pressure", cmap="RdBu_r",
-                     show_edges=False, lighting=True,
-                     scalar_bar_args={"title": "Pressure (Pa)"})
-    plotter.view_xy()
-    plotter.camera.zoom(0.8)
-    plotter.camera_position = [
-        (8, 0, 6),   # camera position
-        (0, 0, 0),   # focal point
-        (0, 1, 1),   # view up
-    ]
-    plotter.show_bounds(grid="back", location="outer", all_edges=True)
-
-    out_path = IMAGES / f"cylinder_{suffix}_3d.html"
-    plotter.export_html(str(out_path))
     print(f"  Saved: {out_path.name}")
-    plotter.close()
 
 
 # ═══════════════════════════════════════════════════════════
@@ -396,28 +439,35 @@ if __name__ == "__main__":
     IMAGES.mkdir(parents=True, exist_ok=True)
 
     print("=" * 60)
-    print("  GENERATING VISUALIZATIONS")
+    print("  GENERATING VISUALIZATIONS — LAMINAR RE SWEEP")
     print("=" * 60)
+
+    cases = discover_cases()
+    if not cases:
+        print("\n  No output_*_lam_re* directories found.")
+        print("  Run run_unsteady.py first.")
+        sys.exit(1)
+
+    print(f"\n  Found {len(cases)} case directories:")
+    for d, s, r in cases:
+        steps = len(get_step_range(d))
+        print(f"    {d}/ — {steps} steps")
 
     # 1. Mesh
     plot_mesh()
 
-    # 2. Static 2D plots
+    # 2. Static 2D plots (per case)
     static_plots()
 
-    # 3. Animated 2D MP4s
-    # Pressure animations
-    animate_flow("output_nospin_lam", "No Spin", "nospin", field="pressure")
-    animate_flow("output_magnus_lam", "Magnus", "magnus", field="pressure")
-    # Velocity animations
-    animate_flow("output_nospin_lam", "No Spin", "nospin", field="velocity")
-    animate_flow("output_magnus_lam", "Magnus", "magnus", field="velocity")
-    # Side-by-side comparison
-    animate_comparison()
+    # 3. Per-case animations (pressure + velocity)
+    for case_dir, spin_name, re in cases:
+        animate_flow(case_dir, spin_name, re, field="pressure")
+        animate_flow(case_dir, spin_name, re, field="velocity")
 
-    # 4. 3D interactive HTML
-    export_3d_html("output_nospin_lam", "No Spin", "nospin")
-    export_3d_html("output_magnus_lam", "Magnus", "magnus")
+    # 4. Re comparison animations (3-panel)
+    for spin_name in ["nospin", "magnus"]:
+        animate_re_comparison(spin_name, field="pressure")
+        animate_re_comparison(spin_name, field="velocity")
 
     print("\n" + "=" * 60)
     print("  ALL DONE")

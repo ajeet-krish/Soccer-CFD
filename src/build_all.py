@@ -8,11 +8,12 @@ from src.tactical import run_tactical, run_macro_stress, run_team_heatmaps, run_
 from phi.jax.flow import Obstacle, vec
 
 from src.domain import CYLINDER
-from src.utils import ASSETS
+from src.utils import IMAGES
 
 
 def main():
-    ASSETS.mkdir(exist_ok=True)
+    (IMAGES / "phiflow_cylinder_2d").mkdir(parents=True, exist_ok=True)
+    (IMAGES / "tactical").mkdir(parents=True, exist_ok=True)
 
     # ── Shot Aerodynamics ──
     print("=" * 60)
@@ -76,8 +77,9 @@ def main():
     print("\n" + "=" * 60)
     print("ALL SIMULATIONS COMPLETE")
     print("=" * 60)
-    for f in sorted(ASSETS.iterdir()):
-        print(f"  {f.name}")
+    for sub in ["phiflow_cylinder_2d", "tactical"]:
+        for f in sorted((IMAGES / sub).iterdir()):
+            print(f"  {sub}/{f.name}")
 
 
 if __name__ == "__main__":

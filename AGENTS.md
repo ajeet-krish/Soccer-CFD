@@ -38,9 +38,14 @@ Integrate SU2 high-fidelity RANS/URANS validation alongside existing ΦFlow simu
 ## File Layout
 ```
 docs/                          # GitHub Pages site (standalone HTML)
-  index.html, theory.html, shot.html, tactical.html, su2-validation.html
+  index.html, theory.html, shot.html, tactical.html
+  cfd.html, code.html
   custom.css                   # Dark theme + responsive nav
-  images/                      # All visualizations (PNG, MP4, HTML)
+  images/
+    phiflow_cylinder_2d/       # ΦFlow cylinder visualizations (MP4)
+    tactical/                  # Tactical simulations (MP4, PNG)
+    su2_cylinder_2d/           # SU2 2D cylinder (PNG, MP4, HTML)
+    su2_sphere/                # SU2 3D sphere (PNG)
 su2_runs/
   cylinder_2d/                 # Phase 3 — 2D cylinder validation
     run_cylinder.py            # Steady-state mesh → config → SU2 → results
@@ -52,37 +57,41 @@ su2_runs/
 src/
   su2_runner.py                # SU2Config, MeshGenerator (wake refine), SU2Solver, PyVista viz
   build_site.py                # Nav-sync utility (optional)
-SU2_INTEGRATION_PLAN.md        # Full 6-phase plan
+linkedin_posts/                # LinkedIn content drafts
 AGENTS.md                      # This file
 ```
 
 ## Visualizations Generated
 | File | Type | Description |
 |------|------|-------------|
-| `cylinder_mesh.png` | PNG | Full domain mesh (224K) |
-| `cylinder_mesh_zoom.png` | PNG | Cylinder close-up with wake refinement (1.3M) |
-| `cylinder_nospin_pressure.png` | PNG | No-spin pressure field (final t=30s) |
-| `cylinder_magnus_pressure.png` | PNG | Magnus pressure field (asymmetric dipole visible) |
-| `cylinder_compare_pressure.png` | PNG | Side-by-side pressure comparison |
-| `cylinder_nospin_velocity.png` | PNG | No-spin velocity magnitude |
-| `cylinder_magnus_velocity.png` | PNG | Magnus velocity magnitude (wake deflection) |
-| `cylinder_compare_velocity.png` | PNG | Side-by-side velocity comparison |
-| `cylinder_nospin_pressure.mp4` | MP4 | 10s animation, pressure, no-spin (3.3M) |
-| `cylinder_magnus_pressure.mp4` | MP4 | 10s animation, pressure, magnus (3.2M) |
-| `cylinder_nospin_velocity.mp4` | MP4 | 10s animation, velocity, no-spin (3.0M) |
-| `cylinder_magnus_velocity.mp4` | MP4 | 10s animation, velocity, magnus (3.1M) |
-| `cylinder_compare_flow.mp4` | MP4 | 10s side-by-side comparison (4.3M) |
-| `cylinder_nospin_3d.html` | HTML | Interactive 3D pressure field, no-spin (2.9M) |
-| `cylinder_magnus_3d.html` | HTML | Interactive 3D pressure field, magnus (2.9M) |
-| `cylinder_unsteady_cl_comparison.png` | PNG | Cl(t) evolution, all 4 cases |
-| `cylinder_pressure_field.png` | PNG | Steady RANS pressure (Phase 3) |
-| `cylinder_velocity_field.png` | PNG | Steady RANS velocity (Phase 3) |
-| `cylinder_cd_convergence.png` | PNG | Steady RANS Cd convergence (Phase 3) |
-| `cylinder_streamlines.png` | PNG | Steady RANS streamlines |
-| `cylinder_nospin_streamlines.png` | PNG | Unsteady laminar streamline snapshot |
-| `cylinder_magnus_streamlines.png` | PNG | Unsteady magnus streamline snapshot |
-| `cylinder_pressure_comparison.png` | PNG | Steady: no-spin vs magnus pressure |
-| `cylinder_streamline_comparison.png` | PNG | Steady: no-spin vs magnus streamlines |
+| `phiflow_cylinder_2d/pressure_comparison.mp4` | MP4 | ΦFlow sidecar: Magnus vs Knuckleball pressure |
+| `phiflow_cylinder_2d/velocity_comparison.mp4` | MP4 | ΦFlow sidecar: Magnus vs Knuckleball velocity |
+| `phiflow_cylinder_2d/phiflow_knuckleball_velocity_frame095.png` | PNG | ΦFlow knuckleball velocity at t=85.5s (interactive slider) |
+| `phiflow_cylinder_2d/phiflow_magnus_velocity_frame095.png` | PNG | ΦFlow magnus velocity at t=85.5s (interactive slider) |
+| `su2_cylinder_2d/cylinder_mesh.png` | PNG | Full domain mesh (224K) |
+| `su2_cylinder_2d/cylinder_mesh_zoom.png` | PNG | Cylinder close-up with wake refinement (1.3M) |
+| `su2_cylinder_2d/cylinder_nospin_pressure.png` | PNG | No-spin pressure field (final t=30s) |
+| `su2_cylinder_2d/cylinder_magnus_pressure.png` | PNG | Magnus pressure field (asymmetric dipole visible) |
+| `su2_cylinder_2d/cylinder_compare_pressure.png` | PNG | Side-by-side pressure comparison |
+| `su2_cylinder_2d/cylinder_nospin_velocity.png` | PNG | No-spin velocity magnitude |
+| `su2_cylinder_2d/cylinder_magnus_velocity.png` | PNG | Magnus velocity magnitude (wake deflection) |
+| `su2_cylinder_2d/cylinder_compare_velocity.png` | PNG | Side-by-side velocity comparison |
+| `su2_cylinder_2d/cylinder_nospin_pressure.mp4` | MP4 | 10s animation, pressure, no-spin (3.3M) |
+| `su2_cylinder_2d/cylinder_magnus_pressure.mp4` | MP4 | 10s animation, pressure, magnus (3.2M) |
+| `su2_cylinder_2d/cylinder_nospin_velocity.mp4` | MP4 | 10s animation, velocity, no-spin (3.0M) |
+| `su2_cylinder_2d/cylinder_magnus_velocity.mp4` | MP4 | 10s animation, velocity, magnus (3.1M) |
+| `su2_cylinder_2d/cylinder_compare_flow.mp4` | MP4 | 10s side-by-side comparison (4.3M) |
+| `su2_cylinder_2d/cylinder_nospin_3d.html` | HTML | Interactive 3D pressure field, no-spin (2.9M) |
+| `su2_cylinder_2d/cylinder_magnus_3d.html` | HTML | Interactive 3D pressure field, magnus (2.9M) |
+| `su2_cylinder_2d/cylinder_unsteady_cl_comparison.png` | PNG | Cl(t) evolution, all 4 cases |
+| `su2_cylinder_2d/cylinder_pressure_field.png` | PNG | Steady RANS pressure (Phase 3) |
+| `su2_cylinder_2d/cylinder_velocity_field.png` | PNG | Steady RANS velocity (Phase 3) |
+| `su2_cylinder_2d/cylinder_cd_convergence.png` | PNG | Steady RANS Cd convergence (Phase 3) |
+| `su2_cylinder_2d/cylinder_streamlines.png` | PNG | Steady RANS streamlines |
+| `su2_cylinder_2d/cylinder_nospin_streamlines.png` | PNG | Unsteady laminar streamline snapshot |
+| `su2_cylinder_2d/cylinder_magnus_streamlines.png` | PNG | Unsteady magnus streamline snapshot |
+| `su2_cylinder_2d/cylinder_pressure_comparison.png` | PNG | Steady: no-spin vs magnus pressure |
+| `su2_cylinder_2d/cylinder_streamline_comparison.png` | PNG | Steady: no-spin vs magnus streamlines |
 
 ## Progress Status
 | Phase | Description | Status |
@@ -94,7 +103,7 @@ AGENTS.md                      # This file
 | 3b | Analysis & comparison with ΦFlow (~1.2) | ✅ 43% diff explained |
 | 3+ | Unsteady URANS SST + laminar NS (no-spin vs magnus) | ✅ Both regimes done |
 | 4 | 3D sphere drag crisis (Re sweep) | ✅ Cd≈0.87 constant (no drag crisis) |
-| 5 | Smooth vs textured sphere | 🔜 Next |
+| 5 | Textured sphere roughness sweep (4 balls × 5 Re) | 🔜 Next |
 | 6 | Deformed ball, altitude effects | ⏳ |
 
 ## Key Results
@@ -105,6 +114,22 @@ AGENTS.md                      # This file
 - **Unsteady laminar NS @ Re=120**: St=0.16 (Lit: ~0.17); Cl ±0.05 (mesh-limited amplitude); magnus bias ≈ -0.15
 - **3D sphere SST**: Cd≈0.87 constant (no drag crisis); 282k tets, y⁺≈13 insufficient
 - **Steady magnus (S=0.2)**: Cl=-0.172 (steady bias)
+
+## Phase 5: Textured Sphere Roughness Sweep
+
+Four ball types compared via SU2 `WALL_ROUGHNESS` model:
+
+| Ball | Year | Panels | Seam Depth | kₛ/D | Source |
+|------|------|--------|-----------|------|--------|
+| Smooth | — | ∞ | 0.0 mm | 0.0 | — |
+| Jabulani | 2010 | 8 | ~1.5 mm | 0.007 | Goff et al. 2022 |
+| Brazuca | 2014 | 6 | ~3.0 mm | 0.014 | Alam et al. 2016 |
+| Trionda | 2026 | 4 | ~4.5 mm | 0.020 | MDPI Appl Sci 2026 |
+
+- **Re sweep**: 1×10⁴, 1×10⁵, 3×10⁵, 6×10⁵, 1×10⁶ (4 balls × 5 Re = 20 runs)
+- **Method**: `WALL_ROUGHNESS= ( wall, <kₛ> )` in SU2 config
+- **Limitation**: RANS SST fully turbulent → no drag crisis capture (0.47→0.07). Expect ~5-15% Cd variation from separation-point shift. Transition model (γ-Reθ) + wall-resolved mesh needed for crisis.
+- **Runner**: `su2_runs/sphere_3d/run_roughness.py`
 
 ## Config templates
 ### Steady RANS SST (Re=40k, Phase 3)

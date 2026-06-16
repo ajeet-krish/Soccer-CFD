@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Full code showcase — ΦFlow, SU2, gmsh, and PyVista source for the soccer aerodynamics project">
+  <title>Code &mdash; The Physics of Play</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/meslo-lg.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="custom.css">
+  <style>
+    /* Jupyter notebook cell styling */
+    .nb-cell {
+      background: #1a1b26;
+      border: 1px solid var(--current-line);
+      border-radius: 6px;
+      margin: 1.5rem 0;
+      overflow: hidden;
+    }
+    .nb-cell .nb-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: #21222c;
+      border-bottom: 1px solid var(--current-line);
+      font-size: 0.7rem;
+      color: var(--comment);
+    }
+    .nb-cell .nb-header .nb-icon {
+      font-size: 0.85rem;
+    }
+    .nb-cell .nb-header .nb-icon.code { color: var(--green); }
+    .nb-cell .nb-header .nb-icon.markdown { color: var(--cyan); }
+    .nb-cell .nb-header .nb-icon.output { color: var(--orange); }
+    .nb-cell .nb-body {
+      padding: 0;
+    }
+    .nb-cell .nb-body pre {
+      margin: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent !important;
+    }
+    .nb-cell .nb-body pre code {
+      font-size: 0.7rem;
+      line-height: 1.6;
+    }
+
+    /* Output cell */
+    .nb-output {
+      padding: 12px 16px;
+      font-size: 0.78rem;
+      color: var(--foreground);
+      border-top: 1px solid var(--current-line);
+    }
+    .nb-output .out-label {
+      font-size: 0.65rem;
+      color: var(--comment);
+      margin-bottom: 6px;
+    }
+    .nb-output .out-data {
+      background: #282a36;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: 'Meslo LG L', monospace;
+      font-size: 0.7rem;
+      color: var(--cyan);
+    }
+    .nb-output img {
+      max-width: 100%;
+      border-radius: 4px;
+      border: 1px solid var(--current-line);
+    }
+    .nb-output video {
+      max-width: 100%;
+      border-radius: 4px;
+      border: 1px solid var(--current-line);
+    }
+
+    /* Section header for notebook sections */
+    .nb-section {
+      color: var(--purple);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 2px solid var(--purple);
+      letter-spacing: -0.02em;
+    }
+    .nb-section .nb-arrow {
+      color: var(--comment);
+      font-weight: 400;
+    }
+
+    .nb-markdown {
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      color: var(--foreground);
+      line-height: 1.7;
+    }
+    .nb-markdown strong { color: var(--pink); }
+  </style>
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="./index.html"><span class="highlight">$</span> physics-of-play</a>
+      <button class="nav-toggle" aria-label="Toggle navigation"
+        onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
+      <div class="nav-entries">
+        <a href="./index.html">[ 01. Home ]</a>
+        <a href="./theory.html">[ 02. Theory ]</a>
+        <a href="./shot.html">[ 03. Shot ]</a>
+        <a href="./tactical.html">[ 04. Tactical ]</a>
+        <a href="./cfd.html">[ 05. CFD ]</a>
+        <a href="./code.html" class="active">[ 06. Code ]</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+
+    <div class="breadcrumb">
+      ~ / physics-of-play / <span style="color: var(--comment);">code.ipynb</span>
+    </div>
+
+    <div class="hero" style="text-align: left; padding: 1.5rem 0;">
+      <h1 style="font-size: clamp(1.4rem, 3vw, 2rem);">Code <span class="highlight">Notebook</span></h1>
+      <p>All the source code behind the simulations, visualizations, and analysis &mdash; presented as a Jupyter-style
+        notebook. Click the copy button on any code block to grab the full snippet.</p>
+    </div>
+
+    <!-- ================================================================== -->
+    <div class="nb-section">1. <span class="nb-arrow">&rarr;</span> &Phi;Flow Cylinder Simulation</div>
+    <!-- ================================================================== -->
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon markdown">[M]</span>
+        <span>Setup &mdash; imports, domain, and obstacle definition</span>
+      </div>
+      <div class="nb-markdown">
+        <p>The core of the &Phi;Flow simulation: define the domain as an 8m &times; 4m box, create a cylinder obstacle
+          with an optional rotation rate, and run the incompressible Navier-Stokes solver using semi-Lagrangian
+          advection.</p>
+      </div>
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon code">[C]</span>
+        <span>In [1]: &Phi;Flow simulation setup</span>
+      </div>
+      <div class="nb-body">
+        <pre><code class="language-python">import phi
+from phi.jax.flow import *
+from phi import field, math
+
+# Domain
+BOX = box['x, y'][:8, :4]
+BOUNDARY = {'x': ('open', 'open'), 'y': ('periodic',)}
+
+# Cylinder parameters
+RADIUS = 0.3
+CENTER = (2.0, 2.0)
+CYLINDER = Sphere(x=CENTER, radius=RADIUS)
+
+# Grid
+v0 = StaggeredGrid((1.0, 0.0), BOUNDARY, x=256, y=128, bounds=BOX)
+
+# Obstacle with optional rotation (rad/s)
+ANGULAR_VELOCITY = 10.0  # set to 0.0 for knuckleball
+obstacle = Obstacle(CYLINDER, angular_velocity=ANGULAR_VELOCITY)
+
+# Simulation loop
+DT = 0.015
+N_STEPS = 2000
+v = v0
+
+for i in range(N_STEPS):
+    v = advect.semi_lagrangian(v, v, dt=DT)
+    v, p = fluid.make_incompressible(v, [obstacle])
+    # Extract forces, save frames, etc.
+</code></pre>
+      </div>
+      <div class="nb-output">
+        <div class="out-label">Output: velocity field (StaggeredGrid) &amp; pressure (CenteredGrid)</div>
+        <div class="out-data">Grid: 256×128 | dt: 0.015s | Steps: 2000 | Total time: ~30s</div>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <div class="nb-section">2. <span class="nb-arrow">&rarr;</span> SU2 Configuration Files</div>
+    <!-- ================================================================== -->
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon markdown">[M]</span>
+        <span>Steady RANS SST (Re=40k) &mdash; <code>cylinder.cfg</code></span>
+      </div>
+      <div class="nb-markdown">
+        <p>SU2 config for steady-state RANS simulation of a 2D cylinder at Re=40,000. Uses the SST $k$-$\omega$
+          turbulence model with FDS convective scheme. Non-dimensional viscosity via <code>INITIAL_VALUES</code>.</p>
+      </div>
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon code">[C]</span>
+        <span>In [2]: cylinder_steady.cfg</span>
+      </div>
+      <div class="nb-body">
+        <pre><code class="language-ini">SOLVER= INC_RANS
+KIND_TURB_MODEL= SST
+INC_DENSITY_MODEL= CONSTANT
+INC_ENERGY_EQUATION= NO
+INC_NONDIM= INITIAL_VALUES
+REYNOLDS_NUMBER= 40000
+REYNOLDS_LENGTH= 0.6
+VISCOSITY_MODEL= CONSTANT_VISCOSITY
+MU_CONSTANT= 2.5e-05
+
+MARKER_HEATFLUX= ( wall, 0.0 )
+MARKER_MONITORING= ( wall )
+MARKER_FAR= ( farfield )
+
+CONV_NUM_METHOD_FLOW= FDS
+MUSCL_FLOW= NO
+TIME_DISCRE_FLOW= EULER_IMPLICIT
+
+CFL_NUMBER= 0.5
+ITER= 3000
+LINEAR_SOLVER= FGMRES
+LINEAR_SOLVER_PREC= ILU
+</code></pre>
+      </div>
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon markdown">[M]</span>
+        <span>Unsteady Laminar NS (Re=120) &mdash; <code>cylinder_unsteady.cfg</code></span>
+      </div>
+      <div class="nb-markdown">
+        <p>Unsteady laminar Navier-Stokes for vortex shedding at Re=120. Uses dual time-stepping with dimensional
+          viscosity. The Magnus case adds a moving wall boundary condition for spin.</p>
+      </div>
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon code">[C]</span>
+        <span>In [3]: cylinder_unsteady.cfg</span>
+      </div>
+      <div class="nb-body">
+        <pre><code class="language-ini">SOLVER= INC_NAVIER_STOKES
+INC_DENSITY_MODEL= CONSTANT
+INC_ENERGY_EQUATION= NO
+INC_NONDIM= DIMENSIONAL
+INC_DENSITY_INIT= 1.2886
+INC_VELOCITY_INIT= (1.0, 0.0, 0.0)
+VISCOSITY_MODEL= CONSTANT_VISCOSITY
+MU_CONSTANT= 0.00267875
+REYNOLDS_NUMBER= 120
+REYNOLDS_LENGTH= 0.6
+
+MARKER_HEATFLUX= ( wall, 0.0 )
+MARKER_MONITORING= ( wall )
+MARKER_FAR= ( farfield )
+
+TIME_DOMAIN= YES
+TIME_MARCHING= DUAL_TIME_STEPPING-2ND_ORDER
+TIME_STEP= 0.15
+TIME_ITER= 200
+INNER_ITER= 15
+
+CONV_NUM_METHOD_FLOW= FDS
+MUSCL_FLOW= YES
+SLOPE_LIMITER_FLOW= NONE
+TIME_DISCRE_FLOW= EULER_IMPLICIT
+
+CFL_NUMBER= 0.5
+LINEAR_SOLVER= FGMRES
+LINEAR_SOLVER_PREC= ILU
+LINEAR_SOLVER_ERROR= 1E-6
+LINEAR_SOLVER_ITER= 10
+
+OUTPUT_FILES= (RESTART, PARAVIEW)
+OUTPUT_WRT_FREQ= 1
+HISTORY_OUTPUT= (TIME_ITER, INNER_ITER, RMS_RES, AERO_COEFF, CUR_TIME)
+
+# Uncomment for Magnus effect (spin):
+# SURFACE_MOVEMENT= MOVING_WALL
+# MARKER_MOVING= ( wall )
+# SURFACE_ROTATION_RATE= 0.0 0.0 3.33333
+</code></pre>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <div class="nb-section">3. <span class="nb-arrow">&rarr;</span> Mesh Generation (gmsh)</div>
+    <!-- ================================================================== -->
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon markdown">[M]</span>
+        <span>2D cylinder mesh with wake refinement</span>
+      </div>
+      <div class="nb-markdown">
+        <p>Programmatic mesh generation using gmsh's Python API. Distance-based refinement near the cylinder surface
+          (for boundary layer resolution) combined with a Box field to concentrate cells in the wake region, where
+          vortices form and need the highest resolution.</p>
+      </div>
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon code">[C]</span>
+        <span>In [4]: Mesh generator (gmsh)</span>
+      </div>
+      <div class="nb-body">
+        <pre><code class="language-python">import gmsh
+
+def cylinder_2d(radius=0.3, farfield_radius=15.0,
+                cl_cyl=0.01, cl_far=0.5,
+                cl_wake=0.04, wake_length=4.0, wake_width=1.0):
+    gmsh.initialize()
+    gmsh.model.add("cylinder_2d")
+
+    disk = gmsh.model.occ.addDisk(0, 0, 0, radius, radius)
+    farfield = gmsh.model.occ.addDisk(0, 0, 0, farfield_radius, farfield_radius)
+    ov, _ = gmsh.model.occ.cut([(2, farfield)], [(2, disk)])
+    gmsh.model.occ.synchronize()
+
+    # Distance-based refinement near cylinder
+    gmsh.model.mesh.field.add("Distance", 1)
+    gmsh.model.mesh.field.setNumbers(1, "NodesList", [surface_tag])
+    gmsh.model.mesh.field.add("Threshold", 2)
+    gmsh.model.mesh.field.setNumber(2, "InField", 1)
+    gmsh.model.mesh.field.setNumber(2, "SizeMin", cl_cyl)
+    gmsh.model.mesh.field.setNumber(2, "SizeMax", cl_far)
+    gmsh.model.mesh.field.setNumber(2, "DistMin", 0)
+    gmsh.model.mesh.field.setNumber(2, "DistMax", radius * 3)
+
+    # Box field for wake refinement
+    gmsh.model.mesh.field.add("Box", 3)
+    gmsh.model.mesh.field.setNumber(3, "VIn", cl_wake)
+    gmsh.model.mesh.field.setNumber(3, "VOut", cl_far)
+    gmsh.model.mesh.field.setNumber(3, "XMin", -radius)
+    gmsh.model.mesh.field.setNumber(3, "XMax", wake_length)
+    gmsh.model.mesh.field.setNumber(3, "YMin", -wake_width)
+    gmsh.model.mesh.field.setNumber(3, "YMax", wake_width)
+
+    gmsh.model.mesh.field.add("Min", 4)
+    gmsh.model.mesh.field.setNumbers(4, "FieldsList", [2, 3])
+    gmsh.model.mesh.field.setAsBackgroundMesh(4)
+
+    cyl_tag = get_physical_tag(gmsh, "wall")
+    gmsh.model.addPhysicalGroup(1, [cyl_tag], name="wall")
+    gmsh.model.addPhysicalGroup(2, [ov[0][0][1]], name="farfield")
+
+    gmsh.model.mesh.generate(2)
+    gmsh.model.mesh.createTopology()  # required for SU2 export
+    gmsh.write(f"{name}.su2")
+    gmsh.finalize()
+</code></pre>
+      </div>
+      <div class="nb-output">
+        <div class="out-label">Output: SU2 mesh file</div>
+        <div class="out-data">Nodes: 44,710 | Triangles: 89,422 | cl@wall: 0.008 | cl@wake: 0.04</div>
+        <img src="images/su2_cylinder_2d/cylinder_mesh_zoom.png" alt="Cylinder mesh zoomed" style="max-width:100%;margin-top:8px;">
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <div class="nb-section">4. <span class="nb-arrow">&rarr;</span> Running SU2</div>
+    <!-- ================================================================== -->
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon code">[C]</span>
+        <span>In [5]: Execute SU2_CFD</span>
+      </div>
+      <div class="nb-body">
+        <pre><code class="language-bash"># Run SU2 from the case directory
+/Users/ajeet/SU2_CFD/bin/SU2_CFD cylinder.cfg
+
+# Results are written to:
+#   history.csv   — convergence of Cl, Cd, residuals
+#   flow.vtu      — per-timestep solution (ParaView format)
+</code></pre>
+      </div>
+      <div class="nb-output">
+        <div class="out-label">Terminal output (steady case)</div>
+        <div class="out-data" style="color:var(--green);">
+[INFO] SU2 v8.4.0 "Harrier"
+[INFO] Config file: cylinder.cfg
+[INFO] Solving INC_RANS with SST turbulence model
+[INFO] Iteration 500: Cd=0.683 | Cl=-0.032 | RMS_RES=3.2e-06
+[...]
+[INFO] Converged at iteration 3000
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <div class="nb-section">5. <span class="nb-arrow">&rarr;</span> Visualization Pipeline (PyVista)</div>
+    <!-- ================================================================== -->
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon markdown">[M]</span>
+        <span>Reading VTU files and rendering frames</span>
+      </div>
+      <div class="nb-markdown">
+        <p>PyVista reads the per-timestep VTU files written by SU2 and renders pressure and velocity fields using
+          perceptually uniform colormaps. Each frame is saved as a PNG; <code>imageio</code> stitches them into MP4
+          animations. Interactive 3D HTML is exported via the trame backend.</p>
+      </div>
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon code">[C]</span>
+        <span>In [6]: PyVista frame renderer</span>
+      </div>
+      <div class="nb-body">
+        <pre><code class="language-python">import pyvista as pv
+import imageio
+import numpy as np
+
+def render_frame(vtu_path, field="pressure", cmap="magma",
+                 clim=None, camera_pos=None):
+    mesh = pv.read(vtu_path)
+    plotter = pv.Plotter(off_screen=True, window_size=[1920, 1080])
+
+    if field == "pressure":
+        mesh.set_active_scalars("Pressure")
+        cmap = "magma"
+        title = "Pressure Field"
+    else:
+        mesh.set_active_scalars("Velocity")
+        cmap = "inferno"
+        title = "Velocity Magnitude"
+
+    plotter.add_mesh(mesh, cmap=cmap, scalars=mesh.active_scalars_name,
+                     clim=clim, show_edges=False)
+    plotter.add_title(title)
+    plotter.show(auto_close=False)
+    img = plotter.screenshot(return_img=True)
+    plotter.close()
+    return img
+
+
+# Stitch frames into animation
+def make_animation(frame_dir, output_mp4, fps=20):
+    writer = imageio.get_writer(output_mp4, fps=fps)
+    for f in sorted(frame_dir.glob("*.png")):
+        writer.append_data(imageio.imread(f))
+    writer.close()
+</code></pre>
+      </div>
+      <div class="nb-output">
+        <div class="out-label">Output: MP4 animation</div>
+        <div class="out-data">200 frames @ 20fps = 10s animation | Resolution: 1920×1080</div>
+        <video src="images/su2_cylinder_2d/cylinder_compare_flow.mp4" autoplay loop muted playsinline
+          style="max-width:100%;margin-top:8px;border-radius:4px;"></video>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <div class="nb-section">6. <span class="nb-arrow">&rarr;</span> Run Script</div>
+    <!-- ================================================================== -->
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon markdown">[M]</span>
+        <span>Orchestrating the full pipeline</span>
+      </div>
+      <div class="nb-markdown">
+        <p>The <code>src/su2_runner.py</code> module provides a high-level API that ties mesh generation, config
+          writing, solver execution, and visualization into a single <code>SU2Solver</code> class.</p>
+      </div>
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-header">
+        <span class="nb-icon code">[C]</span>
+        <span>In [7]: su2_runner.py (key methods)</span>
+      </div>
+      <div class="nb-body">
+        <pre><code class="language-python">class SU2Config:
+    """Build SU2 .cfg files from Python parameters."""
+
+    def __init__(self, reynolds=40000, length=0.6, magnus=False):
+        self.params = {
+            "SOLVER": "INC_RANS",
+            "KIND_TURB_MODEL": "SST",
+            "REYNOLDS_NUMBER": reynolds,
+            "REYNOLDS_LENGTH": length,
+            "VISCOSITY_MODEL": "CONSTANT_VISCOSITY",
+            "MU_CONSTANT": 1.0 / reynolds,
+        }
+        if magnus:
+            self.params.update({
+                "SURFACE_MOVEMENT": "MOVING_WALL",
+                "MARKER_MOVING": "( wall )",
+                "SURFACE_ROTATION_RATE": "0.0 0.0 3.33333",
+            })
+
+    def write(self, path):
+        with open(path, "w") as f:
+            for k, v in self.params.items():
+                f.write(f"{k}= {v}\n")
+
+
+class SU2Solver:
+    """Run SU2_CFD and parse results."""
+
+    def __init__(self, binary="/Users/ajeet/SU2_CFD/bin/SU2_CFD"):
+        self.binary = binary
+
+    def run(self, case_dir):
+        subprocess.run([self.binary], cwd=case_dir, check=True)
+        hist = pd.read_csv(f"{case_dir}/history.csv")
+        cd = hist["CD"].iloc[-1]
+        cl = hist["CL"].iloc[-1]
+        return {"Cd": cd, "Cl": cl}
+</code></pre>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 &middot; The Physics of Play &middot; Built by Ajeet Krishnasamy</p>
+    <p style="margin-top: 6px;"><a href="https://github.com/ajeet-krish/Soccer-CFD">[ GitHub Repo ]</a> &middot; <a
+        href="https://ajeetkrishnasamy.com">[ Portfolio ]</a> &middot; <a
+        href="https://www.linkedin.com/in/ajeetkrishnasamy/">[ LinkedIn ]</a></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false }
+        ],
+        throwOnError: false
+      });
+      initScrollAnimations();
+    });
+
+    function initScrollAnimations() {
+      const els = document.querySelectorAll('.nb-cell, .nb-section');
+      els.forEach(el => el.classList.add('fade-in'));
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    }
+  </script>
+</body>
+
+</html>

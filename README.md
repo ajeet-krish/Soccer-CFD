@@ -64,11 +64,20 @@ SU2 RANS SST on a circular cylinder at Re=40k, matching the ΦFlow shot domain.
 Steady RANS (SST k-ω) on a smooth sphere sweeping Re = 10⁴ → 10⁶.
 
 - **Mesh**: Coarse tetrahedral (45K nodes, 282K tets, y+ ~13)
-- **Limitation**: SST is fully turbulent — no drag crisis captured (Cd ≈ 0.87 flat). This is consistent with RANS behaviour and documented honestly
+- **Limitation**: SST is fully turbulent — no drag crisis captured (Cd ≈ 0.87 flat). Consistent with RANS behaviour.
 
-### 5. SU2 3D Sphere: Textured Ball Roughness (Planned)
+### 5. SU2 3D Sphere: Textured Ball Roughness
 
-Comparing four ball types (smooth, Jabulani, Brazuca, Trionda) via `WALL_ROUGHNESS` model across Re = 10⁴ → 10⁶. Seam depths from peer-reviewed literature.
+Comparing four ball types via `WALL_ROUGHNESS` model across Re = 10⁴ → 10⁶:
+
+| Ball | Year | Panels | Est. Seam Depth | kₛ/D | Source |
+|------|------|--------|----------------|------|--------|
+| Smooth (baseline) | — | ∞ | 0.0 mm | 0.0 | — |
+| Jabulani | 2010 | 8 | ~1.5 mm | 0.007 | Goff et al. 2022 |
+| Brazuca | 2014 | 6 | ~3.0 mm | 0.014 | Alam et al. 2016 |
+| Trionda | 2026 | 4 | ~4.5 mm | 0.020 | MDPI Appl Sci 2026 |
+
+RANS SST with roughness shows separation-point shift trends (~5-15% Cd variation) but cannot capture the full drag crisis drop (0.47→0.07) — that requires a transition model (γ-Reθ) + wall-resolved mesh.
 
 ## Project Structure
 
@@ -77,7 +86,7 @@ src/
 ├── build_all.py           # ΦFlow orchestrator
 ├── build_site.py          # Nav-sync utility
 ├── shot_aero.py           # Magnus + Knuckleball (cylinder in crossflow)
-├── tactical.py            # Tactical positioning + stress fields + team heatmaps
+├── tactical.py            # Tactical positioning + stress fields + heatmaps
 ├── domain.py              # Domain constants (grid, bounds, dt)
 ├── su2_runner.py          # SU2Config, MeshGenerator, SU2Solver, PyVista viz
 └── utils.py               # Shared theme, paths, imports
@@ -90,17 +99,24 @@ su2_runs/
 └── sphere_3d/             # Phase 4 — smooth sphere drag crisis
     ├── run_sphere.py
     ├── viz_sphere.py      # PyVista visualization pipeline
-    ├── results.json
-    └── vol_solution.vtu   # Final field solution (Re=1e6)
+    └── results.json
 docs/                      # GitHub Pages site
 ├── index.html             # Landing page hub
 ├── theory.html            # Background fluid dynamics theory
 ├── shot.html              # Shot aerodynamics
 ├── tactical.html          # Tactical positioning
-├── su2-validation.html    # SU2 validation narrative
-├── custom.css             # Dark theme + responsive nav
-└── images/                # Generated visualizations
-assets/                    # ΦFlow-generated MP4s and PNGs
+├── shot.html              # Ball aerodynamics (Python sim + CFD validation)
+├── tactical.html          # Tactical positioning
+├── cfd.html               # CFD methodology & validation
+├── code.html              # Jupyter-style code notebook
+├── custom.css             # Dark terminal theme + responsive nav
+└── images/                # Generated visualizations (organized by case)
+    ├── phiflow_cylinder_2d/
+    ├── tactical/
+    ├── su2_cylinder_2d/
+    └── su2_sphere/
+assets/                    # ΦFlow frame cache
+linkedin_posts/            # LinkedIn content drafts
 ```
 
 ## Getting Started
@@ -109,18 +125,12 @@ assets/                    # ΦFlow-generated MP4s and PNGs
 ```bash
 uv sync
 uv run python src/build_all.py
-uv run jupyter notebook
 ```
 
-**SU2 validation (requires SU2 v8.4 installed):**
+**SU2 validation (requires SU2 v8.4):**
 ```bash
-# 2D cylinder
 uv run python su2_runs/cylinder_2d/run_cylinder.py
-
-# 3D sphere
 uv run python su2_runs/sphere_3d/run_sphere.py
-
-# Sphere visualizations
 uv run python su2_runs/sphere_3d/viz_sphere.py
 ```
 
@@ -135,10 +145,10 @@ open http://localhost:8000
 - **Python** 3.12, **uv** package manager
 - **ffmpeg** — MP4 export (`brew install ffmpeg`)
 - **ΦFlow** (≥3.4), JAX, matplotlib, numpy, tqdm, pyvista, gmsh
-- **SU2 v8.4** — CFD solver (validation only, not needed for browsing the site)
+- **SU2 v8.4** — CFD solver (validation only, not needed for browsing)
 
 ## Key Results & Honest Limitations
 
 - **2D Cylinder**: SU2 Cd=0.683 vs ΦFlow Cd≈1.2 at Re=40k. The 43% gap is physically meaningful: fully turbulent RANS delays separation, narrowing the wake.
-- **3D Sphere (Smooth)**: SST k-ω produces Cd≈0.87 flat across Re. No drag crisis — this is a known limitation of fully turbulent RANS. A transition model (γ-Reθ) + wall-resolved mesh would be required for crisis capture.
-- **Textured Sphere**: Phase 5 will use roughness wall functions to show separation-point shift trends. Expect ~5–15% Cd variation, not a drag crisis drop.
+- **3D Sphere (Smooth)**: SST k-ω produces Cd≈0.87 flat across Re. No drag crisis. A transition model (γ-Reθ) + wall-resolved mesh would be required for crisis capture.
+- **Textured Sphere**: Phase 5 will use roughness wall functions to show separation-point shift trends.

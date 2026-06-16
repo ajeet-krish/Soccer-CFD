@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from phi.jax.flow import Obstacle, StaggeredGrid, CenteredGrid, fluid, advect, vec, field, ZERO_GRADIENT
 
-from src.utils import setup_theme, ASSETS
+from src.utils import setup_theme, ASSETS, IMAGES
 from src.domain import BOX, BOUNDARY, CENTER, RADIUS, CYLINDER, CENTERED, DT, N_STEPS, SAVE_EVERY
 
 setup_theme()
@@ -109,7 +109,7 @@ def animate_velocity_comparison(frames_magnus, frames_knuckle):
         return (ax1, ax2)
 
     anim = FuncAnimation(fig, update, frames=n_frames, interval=80, blit=False)
-    path = ASSETS / "velocity_comparison.mp4"
+    path = IMAGES / "phiflow_cylinder_2d" / "velocity_comparison.mp4"
     anim.save(str(path), writer="ffmpeg", fps=10, dpi=150)
     print(f"Saved {path}")
     plt.close(fig)
@@ -157,7 +157,7 @@ def animate_pressure_comparison(frames_magnus, frames_knuckle):
         return imgs
 
     anim = FuncAnimation(fig, update, frames=n_frames, interval=80, blit=True)
-    path = ASSETS / "pressure_comparison.mp4"
+    path = IMAGES / "phiflow_cylinder_2d" / "pressure_comparison.mp4"
     anim.save(str(path), writer="ffmpeg", fps=10, dpi=150)
     print(f"Saved {path}")
     plt.close(fig)
@@ -214,7 +214,7 @@ def _animate_single(frames, output_path, *, title, cmap, vmin, vmax, cbar_label,
 
 def animate_magnus_pressure(frames):
     all_p = np.concatenate([f["pressure"].ravel() for f in frames[1:]])
-    _animate_single(frames, ASSETS / "magnus_pressure.mp4",
+    _animate_single(frames, IMAGES / "phiflow_cylinder_2d" / "magnus_pressure.mp4",
                     title="Magnus Effect — Pressure Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
                     cmap="magma", vmin=float(all_p.min()), vmax=float(all_p.max()),
                     cbar_label="Pressure (Pa)",
@@ -224,7 +224,7 @@ def animate_magnus_pressure(frames):
 def animate_magnus_velocity(frames):
     x_s = np.linspace(0, 8.0, 256)
     y_s = np.linspace(0, 4.0, 128)
-    _animate_single(frames, ASSETS / "magnus_velocity.mp4",
+    _animate_single(frames, IMAGES / "phiflow_cylinder_2d" / "magnus_velocity.mp4",
                     title="Magnus Effect — Velocity Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
                     cmap="inferno", vmin=0, vmax=1.5,
                     cbar_label="Velocity magnitude (m/s)",
@@ -236,7 +236,7 @@ def animate_magnus_velocity(frames):
 
 
 def animate_magnus_vorticity(frames):
-    _animate_single(frames, ASSETS / "magnus_vorticity.mp4",
+    _animate_single(frames, IMAGES / "phiflow_cylinder_2d" / "magnus_vorticity.mp4",
                     title="Magnus Effect — Vorticity Field",
                     cmap="RdBu", vmin=-4, vmax=4,
                     cbar_label="Vorticity ω_z",
@@ -245,7 +245,7 @@ def animate_magnus_vorticity(frames):
 
 def animate_knuckle_pressure(frames):
     all_p = np.concatenate([f["pressure"].ravel() for f in frames[1:]])
-    _animate_single(frames, ASSETS / "knuckleball_pressure_individual.mp4",
+    _animate_single(frames, IMAGES / "phiflow_cylinder_2d" / "knuckleball_pressure_individual.mp4",
                     title="Knuckleball — Pressure Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
                     cmap="magma", vmin=float(all_p.min()), vmax=float(all_p.max()),
                     cbar_label="Pressure (Pa)",
@@ -255,7 +255,7 @@ def animate_knuckle_pressure(frames):
 def animate_knuckle_velocity(frames):
     x_s = np.linspace(0, 8.0, 256)
     y_s = np.linspace(0, 4.0, 128)
-    _animate_single(frames, ASSETS / "knuckleball_velocity.mp4",
+    _animate_single(frames, IMAGES / "phiflow_cylinder_2d" / "knuckleball_velocity.mp4",
                     title="Knuckleball — Velocity Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
                     cmap="inferno", vmin=0, vmax=1.5,
                     cbar_label="Velocity magnitude (m/s)",
@@ -267,17 +267,95 @@ def animate_knuckle_velocity(frames):
 
 
 def animate_knuckle_vorticity(frames):
-    _animate_single(frames, ASSETS / "knuckleball_vorticity.mp4",
+    _animate_single(frames, IMAGES / "phiflow_cylinder_2d" / "knuckleball_vorticity.mp4",
                     title="Knuckleball — Vorticity Field",
                     cmap="RdBu", vmin=-4, vmax=4,
                     cbar_label="Vorticity ω_z",
                     data_fn=lambda f: np.gradient(f["v"], axis=1) - np.gradient(f["u"], axis=0))
 
 
-CACHE_FILE = Path(__file__).parent.parent / "assets" / "_frames_cache.pkl"
+CACHE_FILE = ASSETS / "_frames_cache.pkl"
+PHIFLOW_IMAGES = IMAGES / "phiflow_cylinder_2d"
+
+
+def extract_static_frames(frames_magnus, frames_knuckle, output_dir=None):
+    """Extract static PNG frames at animation time 6-10s (frames 60-95, every 5th).
+
+    Total: 2 cases × 2 fields × 8 frames = 32 PNGs.
+    """
+    if output_dir is None:
+        output_dir = PHIFLOW_IMAGES
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Animation: 100 frames total @ 10fps → 10s. Frame 0 = t=0s, frame 99 = t=9.9s.
+    # Animation time 6-10s → frames 60-99. Select every 5th frame.
+    frame_indices = list(range(60, min(100, len(next(iter(frames_magnus.values() if isinstance(frames_magnus, dict) else frames_magnus)) if isinstance(next(iter(frames_magnus.values() if isinstance(frames_magnus, dict) else frames_magnus)), list) else frames_magnus)), 5))  # noqa
+
+    x_s = np.linspace(0, 8.0, 256)
+    y_s = np.linspace(0, 4.0, 128)
+
+    def _extract(frames, slug, title, field, data_key, cmap, vmin, vmax, cbar_label):
+        for idx in frame_indices:
+            if idx >= len(frames):
+                continue
+            data = frames[idx][data_key]
+            fig, ax = plt.subplots(figsize=(8, 4), facecolor="#111111")
+            ax.set_facecolor("#111111")
+            ax.set_xlim(0.5, 7.5)
+            ax.set_ylim(0.5, 3.5)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            im = ax.imshow(data.T, origin="lower", cmap=cmap, aspect="auto",
+                           extent=[0, 8, 0, 4], vmin=vmin, vmax=vmax)
+            ax.add_patch(Circle(CENTER, RADIUS, facecolor="black", edgecolor="white", linewidth=2.0))
+
+            # Streamlines for velocity fields
+            if field == "velocity":
+                u = frames[idx]["u"]
+                v = frames[idx]["v"]
+                stride = 2
+                streamline_color = "black" if slug == "magnus" else "white"
+                ax.streamplot(x_s, y_s, u.T, v.T, color=streamline_color, linewidth=0.7,
+                              density=1.2, arrowstyle="->", arrowsize=0.5)
+
+            cbar = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
+            cbar.set_label(cbar_label, color="white")
+            cbar.ax.yaxis.set_tick_params(color="white")
+            plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
+
+            ax.set_title(f"{title} — {field} Field", color="white", fontsize=10)
+
+            fig.tight_layout()
+
+            out_path = output_dir / f"phiflow_{slug}_{field.lower()}_frame{idx:03d}.png"
+            fig.savefig(out_path, dpi=150, facecolor="#111111", bbox_inches="tight")
+            print(f"  Saved: {out_path.name}")
+            plt.close(fig)
+
+    # Pressure fields
+    all_p_m = np.concatenate([f["pressure"].ravel() for f in frames_magnus[1:]])
+    all_p_k = np.concatenate([f["pressure"].ravel() for f in frames_knuckle[1:]])
+    pmin = min(float(all_p_m.min()), float(all_p_k.min()))
+    pmax = max(float(all_p_m.max()), float(all_p_k.max()))
+
+    _extract(frames_magnus, "magnus", "Magnus", "pressure", "pressure", "magma", pmin, pmax, "Pressure (Pa)")
+    _extract(frames_knuckle, "knuckleball", "Knuckleball", "pressure", "pressure", "magma", pmin, pmax, "Pressure (Pa)")
+
+    # Velocity fields
+    _extract(frames_magnus, "magnus", "Magnus (Spin)", "velocity", "velocity", "inferno", 0, 1.5, "Velocity (m/s)")
+    _extract(frames_knuckle, "knuckleball", "Knuckleball (No Spin)", "velocity", "velocity", "inferno", 0, 1.5, "Velocity (m/s)")
+
+    print(f"\nExtracted {len(frame_indices) * 4} static PNGs to {output_dir}/")
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Shot aerodynamics simulation & visualization")
+    parser.add_argument("--extract", action="store_true", help="Extract static frames only (no MP4s)")
+    args = parser.parse_args()
+
     obstacle_spin = Obstacle(CYLINDER, velocity=vec(x=0.0, y=0.0), angular_velocity=10.0)
     obstacle_nospin = Obstacle(CYLINDER, velocity=vec(x=0.0, y=0.0), angular_velocity=0.0)
 
@@ -304,16 +382,23 @@ if __name__ == "__main__":
 
     print(f"\nFrames: {len(frames_magnus)} each, u shape: {frames_magnus[0]['u'].shape}")
 
-    # Individual animations
-    print("\n--- Individual Magnus animations ---")
-    animate_magnus_pressure(frames_magnus)
-    animate_magnus_velocity(frames_magnus)
+    if args.extract:
+        print("\n" + "=" * 60)
+        print("STATIC FRAME EXTRACTION (t = 6-10s, every 5th frame)")
+        print("=" * 60)
+        PHIFLOW_IMAGES.mkdir(parents=True, exist_ok=True)
+        extract_static_frames(frames_magnus, frames_knuckle, PHIFLOW_IMAGES)
+    else:
+        # Individual animations
+        print("\n--- Individual Magnus animations ---")
+        animate_magnus_pressure(frames_magnus)
+        animate_magnus_velocity(frames_magnus)
 
-    print("\n--- Individual Knuckleball animations ---")
-    animate_knuckle_pressure(frames_knuckle)
-    animate_knuckle_velocity(frames_knuckle)
+        print("\n--- Individual Knuckleball animations ---")
+        animate_knuckle_pressure(frames_knuckle)
+        animate_knuckle_velocity(frames_knuckle)
 
-    # Side-by-side comparisons
-    print("\n--- Side-by-side comparisons ---")
-    animate_velocity_comparison(frames_magnus, frames_knuckle)
-    animate_pressure_comparison(frames_magnus, frames_knuckle)
+        # Side-by-side comparisons
+        print("\n--- Side-by-side comparisons ---")
+        animate_velocity_comparison(frames_magnus, frames_knuckle)
+        animate_pressure_comparison(frames_magnus, frames_knuckle)

@@ -8,7 +8,7 @@ import pyvista as pv
 from pathlib import Path
 
 WORKDIR = Path(__file__).parent
-IMAGES = WORKDIR.parent.parent / "docs" / "images"
+IMAGES = WORKDIR.parent.parent / "docs" / "images" / "su2_sphere"
 VTU_PATH = WORKDIR / "vol_solution.vtu"
 
 SPHERE_RADIUS = 0.11

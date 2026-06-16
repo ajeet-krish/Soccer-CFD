@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="The governing equations and physical concepts behind every simulation">
   <title>Background Theory &mdash; The Physics of Play</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/meslo-lg.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
   <link rel="stylesheet" href="custom.css">
@@ -13,21 +14,26 @@
 
 <nav class="site-nav">
   <div class="nav-inner">
-    <a class="nav-brand" href="./index.html">The Physics of <span class="highlight">Play</span></a>
+    <a class="nav-brand" href="./index.html"><span class="highlight">$</span> physics-of-play</a>
     <button class="nav-toggle" aria-label="Toggle navigation" onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
     <div class="nav-entries">
-      <a href="./index.html">Home</a>
-      <a href="./theory.html">Theory</a>
-      <a href="./shot.html">Shot Aerodynamics</a>
-      <a href="./tactical.html">Tactical</a>
-      <a href="./su2-validation.html">SU2 Validation</a>
-    </div>
+      <a href="./index.html">[ 01. Home ]</a>
+      <a href="./theory.html" class="active">[ 02. Theory ]</a>
+      <a href="./shot.html">[ 03. Shot ]</a>
+      <a href="./tactical.html">[ 04. Tactical ]</a>
+        <a href="./cfd.html">[ 05. CFD ]</a>
+        <a href="./code.html">[ 06. Code ]</a>
+      </div>
   </div>
 </nav>
 
 <main class="main-content">
 
-<h2>Governing Equations</h2>
+<div class="breadcrumb">
+  ~ / physics-of-play / <span style="color: var(--cyan);">theory.py</span>
+</div>
+
+<h2># Governing Equations</h2>
 
 <h3>Navier-Stokes</h3>
 <p>All CFD simulations in this project (both &Phi;Flow and SU2) solve the incompressible Navier-Stokes equations:</p>
@@ -44,7 +50,7 @@ $$ \frac{\partial \mathbf{u}}{\partial t} + (\mathbf{u} \cdot \nabla) \mathbf{u}
   <strong>&Phi;Flow approach:</strong> Semi-Lagrangian advection + iterative CG pressure solve on a staggered MAC grid. Fast and differentiable &mdash; ideal for parametric sweeps.
 </div>
 
-<div class="callout-box theory">
+<div class="callout-box detail">
   <strong>SU2 approach:</strong> Finite-volume RANS with Menter SST $k$-$\omega$ turbulence model. Unstructured meshes resolve boundary layers for accurate skin friction and separation points.
 </div>
 
@@ -110,6 +116,7 @@ $$ \kappa = \frac{\text{Area where } \phi(\mathbf{x}) &lt; \text{threshold}}{\te
 
 <footer class="site-footer">
   <p>&copy; 2026 &middot; The Physics of Play &middot; Built with <a href="https://github.com/tum-pbs/PhiFlow">&Phi;Flow</a>, <a href="https://su2code.github.io/">SU2</a>, and <a href="https://pyvista.org/">PyVista</a></p>
+  <p style="margin-top: 6px;"><a href="https://github.com/ajeet-krish/Soccer-CFD">[ GitHub Repo ]</a> &middot; <a href="https://ajeetkrishnasamy.com">[ Portfolio ]</a> &middot; <a href="https://www.linkedin.com/in/ajeetkrishnasamy/">[ LinkedIn ]</a></p>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
@@ -125,7 +132,24 @@ document.addEventListener("DOMContentLoaded", function() {
     ],
     throwOnError: false
   });
+  initScrollAnimations();
 });
+
+function initScrollAnimations() {
+  const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links');
+  els.forEach(el => el.classList.add('fade-in'));
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+}
 </script>
 </body>
 </html>

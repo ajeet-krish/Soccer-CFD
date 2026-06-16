@@ -6,7 +6,6 @@ from src.su2_runner import SU2Config, SU2Solver
 from pathlib import Path
 
 WORKDIR = Path(__file__).parent
-IMAGES = WORKDIR.parent.parent / "docs" / "images"
 
 # Spin parameter S = ω·R/U∞ = 0.2 (typical soccer ball)
 # ω_non_dim = ω_dim · D / V_ref = 2·S · U∞ · R / (U∞ · R) ... actually:

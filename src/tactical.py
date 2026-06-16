@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from phi import geom
 from phi.jax.flow import Obstacle, StaggeredGrid, CenteredGrid, fluid, advect, vec, field, math, ZERO_GRADIENT
 
-from src.utils import setup_theme, ASSETS
+from src.utils import setup_theme, ASSETS, IMAGES
 
 setup_theme()
 
@@ -217,7 +217,7 @@ def animate_tactical(frames_c1, frames_c2, frames_c3, drag_c1, drag_c3, pct_redu
         return imgs
 
     anim = FuncAnimation(fig, update, frames=n_frames4, interval=80, blit=False)
-    path = ASSETS / "soccer_positioning.mp4"
+    path = IMAGES / "tactical" / "soccer_positioning.mp4"
     anim.save(str(path), writer="ffmpeg", fps=10, dpi=150)
     print(f"Saved {path}")
     plt.close(fig)
@@ -407,7 +407,7 @@ def run_macro_stress():
     cbar.ax.yaxis.set_tick_params(color="white")
     plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
 
-    path = ASSETS / "stress_field.png"
+    path = IMAGES / "tactical" / "stress_field.png"
     fig.savefig(str(path), dpi=150, bbox_inches="tight", facecolor="#111111")
     print(f"Saved {path}")
     plt.close(fig)
@@ -465,7 +465,7 @@ def run_macro_stress():
         return axes
 
     anim = FuncAnimation(fig, update, frames=N_FRAMES, interval=80, blit=False)
-    path = ASSETS / "stress_field_continuum.mp4"
+    path = IMAGES / "tactical" / "stress_field_continuum.mp4"
     anim.save(str(path), writer="ffmpeg", fps=12, dpi=150)
     print(f"Saved {path}")
     plt.close(fig)
@@ -621,7 +621,7 @@ def plot_team_heatmaps():
     cbar.ax.yaxis.set_tick_params(color="white")
     plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
 
-    path = ASSETS / "team_heatmaps.png"
+    path = IMAGES / "tactical" / "team_heatmaps.png"
     fig.savefig(str(path), dpi=150, bbox_inches="tight", facecolor="#111111")
     print(f"Saved {path}")
     plt.close(fig)
@@ -698,7 +698,7 @@ def animate_team_collapse():
         return axes
 
     anim = FuncAnimation(fig, update, frames=N_COLLAPSE_FRAMES, interval=80, blit=False)
-    path = ASSETS / "defensive_collapse.mp4"
+    path = IMAGES / "tactical" / "defensive_collapse.mp4"
     anim.save(str(path), writer="ffmpeg", fps=12, dpi=150)
     print(f"Saved {path}")
     plt.close(fig)
@@ -797,7 +797,7 @@ def plot_formation_fluid_arrays():
     cbar.ax.yaxis.set_tick_params(color="white")
     plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
 
-    path = ASSETS / "formation_fluid_arrays.png"
+    path = IMAGES / "tactical" / "formation_fluid_arrays.png"
     fig.savefig(str(path), dpi=150, bbox_inches="tight", facecolor="#111111")
     print(f"Saved {path}")
     plt.close(fig)
@@ -940,7 +940,7 @@ def animate_lateral_shift():
         return axes
 
     anim = FuncAnimation(fig, update, frames=N_LAT_FRAMES, interval=80, blit=False)
-    path = ASSETS / "lateral_shift.mp4"
+    path = IMAGES / "tactical" / "lateral_shift.mp4"
     anim.save(str(path), writer="ffmpeg", fps=LAT_FPS, dpi=150)
     print(f"Saved {path}")
     plt.close(fig)
@@ -1097,7 +1097,7 @@ def animate_up_back_through():
         return ax,
 
     anim = FuncAnimation(fig, update, frames=N_UBT_FRAMES, interval=80, blit=False)
-    path = ASSETS / "up_back_through.mp4"
+    path = IMAGES / "tactical" / "up_back_through.mp4"
     anim.save(str(path), writer="ffmpeg", fps=UBT_FPS, dpi=150)
     print(f"Saved {path}")
     plt.close(fig)
@@ -1220,7 +1220,7 @@ def animate_rapid_circulation():
         return axes
 
     anim = FuncAnimation(fig, update, frames=N_QCR_FRAMES, interval=80, blit=False)
-    path = ASSETS / "rapid_circulation.mp4"
+    path = IMAGES / "tactical" / "rapid_circulation.mp4"
     anim.save(str(path), writer="ffmpeg", fps=QCR_FPS, dpi=150)
     print(f"Saved {path}")
     plt.close(fig)

@@ -11,6 +11,7 @@ from tqdm import trange
 
 
 ASSETS = Path("assets")
+IMAGES = Path("docs/images")
 
 
 def setup_theme():

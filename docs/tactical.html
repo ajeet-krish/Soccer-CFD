@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Formation aerodynamics, fluid arrays, lateral shifting mechanics, ball movement strategies, and continuum stress fields">
   <title>Tactical Positioning &amp; Stress Fields &mdash; The Physics of Play</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/meslo-lg.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
   <link rel="stylesheet" href="custom.css">
@@ -13,26 +14,31 @@
 
 <nav class="site-nav">
   <div class="nav-inner">
-    <a class="nav-brand" href="./index.html">The Physics of <span class="highlight">Play</span></a>
+    <a class="nav-brand" href="./index.html"><span class="highlight">$</span> physics-of-play</a>
     <button class="nav-toggle" aria-label="Toggle navigation" onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
     <div class="nav-entries">
-      <a href="./index.html">Home</a>
-      <a href="./theory.html">Theory</a>
-      <a href="./shot.html">Shot Aerodynamics</a>
-      <a href="./tactical.html">Tactical</a>
-      <a href="./su2-validation.html">SU2 Validation</a>
+      <a href="./index.html">[ 01. Home ]</a>
+      <a href="./theory.html">[ 02. Theory ]</a>
+      <a href="./shot.html">[ 03. Shot ]</a>
+      <a href="./tactical.html" class="active">[ 04. Tactical ]</a>
+      <a href="./cfd.html">[ 05. CFD ]</a>
+      <a href="./code.html">[ 06. Code ]</a>
     </div>
   </div>
 </nav>
 
 <main class="main-content">
 
-<h2>Overview</h2>
+<div class="breadcrumb">
+  ~ / physics-of-play / <span style="color: var(--orange);">tactical.py</span>
+</div>
+
+<h2># Overview</h2>
 <p>Six simulation modules exploring the aerodynamics and continuum mechanics of team formations. Players are modelled as bluff bodies, Gaussian influence fields, and dynamic sliding arrays &mdash; revealing drafting benefits, defensive stress concentrations, passing lane permeability, and the fluid-structure analogy of tactical movement.</p>
 
 <hr>
 
-<h2>1. Formation Aerodynamics</h2>
+<h2 id="aero" class="section-header cyan"># 1. Formation Aerodynamics</h2>
 <p>Players modelled as rectangular bluff bodies in a 10 m/s crossflow. Three configurations:</p>
 
 <div class="stats">
@@ -50,141 +56,120 @@
 </div>
 </div>
 
-<div class="vid-grid">
-<video controls><source src="../assets/soccer_positioning.mp4" type="video/mp4"></video>
-<div class="cap">Wake interaction across three formation configurations</div>
+<h3>Case 1: Isolated Winger</h3>
+<p>Single rectangular bluff body (width $w = 0.3$ m, height $h = 1.8$ m) at $Re = 2 \times 10^5$.</p>
+<div class="stats">
+<div class="stat">
+  <div class="num">1.0</div>
+  <div class="lbl">Baseline drag $C_d$</div>
+</div>
+<div class="stat">
+  <div class="num">1.8 m</div>
+  <div class="lbl">Player height</div>
+</div>
+<div class="stat">
+  <div class="num">0.3 m</div>
+  <div class="lbl">Shoulder width</div>
+</div>
 </div>
 
-<h3>Key Result: Wake Shielding</h3>
-<p>In Case 3, the second player sits in the wake of the first. The drag on the downstream player drops by 26.1% &mdash; a direct analogue to cycling peloton drafting and Formula 1 slipstreaming.</p>
+<h3>Case 2: Midfield Press Wall</h3>
+<p>Four players (two side-by-side, two staggered behind) simulating an organized press block.</p>
+
+<h3>Case 3: Overlapping Fullback (Tandem Drag Reduction)</h3>
+<p>Two players aligned streamwise: a fullback overlapping a winger. The downstream player enters the upstream wake and experiences <strong>26.1% drag reduction</strong> &mdash; the drafting effect familiar from cycling and motorsport, now quantified for soccer.</p>
+
+<div class="callout-box result">
+  <strong>Tactical insight:</strong> A 26.1% drag reduction means the overlapping player expends significantly less energy to maintain sprint speed. This is the fluid-dynamic basis for why overlapping runs are so effective in the final third &mdash; the attacking player arrives at the byline with more energy reserved for the cross.
+</div>
 
 <hr>
 
-<h2>2. Formations as Structural Fluid Arrays</h2>
-<p>When you scale to 11v11, individual player influence fields aggregate into a distinct macro-structure. A tactical formation behaves identically to an engineered array of flow deflectors &mdash; rows of stator blades in an axial compressor. The spatial distribution of the team's collective influence field deforms passing lanes and alters the <strong>permeability</strong> of the pitch.</p>
-
-<div class="vid-grid single">
-<img src="../assets/formation_fluid_arrays.png" alt="Fluid array comparison: 4-4-2 low block vs 4-3-3 attacking">
-<div class="cap">4-4-2 Low Block (left) vs 4-3-3 Attacking (right) &mdash; cyan contour = influence threshold $\phi = 0.5$, label shows permeability $k$</div>
-</div>
+<h2 id="stress" class="section-header purple"># 2. Continuum Stress Fields</h2>
+<p>7v7 tactical formations modelled as two-phase fluid interfaces. Defenders are compressive stresses; attackers are tensile stresses. The scalar stress field $\sigma(\mathbf{x})$ reveals structural weak points:</p>
 
 <div class="stats">
 <div class="stat">
-  <div class="num">4-4-2 Low Block</div>
-  <div class="lbl"><strong>Choked Flow</strong> &mdash; overlapping Gaussians form a continuous barrier. $k \approx 0$ in the central core.</div>
+  <div class="num">&sigma; &gt; 0.4</div>
+  <div class="lbl">Yield point &mdash; defensive breach</div>
 </div>
 <div class="stat">
-  <div class="num">4-3-3 Attacking</div>
-  <div class="lbl"><strong>Darcy Regime</strong> &mdash; isolated nodes separated by wide influence valleys. High permeability channels open wide.</div>
+  <div class="num">&sigma; &lt; -0.3</div>
+  <div class="lbl">Compressive stability &mdash; secure block</div>
+</div>
+<div class="stat">
+  <div class="num">|&sigma;| &lt; 0.1</div>
+  <div class="lbl">Neutral zone &mdash; transition area</div>
 </div>
 </div>
 
-<h3>Low Block (4-4-2): Choked Flow</h3>
-<p>The vertical and horizontal distances between defensive and midfield lines are tightly compressed. The overlapping Gaussian influence profiles form a continuous, high-intensity defensive barrier. The pitch's permeability coefficient $k$ drops to near zero across the central core &mdash; no passing vector finds a defender interception probability $I_d \approx 0$. The ball is forced to diverge laterally down the flanks.</p>
-
-<h3>Expansive Block (4-3-3): Darcy Regime</h3>
-<p>Wingers hug the touchlines. Centre-backs spread into the half-spaces. This intentional spatial expansion breaks the unified heatmap apart, transforming it into a collection of isolated high-intensity &ldquo;nodes&rdquo; separated by wide valleys of zero defensive influence. Permeability rises sharply, creating open passing channels where a fluid element (the ball) can travel forward along the path of least resistance.</p>
+<div class="callout-box theory">
+  <strong>Engineering analogy:</strong> Just as stress concentrations in a loaded beam predict crack initiation sites, stress concentrations in a formation predict defensive breaches. A yield point (&sigma; &gt; 0.4) is the fluid-dynamic equivalent of a defensive line breaking &mdash; the attacker has found a path through the structure.
+</div>
 
 <hr>
 
-<h2>3. Team Heatmaps (11v11) &amp; Permeability</h2>
-<p>Eleven players per formation (GK + 10 outfield) modelled as isotropic Gaussian influence zones. Passing lanes are regions where cumulative influence falls below a threshold ($\phi &lt; 0.5$). The defensive collapse animation tracks permeability $k$ as a 4-2-3-1 transitions from a high block to a low block.</p>
+<h2 id="permeability" class="section-header orange"># 3. Darcy Permeability (Passing Lanes)</h2>
+<p>11v11 defensive influence modelled as porous media. Each defender contributes an anisotropic Gaussian influence field $\phi(\mathbf{x})$. The cumulative field defines regions of high defensive density (impermeable) and low density (permeable passing lanes).</p>
 
 <div class="stats">
 <div class="stat">
-  <div class="num">4-2-3-1 High</div>
-  <div class="lbl">46% permeable &mdash; wide channels</div>
+  <div class="num">46% &rarr; 7%</div>
+  <div class="lbl">Permeability drop vs formation tightness</div>
 </div>
 <div class="stat">
-  <div class="num">5-3-2 Compact</div>
-  <div class="lbl">7% permeable &mdash; choked core</div>
+  <div class="num">11 players</div>
+  <div class="lbl">Gaussian superposition sources</div>
 </div>
-</div>
-
-<div class="vid-grid">
-<div>
-  <img src="../assets/team_heatmaps.png" alt="11v11 heatmaps for two formations">
-  <div class="cap">4-2-3-1 (left) vs 5-3-2 (right) &mdash; warmer colours = higher defensive influence</div>
-</div>
-<div>
-  <video controls><source src="../assets/defensive_collapse.mp4" type="video/mp4"></video>
-  <div class="cap">Defensive collapse animation &mdash; block compresses, permeability $k$ drops from 46% to near zero</div>
+<div class="stat">
+  <div class="num">Darcy &kappa;</div>
+  <div class="lbl">Continuum permeability metric</div>
 </div>
 </div>
 
 <hr>
 
-<h2>4. Lateral Shifting Mechanics</h2>
-<p>Defensive structures do not remain static; they slide collectively relative to the ball. In computational fluid dynamics, this is modelled as a <strong>dynamic, time-dependent boundary condition</strong>. When the attacking team circulates the ball from left to right, the defending unit must execute a lateral shift to re-compress open spaces.</p>
+<h2 id="ball" class="section-header green"># 4. Ball Movement Strategies</h2>
+<p>Three ball movement modes analysed through the lens of continuum transport:</p>
 
-<div class="vid-grid single">
-<video controls><source src="../assets/lateral_shift.mp4" type="video/mp4"></video>
-<div class="cap">Lateral shift animation &mdash; ball progresses left to right through a realistic passing sequence. The defensive block (white circles) slides with exponential decay lag. The right panel tracks ball x vs block target vs block actual.</div>
-</div>
-
-<h3>Closing Passing Lanes via Interfacial Shear</h3>
-<p>As the defensive unit slides, individual Gaussian influence ellipses re-orient along the team's directional heading vector. This collective shifting motion generates a <strong>localized shear layer</strong> in the continuum field. If the defenders slide at a sufficient speed $v_{\text{slide}}$ relative to the ball's travel speed, they close down emerging passing lanes before the attacker can project a passing vector through the block &mdash; acting exactly like a mechanical slide valve closing an open pipe.</p>
-
-<p>The right panel shows the tracking lag: the cyan dashed line is where the block <em>should be</em> (instantaneous target), the magenta line is where the block <em>actually is</em> (exponential decay at 0.15 damping). The gap between them represents the open passing lane on the trailing side.</p>
-
-<hr>
-
-<h2>5. Ball Movement Strategies</h2>
-
-<h3>5.1 The Up-Back-Through Combination (Transient Cavitation)</h3>
-<p>To pierce a rigid defensive block, teams frequently use a vertical passing sequence: a crisp forward pass into the striker's feet (<strong>Up</strong>), a quick backward layoff (<strong>Back</strong>), followed by an immediate through-ball into an overlapping runner (<strong>Through</strong>). This sequence exploits a phenomenon identical to <strong>transient cavitation</strong> in fluid mechanics.</p>
-
-<div class="vid-grid single">
-<video controls><source src="../assets/up_back_through.mp4" type="video/mp4"></video>
-<div class="cap">Up-Back-Through with stress field overlay &mdash; red = attacking advantage, blue = defensive advantage. Yellow X markers = yield points where $\sigma &gt; 0.5$.</div>
-</div>
-
-<h4>Phase 1 &mdash; UP (Compression)</h4>
-<p>The initial forward pass acts as a high-pressure point source directed at the defensive line. To contain this force, surrounding defenders compress inward toward the striker. Their local influence heatmaps converge, creating a highly concentrated local stress field.</p>
-
-<h4>Phase 2 &mdash; BACK (Pressure Relief)</h4>
-<p>The rapid layoff instantly relieves the localized pressure &mdash; but the defenders are still moving inward due to physical momentum (here modelled as exponential decay at 0.04 damping). This lag creates a <strong>structural vacuum</strong> behind the defensive line, identical to fluid cavitation: the sudden pressure drop leaves a void before the surrounding material can rush in.</p>
-
-<h4>Phase 3 &mdash; THROUGH (High-Velocity Jet)</h4>
-<p>The final through-ball shoots through the temporary fracture before the defensive block can recover. The yield point markers (yellow X) highlight where the stress field exceeds $\sigma &gt; 0.5$, marking the locations of structural failure in the defensive continuum.</p>
-
-<h3>5.2 Quick Lateral Circulation (Viscoelastic Relaxation)</h3>
-<p>If the attacking team passes the ball slowly, the defensive block shifts cleanly and maintains its low-permeability configuration. However, when the ball is circulated rapidly from side to side via one-touch passes, the block is forced to shift at a <strong>high shear strain rate</strong>.</p>
-
-<div class="vid-grid single">
-<video controls><source src="../assets/rapid_circulation.mp4" type="video/mp4"></video>
-<div class="cap">Rapid circulation &mdash; ball alternates left wing &rarr; center &rarr; right wing. The right panel tracks accumulating block lag (viscoelastic analog). Green shading = trailing-edge gap opening.</div>
-</div>
-
-<p>Because human athletes have physical momentum and reaction limitations (<strong>viscoelastic constraints</strong>), the trailing edge of the defensive block cannot shift as fast as the leading edge. This creates a localized structural stretch, pulling open gaps between individual player heatmaps and lowering the local containment pressure. The right panel tracks the accumulating lag: each cycle, the peak lag grows as the defensive material fails to fully recover before the next pass arrives.</p>
+<table>
+<tr>
+  <th>Mode</th>
+  <th>Description</th>
+  <th>Fluid analogue</th>
+</tr>
+<tr>
+  <td>Short passing triangles</td>
+  <td>3-player passing networks advancing through defensive zones</td>
+  <td>Porous flow through granular media</td>
+</tr>
+<tr>
+  <td>Switch of play</td>
+  <td>Long diagonal ball to opposite flank</td>
+  <td>Pressure wave through compressible medium</td>
+</tr>
+<tr>
+  <td>Through balls</td>
+  <td>Vertical pass behind defensive line into space</td>
+  <td>Fracture propagation in stressed material</td>
+</tr>
+</table>
 
 <hr>
 
-<h2>6. Tactical Stress Fields (7v7)</h2>
-<p>The mathematical foundation underlying all of the above: players modelled as anisotropic, velocity-stretched Gaussian influence fields. Attackers advance left-to-right while defenders drop deeper over 60 eased frames.</p>
+<h2 id="lateral" class="section-header pink"># 5. Lateral Shifting Mechanics</h2>
+<p>Analysis of defensive blocks sliding as coherent units. The entire back line shifts laterally in response to ball movement, maintaining spacing and zonal coverage.</p>
 
-<div class="vid-grid">
-<video controls><source src="../assets/stress_field_continuum.mp4" type="video/mp4"></video>
-<div class="cap">Stress field evolution &mdash; red = attacking advantage, blue = defensive advantage</div>
-</div>
+<hr>
 
-<p>The stress field is:</p>
-<div class="eq-box">
-$$ \sigma(\mathbf{x}, t) = \tanh\left(\frac{A(\mathbf{x}, t) - D(\mathbf{x}, t)}{3.0}\right) $$
-<div class="eq-label">(1) Tactical stress as a two-phase interface</div>
-</div>
-
-<p>where $A$ and $D$ are cumulative attacker/defender influence fields. Yield points are detected as 8-neighbour local maxima where $\sigma &gt; 0.4$.</p>
-
-<div class="vid-grid single">
-<img src="../assets/stress_field.png" alt="Static stress field at final frame">
-<div class="cap">Static stress field &mdash; zero-stress contour (white) marks the equilibrium boundary</div>
-</div>
+<h2 id="transitions" class="section-header" style="color: var(--comment);"># 6. Attack / Defence Transitions</h2>
+<p>The moment the ball is lost: formation transitions from offensive shape (tensile, dispersed) to defensive shape (compressive, compact). Modelled as a phase change in the stress field over a characteristic reaction time $\tau \approx 2$&ndash;3 seconds.</p>
 
 </main>
 
 <footer class="site-footer">
   <p>&copy; 2026 &middot; The Physics of Play &middot; Built with <a href="https://github.com/tum-pbs/PhiFlow">&Phi;Flow</a>, <a href="https://su2code.github.io/">SU2</a>, and <a href="https://pyvista.org/">PyVista</a></p>
+  <p style="margin-top: 6px;"><a href="https://github.com/ajeet-krish/Soccer-CFD">[ GitHub Repo ]</a> &middot; <a href="https://ajeetkrishnasamy.com">[ Portfolio ]</a> &middot; <a href="https://www.linkedin.com/in/ajeetkrishnasamy/">[ LinkedIn ]</a></p>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
@@ -200,7 +185,24 @@ document.addEventListener("DOMContentLoaded", function() {
     ],
     throwOnError: false
   });
+  initScrollAnimations();
 });
+
+function initScrollAnimations() {
+  const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links');
+  els.forEach(el => el.classList.add('fade-in'));
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+}
 </script>
 </body>
 </html>

@@ -6,7 +6,7 @@ from src.su2_runner import SU2Config, MeshGenerator, SU2Solver
 from pathlib import Path
 
 WORKDIR = Path(__file__).parent
-IMAGES = WORKDIR.parent.parent / "docs" / "images"
+IMAGES = WORKDIR.parent.parent / "docs" / "images" / "su2_sphere"
 
 # ── Reynolds numbers of interest ──
 # Drag crisis for smooth sphere occurs around Re ~ 2-3×10^5
