@@ -17,18 +17,18 @@ IMAGES = WORKDIR.parent.parent / "docs" / "images" / "su2_cylinder_2d"
 
 SPIN_RATE = 0.4  # S = ω·R/U∞ = 0.2
 INNER_ITER = 15
-DT = 0.15
-N_TIME = 200
+DT = 0.3
+N_TIME = 300
 RE_VALUES = [120, 200, 500]
 
-mesh_path = WORKDIR / "cylinder_fine.su2"
+mesh_path = WORKDIR / "cylinder_fine2.su2"
 if not mesh_path.exists():
-    print("=== Generating refined mesh with wake refinement ===")
+    print("=== Generating finer mesh with wake refinement ===")
     mesh_path = MeshGenerator.cylinder_2d(
         radius=0.3, farfield_radius=20.0,
-        cl_cylinder=0.008, cl_farfield=1.0,
-        cl_wake=0.04, wake_length=15.0, wake_width=2.0,
-        name=str(WORKDIR / "cylinder_fine"),
+        cl_cylinder=0.004, cl_farfield=1.0,
+        cl_wake=0.02, wake_length=15.0, wake_width=2.0,
+        name=str(WORKDIR / "cylinder_fine2"),
     )
     print(f"  Mesh: {mesh_path}")
 
@@ -132,7 +132,7 @@ spin_cases = [
 all_cases = []  # (label, spin_rate, out_dir_name, re)
 for spin_label, rate, spin_name in spin_cases:
     for re in RE_VALUES:
-        dir_name = f"output_{spin_name}_lam_re{re}"
+        dir_name = f"output_{spin_name}_lam_re{re}_fine"
         all_cases.append((f"{spin_label} @ Re={re}", rate, dir_name, re))
 
 # ── Run each case if not already completed ──
@@ -163,7 +163,7 @@ for label, rate, dir_name, re in all_cases:
         shutil.copy2(mesh_path, mesh_local)
 
     solver = SU2Solver(workdir=out_dir)
-    result = solver.run(cfg_path, mesh_local, timeout=3600)  # 1hr timeout
+    result = solver.run(cfg_path, mesh_local, timeout=7200)  # 2hr timeout
     results[dir_name] = {"t": np.array([]), "cl": np.array([]), "cd": np.array([]),
                          "converged": result.converged,
                          "cd_final": result.cd, "cl_final": result.cl}
@@ -192,7 +192,7 @@ spin_names_for_plot = {"nospin": "No Spin", "magnus": "Magnus"}
 
 for spin_label, rate, spin_name in spin_cases:
     for re in RE_VALUES:
-        dir_name = f"output_{spin_name}_lam_re{re}"
+        dir_name = f"output_{spin_name}_lam_re{re}_fine"
         d = results.get(dir_name)
         if d is None or len(d["t"]) == 0:
             continue
@@ -216,7 +216,7 @@ plt.close()
 summary = {}
 for spin_label, rate, spin_name in spin_cases:
     for re in RE_VALUES:
-        dir_name = f"output_{spin_name}_lam_re{re}"
+        dir_name = f"output_{spin_name}_lam_re{re}_fine"
         d = results.get(dir_name)
         if d is None:
             continue

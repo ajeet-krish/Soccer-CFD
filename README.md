@@ -19,8 +19,6 @@ A dual-layer CFD portfolio combining fast ΦFlow (JAX) prototyping with SU2 (RAN
 |---|--------|--------|-----------|
 | 1 | **Shot Aerodynamics** | Navier-Stokes (256×128) | Magnus lift from rotating cylinder; knuckleball unsteady wake |
 | 2 | **Tactical Positioning** | Navier-Stokes (248×186) | 26.1% drag reduction via wake shielding (overlapping fullback) |
-| 3 | **Tactical Stress Fields** | Gaussian superposition + continuum mechanics | Two-phase flow interface & Von Mises yield detection in 7v7 |
-| 4 | **Team Heatmaps** | Gaussian influence fields + Darcy permeability | Passing lane identification via influence thresholding |
 
 ### SU2 Validation
 
@@ -29,6 +27,10 @@ A dual-layer CFD portfolio combining fast ΦFlow (JAX) prototyping with SU2 (RAN
 | 1 | **2D Cylinder** (Re=40k, RANS SST) | ✅ Complete | Cd=0.683 vs ΦFlow~1.2 — 43% diff explained |
 | 2 | **3D Smooth Sphere** (Re sweep, RANS SST) | ✅ Complete | Cd≈0.87 flat across Re (no drag crisis — SST limitation) |
 | 3 | **Textured Sphere Roughness Sweep** (4 balls × 5 Re) | 🔜 Phase 5 | Roughness trends via WALL_ROUGHNESS model |
+
+### Formation Pressure Maps
+
+Each formation modelled as a superposition of Gaussian influence fields (one per defender), revealing defensive pressure patterns across five vertical lanes. Four formations compared: 4-3-3, 4-4-2, 4-2-3-1, 3-5-2. Animated offence-to-defence transitions show how space closes during the counter-attack.
 
 ## Simulation Details
 
@@ -41,15 +43,17 @@ A cylinder in crossflow at Re ≈ 2×10⁵, comparing a rotating case (ω = 10 r
 - **Solver**: Semi-Lagrangian advection + CG pressure solve
 - **Inlet**: Uniform 1.0 m/s from left (x⁻) boundary
 
-### 2. Tactical Positioning — Formation Aerodynamics
+### 2. Tactical Positioning — Overlapping Fullback
 
-Players modelled as rectangular bluff bodies in crossflow (10 m/s inlet).
+The fluid-dynamic basis of the overlapping run: two rectangular bluff bodies in tandem at Re = 2×10⁵. The downstream player (fullback) enters the winger's low-pressure wake, producing **26.1% drag reduction** — the drafting effect familiar from cycling and motorsport, now quantified for soccer.
 
-| Case | Configuration | Metric |
-|------|-------------|--------|
-| 1 — Isolated Winger | Single player at (2.0, 3.0) | Baseline drag |
-| 2 — Midfield Press Wall | Three players at x = 2.0, y = {1.5, 3.0, 4.5} | Vorticity amplification |
-| 3 — Overlapping Fullback | Two players in tandem at x = {2.0, 4.0}, y = 3.0 | 26.1% drag reduction |
+| Parameter | Value |
+|-----------|-------|
+| Player width | 0.3 m |
+| Player height | 1.8 m |
+| Streamwise spacing | 2.0 m |
+| Inlet velocity | 10 m/s |
+| Drag reduction | 26.1% |
 
 ### 3. SU2 2D Cylinder Validation
 
@@ -83,11 +87,12 @@ RANS SST with roughness shows separation-point shift trends (~5-15% Cd variation
 
 ```
 src/
+├── __init__.py
 ├── build_all.py           # ΦFlow orchestrator
-├── build_site.py          # Nav-sync utility
-├── shot_aero.py           # Magnus + Knuckleball (cylinder in crossflow)
-├── tactical.py            # Tactical positioning + stress fields + heatmaps
+├── build_site.py          # Nav-sync utility (optional)
 ├── domain.py              # Domain constants (grid, bounds, dt)
+├── shot_aero.py           # Magnus + Knuckleball (cylinder in crossflow)
+├── tactical.py            # Tactical positioning (overlapping fullback)
 ├── su2_runner.py          # SU2Config, MeshGenerator, SU2Solver, PyVista viz
 └── utils.py               # Shared theme, paths, imports
 su2_runs/
@@ -96,27 +101,30 @@ su2_runs/
 │   ├── run_magnus.py
 │   ├── run_unsteady.py
 │   └── results.json
-└── sphere_3d/             # Phase 4 — smooth sphere drag crisis
-    ├── run_sphere.py
-    ├── viz_sphere.py      # PyVista visualization pipeline
-    └── results.json
+├── sphere_3d/             # Phase 4 — smooth sphere drag crisis
+│   ├── run_sphere.py
+│   ├── viz_sphere.py      # PyVista visualization pipeline
+│   └── results.json
+└── tactical_formations/
+    └── generate_formation_pressure.py  # Gaussian pressure field generator
 docs/                      # GitHub Pages site
 ├── index.html             # Landing page hub
 ├── theory.html            # Background fluid dynamics theory
-├── shot.html              # Shot aerodynamics
-├── tactical.html          # Tactical positioning
-├── shot.html              # Ball aerodynamics (Python sim + CFD validation)
-├── tactical.html          # Tactical positioning
+├── shot.html              # Shot aerodynamics (ΦFlow + SU2)
+├── tactical.html          # Tactical positioning & formation pressure maps
 ├── cfd.html               # CFD methodology & validation
 ├── code.html              # Jupyter-style code notebook
 ├── custom.css             # Dark terminal theme + responsive nav
-└── images/                # Generated visualizations (organized by case)
+└── images/                # Generated visualizations
     ├── phiflow_cylinder_2d/
     ├── tactical/
+    │   ├── formation_lanes/
+    │   ├── formation_pressure/
+    │   └── formation_transition/
     ├── su2_cylinder_2d/
     └── su2_sphere/
-assets/                    # ΦFlow frame cache
-linkedin_posts/            # LinkedIn content drafts
+assets/                    # ΦFlow frame cache (ignored)
+linkedin_posts/            # LinkedIn content drafts (ignored)
 ```
 
 ## Getting Started
@@ -132,6 +140,11 @@ uv run python src/build_all.py
 uv run python su2_runs/cylinder_2d/run_cylinder.py
 uv run python su2_runs/sphere_3d/run_sphere.py
 uv run python su2_runs/sphere_3d/viz_sphere.py
+```
+
+**Tactical formation pressure maps:**
+```bash
+uv run python su2_runs/tactical_formations/generate_formation_pressure.py
 ```
 
 **Website (local preview):**
@@ -152,3 +165,4 @@ open http://localhost:8000
 - **2D Cylinder**: SU2 Cd=0.683 vs ΦFlow Cd≈1.2 at Re=40k. The 43% gap is physically meaningful: fully turbulent RANS delays separation, narrowing the wake.
 - **3D Sphere (Smooth)**: SST k-ω produces Cd≈0.87 flat across Re. No drag crisis. A transition model (γ-Reθ) + wall-resolved mesh would be required for crisis capture.
 - **Textured Sphere**: Phase 5 will use roughness wall functions to show separation-point shift trends.
+- **Overlapping Fullback**: 26.1% drag reduction quantified — the fluid-dynamic basis for why overlapping runs save energy.

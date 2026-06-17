@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="The governing equations and physical concepts behind every simulation">
-  <title>Background Theory &mdash; The Physics of Play</title>
+  <title>Background Theory | The Physics of Play</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/meslo-lg.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
@@ -47,7 +47,7 @@ $$ \frac{\partial \mathbf{u}}{\partial t} + (\mathbf{u} \cdot \nabla) \mathbf{u}
 <p>where $\mathbf{u}$ is the velocity field, $p$ is pressure, $\rho$ is density, and $\nu$ is kinematic viscosity.</p>
 
 <div class="callout-box theory">
-  <strong>&Phi;Flow approach:</strong> Semi-Lagrangian advection + iterative CG pressure solve on a staggered MAC grid. Fast and differentiable &mdash; ideal for parametric sweeps.
+  <strong>&Phi;Flow approach:</strong> Semi-Lagrangian advection + iterative CG pressure solve on a staggered MAC grid. Fast and differentiable: ideal for parametric sweeps.
 </div>
 
 <div class="callout-box detail">
@@ -65,7 +65,7 @@ $$ Re = \frac{\rho U L}{\mu} = \frac{U L}{\nu} $$
 <p>where $U$ is the freestream velocity, $L$ is the characteristic length (ball diameter or cylinder diameter), and $\mu$ is dynamic viscosity.</p>
 
 <h3>Drag Crisis</h3>
-<p>At $Re \approx 2 \times 10^5$, a sphere experiences a sudden drop in drag coefficient $C_d$ from $\sim 0.5$ to $\sim 0.1$ &mdash; the <strong>drag crisis</strong>. This occurs when the boundary layer transitions from laminar to turbulent, moving the separation point aft and reducing the pressure drag.</p>
+<p>At $Re \approx 2 \times 10^5$, a sphere experiences a sudden drop in drag coefficient $C_d$ from $\sim 0.5$ to $\sim 0.1$: the <strong>drag crisis</strong>. This occurs when the boundary layer transitions from laminar to turbulent, moving the separation point aft and reducing the pressure drag.</p>
 
 <div class="stats">
 <div class="stat">
@@ -90,7 +90,7 @@ $$ F_L = C_L \cdot \frac{1}{2} \rho A U^2 $$
 <div class="eq-label">(3) Magnus lift force</div>
 </div>
 
-<p>The spin creates an asymmetric boundary layer &mdash; faster flow on one side reduces pressure (Bernoulli), slower flow on the other increases pressure. The resulting pressure differential deflects the body's trajectory.</p>
+<p>The spin creates an asymmetric boundary layer: faster flow on one side reduces pressure (Bernoulli), slower flow on the other increases pressure. The resulting pressure differential deflects the body's trajectory.</p>
 
 <h3>Continuum Mechanics Analogy</h3>
 <p>Team formations are modelled as a stress field $\sigma$:</p>

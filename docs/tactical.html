@@ -1,208 +1,410 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Formation aerodynamics, fluid arrays, lateral shifting mechanics, ball movement strategies, and continuum stress fields">
-  <title>Tactical Positioning &amp; Stress Fields &mdash; The Physics of Play</title>
+  <meta name="description"
+    content="Formation aerodynamics, fluid arrays, lateral shifting mechanics, ball movement strategies, and continuum stress fields">
+  <title>Tactical Positioning &amp; Stress Fields | The Physics of Play</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/meslo-lg.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
   <link rel="stylesheet" href="custom.css">
 </head>
+
 <body>
 
-<nav class="site-nav">
-  <div class="nav-inner">
-    <a class="nav-brand" href="./index.html"><span class="highlight">$</span> physics-of-play</a>
-    <button class="nav-toggle" aria-label="Toggle navigation" onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
-    <div class="nav-entries">
-      <a href="./index.html">[ 01. Home ]</a>
-      <a href="./theory.html">[ 02. Theory ]</a>
-      <a href="./shot.html">[ 03. Shot ]</a>
-      <a href="./tactical.html" class="active">[ 04. Tactical ]</a>
-      <a href="./cfd.html">[ 05. CFD ]</a>
-      <a href="./code.html">[ 06. Code ]</a>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="./index.html"><span class="highlight">$</span> physics-of-play</a>
+      <button class="nav-toggle" aria-label="Toggle navigation"
+        onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
+      <div class="nav-entries">
+        <a href="./index.html">[ 01. Home ]</a>
+        <a href="./theory.html">[ 02. Theory ]</a>
+        <a href="./shot.html">[ 03. Shot ]</a>
+        <a href="./tactical.html" class="active">[ 04. Tactical ]</a>
+        <a href="./cfd.html">[ 05. CFD ]</a>
+        <a href="./code.html">[ 06. Code ]</a>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<main class="main-content">
+  <main class="main-content">
 
-<div class="breadcrumb">
-  ~ / physics-of-play / <span style="color: var(--orange);">tactical.py</span>
-</div>
+    <div class="breadcrumb">
+      ~ / physics-of-play / <span style="color: var(--orange);">tactical.py</span>
+    </div>
 
-<h2># Overview</h2>
-<p>Six simulation modules exploring the aerodynamics and continuum mechanics of team formations. Players are modelled as bluff bodies, Gaussian influence fields, and dynamic sliding arrays &mdash; revealing drafting benefits, defensive stress concentrations, passing lane permeability, and the fluid-structure analogy of tactical movement.</p>
+    <h1>Tactical Positioning</h1>
 
-<hr>
+    <h2>Overview</h2>
+    <p>Seven simulation modules exploring the aerodynamics and continuum mechanics of team formations. Players are
+      modelled as bluff bodies, Gaussian influence fields, and dynamic sliding arrays: revealing drafting benefits,
+      defensive stress concentrations, passing lane permeability, and the fluid-structure analogy of tactical movement.
+    </p>
 
-<h2 id="aero" class="section-header cyan"># 1. Formation Aerodynamics</h2>
-<p>Players modelled as rectangular bluff bodies in a 10 m/s crossflow. Three configurations:</p>
+    <h2 id="pressure-maps">Formation Pressure Maps</h2>
 
-<div class="stats">
-<div class="stat">
-  <div class="num">Case 1</div>
-  <div class="lbl">Isolated winger &mdash; baseline drag</div>
-</div>
-<div class="stat">
-  <div class="num">Case 2</div>
-  <div class="lbl">Midfield press wall &mdash; vorticity amplification</div>
-</div>
-<div class="stat">
-  <div class="num">Case 3</div>
-  <div class="lbl">Overlapping fullback &mdash; 26.1% drag reduction</div>
-</div>
-</div>
+    <p>Every formation creates a distinct <strong>defensive pressure field</strong> across the pitch. By modelling each
+      defender as a Gaussian influence source and superimposing their contributions, the resulting scalar field
+      $p(\mathbf{x})$ reveals exactly where space exists and where it is congested. This is the same mathematical
+      framework used in CFD: instead of modeling pressure perturbations around bluff bodies in a flow, each player
+      generates a zone of influence that attackers must navigate through, and the superposition principle (summing
+      individual contributions to obtain the total field) is identical to how CFD solves flow fields from boundary
+      conditions.</p>
 
-<h3>Case 1: Isolated Winger</h3>
-<p>Single rectangular bluff body (width $w = 0.3$ m, height $h = 1.8$ m) at $Re = 2 \times 10^5$.</p>
-<div class="stats">
-<div class="stat">
-  <div class="num">1.0</div>
-  <div class="lbl">Baseline drag $C_d$</div>
-</div>
-<div class="stat">
-  <div class="num">1.8 m</div>
-  <div class="lbl">Player height</div>
-</div>
-<div class="stat">
-  <div class="num">0.3 m</div>
-  <div class="lbl">Shoulder width</div>
-</div>
-</div>
+    <p>A <strong>Gaussian influence field</strong> is a bell-shaped function $e^{-r^2 / (2\sigma^2)}$ centered on each
+      player, where $r$ is distance from the player and $\sigma$ controls the radius of influence. The choice of
+      Gaussian is not arbitrary, it mirrors how perturbations decay in potential flow theory. A centre-back with $\sigma
+      = 4.0$ exerts wide zone control spanning the penalty area; a winger with $\sigma = 2.5$ has a narrow, concentrated
+      influence reflecting their position-specific role. Mathematically, the total pressure at any point is the sum of
+      all 11 Gaussians, which is a 2D kernel density estimate of the defending team's spatial structure.</p>
 
-<h3>Case 2: Midfield Press Wall</h3>
-<p>Four players (two side-by-side, two staggered behind) simulating an organized press block.</p>
+    <p>The pitch is divided into <strong>five vertical lanes</strong>, a standard framework in modern soccer analysis:
+    </p>
 
-<h3>Case 3: Overlapping Fullback (Tandem Drag Reduction)</h3>
-<p>Two players aligned streamwise: a fullback overlapping a winger. The downstream player enters the upstream wake and experiences <strong>26.1% drag reduction</strong> &mdash; the drafting effect familiar from cycling and motorsport, now quantified for soccer.</p>
+    <table>
+      <tr>
+        <th>Lane</th>
+        <th>Tactical role</th>
+      </tr>
+      <tr>
+        <td>Left Wing</td>
+        <td>Traditional touchline channel. Primary territory for wide midfielders and overlapping fullbacks.</td>
+      </tr>
+      <tr>
+        <td>Left Half-Space</td>
+        <td>The <strong>half-space</strong>: between the penalty box edge and the central channel. This is where
+          creative playmakers operate, exploiting diagonal passing angles that split centre-backs and fullbacks.</td>
+      </tr>
+      <tr>
+        <td>Center</td>
+        <td>The central corridor. Highest density of players in most formations. Dominated by centre-backs, defensive
+          midfielders, and the opposition striker.</td>
+      </tr>
+      <tr>
+        <td>Right Half-Space</td>
+        <td>Mirror of left half-space. Attacking midfielders drifting into this zone can create 3v2 overloads against
+          the fullback-centre-back gap.</td>
+      </tr>
+      <tr>
+        <td>Right Wing</td>
+        <td>Mirror of left wing. Outlet for switches of play and isolation 1v1 situations.</td>
+      </tr>
+    </table>
 
-<div class="callout-box result">
-  <strong>Tactical insight:</strong> A 26.1% drag reduction means the overlapping player expends significantly less energy to maintain sprint speed. This is the fluid-dynamic basis for why overlapping runs are so effective in the final third &mdash; the attacking player arrives at the byline with more energy reserved for the cross.
-</div>
+    <p>The half-spaces are tactically decisive because passing angles through them bypass the central density wall. Each
+      formation lane analysis below reports the average defensive pressure per lane as a percentage of the maximum lane
+      average across all formations, providing a <strong>direct quantitative comparison</strong> of structural strengths
+      and weaknesses.</p>
 
-<hr>
+    <p>The colormap uses <code>turbo</code> (blue to yellow to red): <strong>dark blue = open space</strong> (low
+      defensive pressure), <strong>yellow/orange = moderate</strong>, <strong>red = congested</strong> (high defensive
+      pressure). Animated transitions show each formation morphing from attacking to defensive shape, revealing how
+      space closes during the defensive transition.</p>
 
-<h2 id="stress" class="section-header purple"># 2. Continuum Stress Fields</h2>
-<p>7v7 tactical formations modelled as two-phase fluid interfaces. Defenders are compressive stresses; attackers are tensile stresses. The scalar stress field $\sigma(\mathbf{x})$ reveals structural weak points:</p>
+    <div class="stats">
+      <div class="stat">
+        <div class="num">4.0</div>
+        <div class="lbl">&sigma; for CBs (wide zone control)</div>
+      </div>
+      <div class="stat">
+        <div class="num">3.5</div>
+        <div class="lbl">&sigma; for fullbacks</div>
+      </div>
+      <div class="stat">
+        <div class="num">2.5</div>
+        <div class="lbl">&sigma; for wingers &amp; strikers (narrow)</div>
+      </div>
+    </div>
 
-<div class="stats">
-<div class="stat">
-  <div class="num">&sigma; &gt; 0.4</div>
-  <div class="lbl">Yield point &mdash; defensive breach</div>
-</div>
-<div class="stat">
-  <div class="num">&sigma; &lt; -0.3</div>
-  <div class="lbl">Compressive stability &mdash; secure block</div>
-</div>
-<div class="stat">
-  <div class="num">|&sigma;| &lt; 0.1</div>
-  <div class="lbl">Neutral zone &mdash; transition area</div>
-</div>
-</div>
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/formation_comparison.png" alt="Formation comparison grid" style="max-width:100%">
+        <figcaption>Four formations compared side-by-side. Dark blue = open space, yellow/orange = moderate, red =
+          congested. The 3-5-2 shows the most extreme pattern: a dense central wall with wide-open flanks.</figcaption>
+      </figure>
+    </div>
 
-<div class="callout-box theory">
-  <strong>Engineering analogy:</strong> Just as stress concentrations in a loaded beam predict crack initiation sites, stress concentrations in a formation predict defensive breaches. A yield point (&sigma; &gt; 0.4) is the fluid-dynamic equivalent of a defensive line breaking &mdash; the attacker has found a path through the structure.
-</div>
+    <h3>4-3-3</h3>
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/formation_lanes/433.png" alt="4-3-3 lane pressure" style="max-width:100%">
+        <figcaption>4-3-3: center at 81%, wings at 32%. The midfield triangle packs the middle, leaving wide areas
+          exposed.</figcaption>
+      </figure>
+    </div>
+    <table>
+      <tr>
+        <th>Lane</th>
+        <th>Pressure</th>
+        <th>Strategy</th>
+      </tr>
+      <tr>
+        <td>Left Wing</td>
+        <td>32%</td>
+        <td>Open. Switch play quickly to exploit the far side before the CDM can shift over.</td>
+      </tr>
+      <tr>
+        <td>Left Half-Space</td>
+        <td>57%</td>
+        <td>Moderate. The LCM covers this zone; use quick 1-2s to bypass.</td>
+      </tr>
+      <tr>
+        <td>Center</td>
+        <td>81%</td>
+        <td>Congested. Avoid direct central combinations. CDM + 2 CMs form a compact triangle.</td>
+      </tr>
+      <tr>
+        <td>Right Half-Space</td>
+        <td>57%</td>
+        <td>Moderate. Mirror of left. Best used as a transition zone, not a sustained attack channel.</td>
+      </tr>
+      <tr>
+        <td>Right Wing</td>
+        <td>32%</td>
+        <td>Open. Overload with fullback overlaps. The winger and FB can create 2v1 against the LB.</td>
+      </tr>
+    </table>
 
-<hr>
+    <h3>4-4-2</h3>
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/formation_lanes/442.png" alt="4-4-2 lane pressure" style="max-width:100%">
+        <figcaption>4-4-2: half-spaces at 68%, center at 50%. LM and RM pin the half-spaces, leaving the middle and
+          extreme wide areas as options.</figcaption>
+      </figure>
+    </div>
+    <table>
+      <tr>
+        <th>Lane</th>
+        <th>Pressure</th>
+        <th>Strategy</th>
+      </tr>
+      <tr>
+        <td>Left Wing</td>
+        <td>38%</td>
+        <td>Open. LM pushes high but leaves space in behind. Target with diagonals.</td>
+      </tr>
+      <tr>
+        <td>Left Half-Space</td>
+        <td>68%</td>
+        <td>Compressed. LM and LCM squeeze this zone. Through balls here are low percentage.</td>
+      </tr>
+      <tr>
+        <td>Center</td>
+        <td>50%</td>
+        <td>Moderate. Two CMs leave the center less packed than 4-3-3. Vertical passes between the strikers and midfield
+          are viable.</td>
+      </tr>
+      <tr>
+        <td>Right Half-Space</td>
+        <td>68%</td>
+        <td>Compressed. Mirror of left. The flat midfield four creates symmetric pressure in the half-spaces.</td>
+      </tr>
+      <tr>
+        <td>Right Wing</td>
+        <td>38%</td>
+        <td>Open. The RM&rsquo;s defensive duties leave the flank exposed. Overlap and cross.</td>
+      </tr>
+    </table>
 
-<h2 id="permeability" class="section-header orange"># 3. Darcy Permeability (Passing Lanes)</h2>
-<p>11v11 defensive influence modelled as porous media. Each defender contributes an anisotropic Gaussian influence field $\phi(\mathbf{x})$. The cumulative field defines regions of high defensive density (impermeable) and low density (permeable passing lanes).</p>
+    <h3>4-2-3-1</h3>
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/formation_lanes/4231.png" alt="4-2-3-1 lane pressure" style="max-width:100%">
+        <figcaption>4-2-3-1: center at 93% (highest of any formation). Double pivot + CAM = three players in the central
+          column. Wings at 32% are the clear vulnerability.</figcaption>
+      </figure>
+    </div>
+    <table>
+      <tr>
+        <th>Lane</th>
+        <th>Pressure</th>
+        <th>Strategy</th>
+      </tr>
+      <tr>
+        <td>Left Wing</td>
+        <td>32%</td>
+        <td>Very open. The LW pushes high and the LB is isolated. Exploit with quick switches and overlapping runs.</td>
+      </tr>
+      <tr>
+        <td>Left Half-Space</td>
+        <td>51%</td>
+        <td>Moderate. The left CDM covers this zone but has ground to make up. A quick transition through here catches
+          the pivot out of position.</td>
+      </tr>
+      <tr>
+        <td>Center</td>
+        <td>93%</td>
+        <td>Extremely congested. Avoid playing through the middle at all costs. The double pivot + CAM create a
+          three-player density wall.</td>
+      </tr>
+      <tr>
+        <td>Right Half-Space</td>
+        <td>51%</td>
+        <td>Moderate. Mirror of left. The CDM rotation leaves brief windows of vulnerability in transition.</td>
+      </tr>
+      <tr>
+        <td>Right Wing</td>
+        <td>32%</td>
+        <td>Very open. Same as left. The 4-2-3-1 gives up width for central control. Attack the flanks relentlessly.
+        </td>
+      </tr>
+    </table>
 
-<div class="stats">
-<div class="stat">
-  <div class="num">46% &rarr; 7%</div>
-  <div class="lbl">Permeability drop vs formation tightness</div>
-</div>
-<div class="stat">
-  <div class="num">11 players</div>
-  <div class="lbl">Gaussian superposition sources</div>
-</div>
-<div class="stat">
-  <div class="num">Darcy &kappa;</div>
-  <div class="lbl">Continuum permeability metric</div>
-</div>
-</div>
+    <h3>3-5-2</h3>
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/formation_lanes/352.png" alt="3-5-2 lane pressure" style="max-width:100%">
+        <figcaption>3-5-2: center at 100% (three CBs + double pivot + CAM), wings at 21% (wide open). The 3-5-2 funnels
+          everything through the middle at the cost of flank coverage.</figcaption>
+      </figure>
+    </div>
+    <table>
+      <tr>
+        <th>Lane</th>
+        <th>Pressure</th>
+        <th>Strategy</th>
+      </tr>
+      <tr>
+        <td>Left Wing</td>
+        <td>21%</td>
+        <td>Very open. The LWB pushes high, leaving the touchline unprotected. Quick switches and overlapping runs will
+          find acres of space.</td>
+      </tr>
+      <tr>
+        <td>Left Half-Space</td>
+        <td>65%</td>
+        <td>Moderate. The left-sided CDM and LWB converge here. A quick transition can catch the wing-back out of
+          position before the CDM can shift over.</td>
+      </tr>
+      <tr>
+        <td>Center</td>
+        <td>100%</td>
+        <td>Extremely congested. Three CBs, two CDMs, and the CAM create a five-player column through the center. Any
+          central attack faces a wall of bodies.</td>
+      </tr>
+      <tr>
+        <td>Right Half-Space</td>
+        <td>65%</td>
+        <td>Moderate. Mirror of left. The RWB&rsquo;s advanced starting position leaves brief windows of vulnerability
+          in transition.</td>
+      </tr>
+      <tr>
+        <td>Right Wing</td>
+        <td>22%</td>
+        <td>Very open. Same as left. The 3-5-2 trades wide defensive solidity for midfield numerical superiority. Attack
+          the flanks with pace.</td>
+      </tr>
+    </table>
 
-<hr>
+    <h3>Offence to Defence Transition</h3>
+    <p>Each formation shown transitioning from its attacking shape (players spread, large gaps) to its defending shape
+      (compact, spaces closed). Watch how the pressure field morphs: blue space areas shrink and fragment as players
+      drop into defensive positions.</p>
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/tactical/formation_transition/attacking_to_defending_433.mp4" type="video/mp4">
+        </video>
+        <figcaption>4-3-3 attacking to defending: wingers drop back, midfield compresses, the back line tucks in. The
+          wide blue space corridors visible in attack narrow significantly once the team is in shape.</figcaption>
+      </figure>
+    </div>
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/tactical/formation_transition/attacking_to_defending_442.mp4" type="video/mp4">
+        </video>
+        <figcaption>4-4-2 attacking to defending: the entire block slides deeper and tighter. The two banks of four
+          become clearly defined. Space between the lines compresses as strikers drop to press.</figcaption>
+      </figure>
+    </div>
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/tactical/formation_transition/attacking_to_defending_4231.mp4" type="video/mp4">
+        </video>
+        <figcaption>4-2-3-1 attacking to defending: the double pivot drops in front of the back four, the CAM tucks into
+          midfield, wide attackers retreat. The attacking diamond collapses into a compact defensive block.</figcaption>
+      </figure>
+    </div>
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/tactical/formation_transition/attacking_to_defending_352.mp4" type="video/mp4">
+        </video>
+        <figcaption>3-5-2 attacking to defending: wing-backs drop into the midfield line, the CAM tucks back level with
+          the double pivot, strikers split and press. The transition reveals how the five-man midfield compresses into a
+          solid central block.</figcaption>
+      </figure>
+    </div>
 
-<h2 id="ball" class="section-header green"># 4. Ball Movement Strategies</h2>
-<p>Three ball movement modes analysed through the lens of continuum transport:</p>
+    <h2 id="aero">Formation Aerodynamics</h2>
+    <p>In soccer, overlapping runs are a fundamental attacking tactic: the fullback sprints past the winger on the
+      outside, receiving the ball in space behind the defence. The physics behind its effectiveness has a clear
+      fluid-dynamic explanation — <strong>tandem drag reduction</strong>.</p>
 
-<table>
-<tr>
-  <th>Mode</th>
-  <th>Description</th>
-  <th>Fluid analogue</th>
-</tr>
-<tr>
-  <td>Short passing triangles</td>
-  <td>3-player passing networks advancing through defensive zones</td>
-  <td>Porous flow through granular media</td>
-</tr>
-<tr>
-  <td>Switch of play</td>
-  <td>Long diagonal ball to opposite flank</td>
-  <td>Pressure wave through compressible medium</td>
-</tr>
-<tr>
-  <td>Through balls</td>
-  <td>Vertical pass behind defensive line into space</td>
-  <td>Fracture propagation in stressed material</td>
-</tr>
-</table>
+    <p>Two players aligned streamwise form a tandem bluff-body configuration. The downstream player (the overlapping
+      fullback) enters the low-pressure wake of the upstream player (the winger). Within this wake, the oncoming flow
+      speed is reduced and the dynamic pressure head is lower, producing a <strong>26.1% drag reduction</strong> for the
+      trailing player. This is exactly the drafting effect familiar from cycling time-trials and Formula 1
+      slipstreaming, where a following vehicle experiences significantly less aerodynamic resistance.</p>
 
-<hr>
+    <p>The flow was modelled using $\Phi$Flow with two rectangular bluff bodies (width $w = 0.3$ m, height $h = 1.8$ m)
+      at $Re = 2 \times 10^5$, spaced one body-length apart in the streamwise direction.</p>
 
-<h2 id="lateral" class="section-header pink"># 5. Lateral Shifting Mechanics</h2>
-<p>Analysis of defensive blocks sliding as coherent units. The entire back line shifts laterally in response to ball movement, maintaining spacing and zonal coverage.</p>
+    <div class="callout-box result">
+      <strong>Tactical insight:</strong> A 26.1% drag reduction means the overlapping player expends significantly less
+      energy to maintain sprint speed. This is the fluid-dynamic basis for why overlapping runs are so effective in the
+      final third: the attacking player arrives at the byline with more energy reserved for the cross.
+    </div>
 
-<hr>
+  </main>
 
-<h2 id="transitions" class="section-header" style="color: var(--comment);"># 6. Attack / Defence Transitions</h2>
-<p>The moment the ball is lost: formation transitions from offensive shape (tensile, dispersed) to defensive shape (compressive, compact). Modelled as a phase change in the stress field over a characteristic reaction time $\tau \approx 2$&ndash;3 seconds.</p>
+  <footer class="site-footer">
+    <p>&copy; 2026 &middot; The Physics of Play &middot; Built by Ajeet Krishnasamy</p>
+    <p style="margin-top: 6px;"><a href="https://github.com/ajeet-krish/Soccer-CFD">[ GitHub Repo ]</a> &middot; <a
+        href="https://ajeetkrishnasamy.com">[ Portfolio ]</a> &middot; <a
+        href="https://www.linkedin.com/in/ajeetkrishnasamy/">[ LinkedIn ]</a></p>
+  </footer>
 
-</main>
-
-<footer class="site-footer">
-  <p>&copy; 2026 &middot; The Physics of Play &middot; Built with <a href="https://github.com/tum-pbs/PhiFlow">&Phi;Flow</a>, <a href="https://su2code.github.io/">SU2</a>, and <a href="https://pyvista.org/">PyVista</a></p>
-  <p style="margin-top: 6px;"><a href="https://github.com/ajeet-krish/Soccer-CFD">[ GitHub Repo ]</a> &middot; <a href="https://ajeetkrishnasamy.com">[ Portfolio ]</a> &middot; <a href="https://www.linkedin.com/in/ajeetkrishnasamy/">[ LinkedIn ]</a></p>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  renderMathInElement(document.body, {
-    delimiters: [
-      {left: "$$", right: "$$", display: true},
-      {left: "$", right: "$", display: false}
-    ],
-    throwOnError: false
-  });
-  initScrollAnimations();
-});
-
-function initScrollAnimations() {
-  const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links');
-  els.forEach(el => el.classList.add('fade-in'));
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false }
+        ],
+        throwOnError: false
+      });
+      initScrollAnimations();
     });
-  }, { threshold: 0.1 });
 
-  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-}
-</script>
+    function initScrollAnimations() {
+      const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links');
+      els.forEach(el => el.classList.add('fade-in'));
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    }
+  </script>
 </body>
+
 </html>

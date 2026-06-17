@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Full code showcase — ΦFlow, SU2, gmsh, and PyVista source for the soccer aerodynamics project">
-  <title>Code &mdash; The Physics of Play</title>
+  <meta name="description" content="Full code showcase : ΦFlow, SU2, gmsh, and PyVista source for the soccer aerodynamics project">
+  <title>Code | The Physics of Play</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/meslo-lg.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
@@ -131,7 +131,7 @@
 
     <div class="hero" style="text-align: left; padding: 1.5rem 0;">
       <h1 style="font-size: clamp(1.4rem, 3vw, 2rem);">Code <span class="highlight">Notebook</span></h1>
-      <p>All the source code behind the simulations, visualizations, and analysis &mdash; presented as a Jupyter-style
+      <p>All the source code behind the simulations, visualizations, and analysis: presented as a Jupyter-style
         notebook. Click the copy button on any code block to grab the full snippet.</p>
     </div>
 
@@ -142,7 +142,7 @@
     <div class="nb-cell">
       <div class="nb-header">
         <span class="nb-icon markdown">[M]</span>
-        <span>Setup &mdash; imports, domain, and obstacle definition</span>
+        <span>Setup: imports, domain, and obstacle definition</span>
       </div>
       <div class="nb-markdown">
         <p>The core of the &Phi;Flow simulation: define the domain as an 8m &times; 4m box, create a cylinder obstacle
@@ -201,7 +201,7 @@ for i in range(N_STEPS):
     <div class="nb-cell">
       <div class="nb-header">
         <span class="nb-icon markdown">[M]</span>
-        <span>Steady RANS SST (Re=40k) &mdash; <code>cylinder.cfg</code></span>
+        <span>Steady RANS SST (Re=40k): <code>cylinder.cfg</code></span>
       </div>
       <div class="nb-markdown">
         <p>SU2 config for steady-state RANS simulation of a 2D cylinder at Re=40,000. Uses the SST $k$-$\omega$
@@ -244,7 +244,7 @@ LINEAR_SOLVER_PREC= ILU
     <div class="nb-cell">
       <div class="nb-header">
         <span class="nb-icon markdown">[M]</span>
-        <span>Unsteady Laminar NS (Re=120) &mdash; <code>cylinder_unsteady.cfg</code></span>
+        <span>Unsteady Laminar NS (Re=120): <code>cylinder_unsteady.cfg</code></span>
       </div>
       <div class="nb-markdown">
         <p>Unsteady laminar Navier-Stokes for vortex shedding at Re=120. Uses dual time-stepping with dimensional
@@ -391,8 +391,8 @@ def cylinder_2d(radius=0.3, farfield_radius=15.0,
 /Users/ajeet/SU2_CFD/bin/SU2_CFD cylinder.cfg
 
 # Results are written to:
-#   history.csv   — convergence of Cl, Cd, residuals
-#   flow.vtu      — per-timestep solution (ParaView format)
+#   history.csv   : convergence of Cl, Cd, residuals
+#   flow.vtu      : per-timestep solution (ParaView format)
 </code></pre>
       </div>
       <div class="nb-output">

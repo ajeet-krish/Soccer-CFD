@@ -43,17 +43,24 @@ docs/                          # GitHub Pages site (standalone HTML)
   custom.css                   # Dark theme + responsive nav
   images/
     phiflow_cylinder_2d/       # ΦFlow cylinder visualizations (MP4)
-    tactical/                  # Tactical simulations (MP4, PNG)
+    tactical/                  # Tactical simulations
+      formation_pressure/      # 4 formations, Gaussian pressure fields (PNG)
+      formation_lanes/         # 5-lane pressure analysis per formation (PNG)
+      formation_transition/    # Offence to Defence transition videos (MP4)
     su2_cylinder_2d/           # SU2 2D cylinder (PNG, MP4, HTML)
     su2_sphere/                # SU2 3D sphere (PNG)
 su2_runs/
   cylinder_2d/                 # Phase 3 — 2D cylinder validation
     run_cylinder.py            # Steady-state mesh → config → SU2 → results
     run_unsteady.py            # Unsteady laminar Re=120 (no-spin + magnus)
-    generate_viz.py            # All plots, animations, 3D HTML generator
     cylinder_fine.su2          # Wake-refined mesh (44,710 nodes, 89,422 tri)
     output_nospin_lam/         # 200 per-timestep VTU + history CSV (no spin)
     output_magnus_lam/         # 200 per-timestep VTU + history CSV (magnus)
+  sphere_3d/                   # Phase 4 — 3D sphere drag crisis
+    run_sphere.py              # Mesh → config → SU2 → results
+    viz_sphere.py              # PyVista visualization pipeline
+  tactical_formations/
+    generate_formation_pressure.py  # Gaussian pressure field generator
 src/
   su2_runner.py                # SU2Config, MeshGenerator (wake refine), SU2Solver, PyVista viz
   build_site.py                # Nav-sync utility (optional)
@@ -92,6 +99,19 @@ AGENTS.md                      # This file
 | `su2_cylinder_2d/cylinder_magnus_streamlines.png` | PNG | Unsteady magnus streamline snapshot |
 | `su2_cylinder_2d/cylinder_pressure_comparison.png` | PNG | Steady: no-spin vs magnus pressure |
 | `su2_cylinder_2d/cylinder_streamline_comparison.png` | PNG | Steady: no-spin vs magnus streamlines |
+| `tactical/formation_comparison.png` | PNG | 2x2 comparison grid, 4 formations, turbo colormap |
+| `tactical/formation_pressure/433.png` | PNG | 4-3-3 Gaussian defensive pressure field |
+| `tactical/formation_pressure/442.png` | PNG | 4-4-2 Gaussian defensive pressure field |
+| `tactical/formation_pressure/4231.png` | PNG | 4-2-3-1 Gaussian defensive pressure field |
+| `tactical/formation_pressure/352.png` | PNG | 3-5-2 Gaussian defensive pressure field |
+| `tactical/formation_lanes/433.png` | PNG | 4-3-3 five-lane pressure analysis with percentages |
+| `tactical/formation_lanes/442.png` | PNG | 4-4-2 five-lane pressure analysis with percentages |
+| `tactical/formation_lanes/4231.png` | PNG | 4-2-3-1 five-lane pressure analysis with percentages |
+| `tactical/formation_lanes/352.png` | PNG | 3-5-2 five-lane pressure analysis with percentages |
+| `tactical/formation_transition/attacking_to_defending_433.mp4` | MP4 | 4-3-3 attacking→defending morph animation |
+| `tactical/formation_transition/attacking_to_defending_442.mp4` | MP4 | 4-4-2 attacking→defending morph animation |
+| `tactical/formation_transition/attacking_to_defending_4231.mp4` | MP4 | 4-2-3-1 attacking→defending morph animation |
+| `tactical/formation_transition/attacking_to_defending_352.mp4` | MP4 | 3-5-2 attacking→defending morph animation |
 
 ## Progress Status
 | Phase | Description | Status |
@@ -114,6 +134,22 @@ AGENTS.md                      # This file
 - **Unsteady laminar NS @ Re=120**: St=0.16 (Lit: ~0.17); Cl ±0.05 (mesh-limited amplitude); magnus bias ≈ -0.15
 - **3D sphere SST**: Cd≈0.87 constant (no drag crisis); 282k tets, y⁺≈13 insufficient
 - **Steady magnus (S=0.2)**: Cl=-0.172 (steady bias)
+- **Overlapping fullback**: 26.1% drag reduction (tandem bluff-body drafting)
+- **Formation pressure maps**: 4-3-3 center 81% (wings open), 4-4-2 half-spaces 68% (balanced), 4-2-3-1 center 93% (congested middle, wings 32%), 3-5-2 center 100% (five-player central wall) with wings at 21% (extremely exposed flanks)
+
+## Tactical Page Structure
+```
+h1 Tactical Positioning
+  h2 Overview
+  h2 Formation Pressure Maps
+    h3 4-3-3
+    h3 4-4-2
+    h3 4-2-3-1
+    h3 3-5-2
+    h3 Offence to Defence Transition
+  h2 Formation Aerodynamics
+    (Overlapping fullback science only — tandem drag reduction, 26.1%)
+```
 
 ## Phase 5: Textured Sphere Roughness Sweep
 
@@ -151,4 +187,7 @@ uv run python su2_runs/cylinder_2d/generate_viz.py
 
 # Run unsteady laminar
 uv run python su2_runs/cylinder_2d/run_unsteady.py
+
+# Generate tactical formation pressure maps
+uv run python su2_runs/tactical_formations/generate_formation_pressure.py
 ```

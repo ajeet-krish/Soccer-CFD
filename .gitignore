@@ -44,6 +44,17 @@ su2_runs/**/results*.json
 su2_runs/**/surface.vtu
 su2_runs/**/*.log
 
+# ΦFlow shot simulation output (regeneratable)
+docs/images/shot_*.mp4
+
+# Test / debug artifacts
+docs/images/su2_cylinder_2d/test_*.mp4
+
+# Tactical formation analysis (regeneratable by generate_formation_pressure.py)
+docs/images/tactical/formation_lanes/
+docs/images/tactical/formation_pressure/
+docs/images/tactical/formation_transition/
+
 # Re-sweep generated images (regeneratable by viz scripts)
 docs/images/su2_cylinder_2d/*_re*.mp4
 docs/images/su2_cylinder_2d/*_re*.png
