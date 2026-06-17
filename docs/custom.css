@@ -25,6 +25,87 @@
   --mod-knuckle: var(--orange);
 }
 
+/* --- 1a. Pitch Diagram --- */
+.pitch-diagram-wrap {
+  margin: 1.5rem auto;
+  max-width: 600px;
+}
+.pitch-diagram-wrap figcaption {
+  font-size: 0.78rem;
+  color: var(--comment);
+  margin-top: 8px;
+  text-align: center;
+}
+.pitch-diagram {
+  width: 100%;
+  display: block;
+  border-radius: 6px;
+  border: 1px solid var(--current-line);
+  background: rgba(33, 34, 44, 0.5);
+  padding: 4px;
+  overflow: visible;
+}
+/* pitch outline strokes — solid bright */
+.pitch-diagram .pitch-border { fill: none; stroke: var(--comment); stroke-width: 1; }
+.pitch-diagram .pitch-bg {
+  fill: url(#pitch-grad);
+  stroke: none;
+}
+.pitch-diagram .pitch-spot {
+  fill: var(--comment);
+  stroke: none;
+  r: 3;
+  animation: pitchSpotPulse 3s ease-in-out infinite;
+}
+@keyframes pitchSpotPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.pitch-diagram .pitch-goal { fill: none; stroke: var(--foreground); stroke-width: 2.5; }
+/* lane separator lines — dashed vibrant */
+.pitch-diagram .lane-sep {
+  fill: none;
+  stroke: var(--purple);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+.pitch-diagram-wrap:hover .lane-sep { opacity: 1; }
+/* lane band fills */
+.pitch-diagram .lane {
+  stroke: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  cursor: pointer;
+}
+.pitch-diagram .lane.visible { opacity: 0.15 !important; }
+.pitch-diagram .lane.visible.lane-hovered { opacity: 0.35 !important; }
+.pitch-diagram .lane.visible:hover { opacity: 0.25 !important; }
+/* cross-highlight rows */
+tr.hl { background: rgba(255,255,255,0.04) !important; }
+tr.hl td { color: var(--foreground) !important; }
+.pitch-diagram .lw { fill: var(--cyan); }
+.pitch-diagram .lhs { fill: var(--green); }
+.pitch-diagram .cen { fill: var(--purple); }
+.pitch-diagram .rhs { fill: var(--green); }
+.pitch-diagram .rw { fill: var(--cyan); }
+/* lane labels */
+.pitch-diagram .lane-label {
+  fill: var(--comment);
+  font-size: 14px;
+  font-family: 'Meslo LG L', 'JetBrains Mono', 'Consolas', monospace;
+  opacity: 0;
+  transition: opacity 0.6s ease 0.4s;
+}
+.pitch-diagram .lane-label.visible { opacity: 1; }
+.pitch-diagram .cen-lbl { fill: var(--purple); }
+.pitch-diagram .lw-lbl,
+.pitch-diagram .rw-lbl { fill: var(--cyan); }
+.pitch-diagram .lhs-lbl,
+.pitch-diagram .rhs-lbl { fill: var(--green); }
+
+
 /* --- 2. Base Elements --- */
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -47,7 +128,7 @@ a:hover {
   color: var(--pink);
 }
 
-h1, h2, h3, h4 {
+h2, h3, h4 {
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -182,6 +263,14 @@ hr {
 .section-header.orange { color: var(--orange); }
 .section-header.pink { color: var(--pink); }
 
+.main-content h1 {
+  color: var(--pink);
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1.2rem;
+  letter-spacing: -0.02em;
+}
 .main-content h2 {
   color: var(--purple);
   font-size: 1.3rem;
@@ -450,7 +539,7 @@ hr {
   width: 100%;
   border-collapse: collapse;
   margin: 1rem 0;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
 }
 .main-content th, .main-content td {
   padding: 8px 12px;
@@ -480,7 +569,7 @@ hr {
   display: block;
 }
 .vid-grid .cap {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   color: var(--comment);
   margin-top: 6px;
   text-align: center;
@@ -496,13 +585,45 @@ hr {
 .img-row.single { grid-template-columns: 1fr; }
 .img-row figure { margin: 0; }
 .img-row figcaption {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   color: var(--comment);
   margin-top: 6px;
   text-align: center;
 }
 
-/* --- 17. Video Rows --- */
+/* --- 17. Panel Rows (CFD gallery side-by-side) --- */
+.panel-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 1.5rem 0;
+}
+.panel-row .panel {
+  background: #21222c;
+  border: 1px solid var(--current-line);
+  border-radius: 6px;
+  padding: 14px;
+}
+.panel-row .panel h4 {
+  margin: 0 0 10px;
+  text-align: center;
+  color: var(--purple);
+  font-size: 0.9rem;
+}
+.panel-row figure {
+  margin: 0;
+}
+.panel-row figcaption {
+  font-size: 0.7rem;
+  color: var(--comment);
+  margin-top: 4px;
+  text-align: center;
+}
+@media (max-width: 720px) {
+  .panel-row { grid-template-columns: 1fr; }
+}
+
+/* --- 18. Video Rows --- */
 .video-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -510,6 +631,7 @@ hr {
   margin: 1.5rem 0;
 }
 .video-row.single { grid-template-columns: 1fr; }
+.video-row.triple { grid-template-columns: 1fr 1fr 1fr; }
 .video-row figure { margin: 0; }
 .video-row figure:only-child { grid-column: 1 / -1; }
 .video-row video {
@@ -519,7 +641,7 @@ hr {
   display: block;
 }
 .video-row figcaption {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   color: var(--comment);
   margin-top: 6px;
   text-align: center;
@@ -540,7 +662,7 @@ hr {
   background: #1a1b26;
 }
 .iframe-row figcaption {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   color: var(--comment);
   margin-top: 6px;
   text-align: center;
@@ -706,6 +828,7 @@ hr {
   .vid-grid { grid-template-columns: 1fr; }
   .img-row { grid-template-columns: 1fr; }
   .video-row { grid-template-columns: 1fr; }
+  .video-row.triple { grid-template-columns: 1fr; }
   .iframe-row { grid-template-columns: 1fr; }
   .stats { gap: 8px; }
   .stat { min-width: 80px; padding: 10px 14px; }

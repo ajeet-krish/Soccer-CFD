@@ -117,6 +117,7 @@ def _setup_ax(ax, title=""):
 
 def plot_mesh():
     print("--- Mesh visualization ---")
+    (IMAGES / "mesh").mkdir(parents=True, exist_ok=True)
     cases = discover_cases()
     if not cases:
         print("  [SKIP] No cases found")
@@ -135,8 +136,8 @@ def plot_mesh():
         plotter.add_mesh(edges, color="grey", line_width=0.3)
         plotter.view_xy()
         plotter.camera.zoom(zoom_factor)
-        plotter.screenshot(str(IMAGES / filename))
-        print(f"  Saved: {filename}")
+        plotter.screenshot(str(IMAGES / "mesh" / filename))
+        print(f"  Saved: mesh/{filename}")
         plotter.close()
 
 
@@ -145,7 +146,7 @@ def plot_mesh():
 # ═══════════════════════════════════════════════════════════
 
 def static_pressure(case_dir, spin_name, re, steps):
-    step = min(225, max(steps))
+    step = max(steps)
     vtu = load_vtu(step, case_dir)
     x, y, p, u, v, vm = get_2d_data(vtu)
     Xg, Yg = make_regular_grid(XLIM, YLIM, NX, NY)
@@ -162,14 +163,16 @@ def static_pressure(case_dir, spin_name, re, steps):
     plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
     cbar.outline.set_edgecolor("white")
     fig.tight_layout()
-    out = IMAGES / f"cylinder_{spin_name}_pressure_re{re}.png"
+    out_dir = IMAGES / f"re{re}/{spin_name}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / f"cylinder_{spin_name}_pressure_re{re}.png"
     fig.savefig(out, dpi=150, facecolor="#111111")
     print(f"  Saved: {out.name}")
     plt.close()
 
 
 def static_velocity(case_dir, spin_name, re, steps):
-    step = min(225, max(steps))
+    step = max(steps)
     vtu = load_vtu(step, case_dir)
     x, y, p, u, v, vm = get_2d_data(vtu)
     Xg, Yg = make_regular_grid(XLIM, YLIM, NX, NY)
@@ -192,7 +195,9 @@ def static_velocity(case_dir, spin_name, re, steps):
     plt.setp(plt.getp(cbar.ax.axes, "yticklabels"), color="white")
     cbar.outline.set_edgecolor("white")
     fig.tight_layout()
-    out = IMAGES / f"cylinder_{spin_name}_velocity_re{re}.png"
+    out_dir = IMAGES / f"re{re}/{spin_name}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / f"cylinder_{spin_name}_velocity_re{re}.png"
     fig.savefig(out, dpi=150, facecolor="#111111")
     print(f"  Saved: {out.name}")
     plt.close()
@@ -269,7 +274,9 @@ def animate_flow(case_dir: str, spin_name: str, re: int,
     fig.tight_layout()
 
     suffix = f"{spin_name}_{field}_re{re}"
-    out_path = IMAGES / f"cylinder_{suffix}.mp4"
+    out_dir = IMAGES / f"re{re}/{spin_name}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"cylinder_{suffix}.mp4"
     writer = FFMpegWriter(fps=FPS, bitrate=3000)
 
     from matplotlib.collections import LineCollection
@@ -302,11 +309,16 @@ def animate_flow(case_dir: str, spin_name: str, re: int,
                         old.lines.remove()
                     except Exception:
                         pass
-                    for arr in getattr(old, 'arrows', []):
+                    arrows = getattr(old, 'arrows', None)
+                    if arrows is not None:
                         try:
-                            arr.remove()
+                            arrows.remove()
                         except Exception:
-                            pass
+                            try:
+                                for arr in arrows:
+                                    arr.remove()
+                            except Exception:
+                                pass
                 stride = 4
                 sl_ref[0] = ax.streamplot(Xg[::stride, ::stride], Yg[::stride, ::stride],
                                           Ug[::stride, ::stride], Vg[::stride, ::stride],
@@ -328,7 +340,7 @@ def animate_re_comparison(spin_name: str, field: str = "pressure"):
     label = "No Spin" if spin_name == "nospin" else "Magnus"
     cases = []
     for re in [120, 200, 500]:
-        dir_name = f"output_{spin_name}_lam_re{re}"
+        dir_name = f"output_{spin_name}_lam_re{re}_fine"
         steps = get_step_range(dir_name)
         if len(steps) > 1:
             cases.append((dir_name, re, steps))
@@ -394,7 +406,9 @@ def animate_re_comparison(spin_name: str, field: str = "pressure"):
     cbar.outline.set_edgecolor("white")
 
     suffix = f"{spin_name}_{field}_re_comparison"
-    out_path = IMAGES / f"cylinder_{suffix}.mp4"
+    cmp_dir = IMAGES / "comparisons"
+    cmp_dir.mkdir(parents=True, exist_ok=True)
+    out_path = cmp_dir / f"cylinder_{suffix}.mp4"
     writer = FFMpegWriter(fps=FPS, bitrate=5000)
 
     with writer.saving(fig, str(out_path), dpi=150):

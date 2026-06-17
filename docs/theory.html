@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,146 +11,238 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
   <link rel="stylesheet" href="custom.css">
 </head>
+
 <body>
 
-<nav class="site-nav">
-  <div class="nav-inner">
-    <a class="nav-brand" href="./index.html"><span class="highlight">$</span> physics-of-play</a>
-    <button class="nav-toggle" aria-label="Toggle navigation" onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
-    <div class="nav-entries">
-      <a href="./index.html">[ 01. Home ]</a>
-      <a href="./theory.html" class="active">[ 02. Theory ]</a>
-      <a href="./shot.html">[ 03. Shot ]</a>
-      <a href="./tactical.html">[ 04. Tactical ]</a>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="./index.html"><span class="highlight">$</span> physics-of-play</a>
+      <button class="nav-toggle" aria-label="Toggle navigation"
+        onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
+      <div class="nav-entries">
+        <a href="./index.html">[ 01. Home ]</a>
+        <a href="./theory.html" class="active">[ 02. Theory ]</a>
+        <a href="./shot.html">[ 03. Shot ]</a>
+        <a href="./tactical.html">[ 04. Tactical ]</a>
         <a href="./cfd.html">[ 05. CFD ]</a>
         <a href="./code.html">[ 06. Code ]</a>
       </div>
-  </div>
-</nav>
+    </div>
+  </nav>
 
-<main class="main-content">
+  <main class="main-content">
 
-<div class="breadcrumb">
-  ~ / physics-of-play / <span style="color: var(--cyan);">theory.py</span>
-</div>
+    <div class="breadcrumb">
+      ~ / physics-of-play / <span style="color: var(--cyan);">theory.py</span>
+    </div>
 
-<h2># Governing Equations</h2>
+    <!-- ====================================================================== -->
+    <h1>What is CFD?</h1>
+    <!-- ====================================================================== -->
 
-<h3>Navier-Stokes</h3>
-<p>All CFD simulations in this project (both &Phi;Flow and SU2) solve the incompressible Navier-Stokes equations:</p>
+    <p>Computational Fluid Dynamics (CFD) is the numerical solution of the Navier-Stokes equations: the partial
+      differential equations that govern the motion of fluid. Instead of building a physical prototype and measuring
+      forces in a wind tunnel, CFD divides the domain into thousands or millions of discrete cells (a
+      <strong>mesh</strong>), then solves for velocity and pressure at each cell center using iterative matrix algebra.
+    </p>
 
-<div class="eq-box">
-$$ \nabla \cdot \mathbf{u} = 0 $$
-$$ \frac{\partial \mathbf{u}}{\partial t} + (\mathbf{u} \cdot \nabla) \mathbf{u} = -\frac{1}{\rho} \nabla p + \nu \nabla^2 \mathbf{u} $$
-<div class="eq-label">(1) Conservation of mass and momentum</div>
-</div>
+    <p>For a soccer ball in flight, CFD provides:</p>
+    <ul>
+      <li><strong>Drag coefficient</strong> $C_d$: how much the ball slows down</li>
+      <li><strong>Lift coefficient</strong> $C_l$: how much it curves (Magnus effect)</li>
+      <li><strong>Separation point</strong>: where the boundary layer detaches, determining wake size and pressure drag
+      </li>
+      <li><strong>Strouhal number</strong> $St$: the frequency of vortex shedding (knuckleball jitter)</li>
+    </ul>
 
-<p>where $\mathbf{u}$ is the velocity field, $p$ is pressure, $\rho$ is density, and $\nu$ is kinematic viscosity.</p>
+    <div class="eq-box">
+      $$ \nabla \cdot \mathbf{u} = 0 \qquad \frac{\partial \mathbf{u}}{\partial t} + (\mathbf{u} \cdot \nabla)
+      \mathbf{u} = -\frac{1}{\rho} \nabla p + \nu \nabla^2 \mathbf{u} $$
+      <div class="eq-label">Incompressible Navier-Stokes: the equations CFD solves at every cell</div>
+    </div>
 
-<div class="callout-box theory">
-  <strong>&Phi;Flow approach:</strong> Semi-Lagrangian advection + iterative CG pressure solve on a staggered MAC grid. Fast and differentiable: ideal for parametric sweeps.
-</div>
+    <p><strong>Steady vs Unsteady:</strong> A steady simulation assumes the flow does not change in time: one solution
+      captures the time-averaged behaviour. An unsteady simulation marches forward in small time steps, resolving
+      transient phenomena like vortex shedding. The knuckleball is inherently unsteady; a spinning Magnus shot can be
+      approximated as steady because the wake locks into a fixed asymmetric pattern.</p>
 
-<div class="callout-box detail">
-  <strong>SU2 approach:</strong> Finite-volume RANS with Menter SST $k$-$\omega$ turbulence model. Unstructured meshes resolve boundary layers for accurate skin friction and separation points.
-</div>
+    <p><strong>Laminar vs Turbulent:</strong> At soccer-relevant Reynolds numbers ($Re \approx 2 \times 10^4$ to $5
+      \times 10^5$), the flow can be either laminar (smooth, ordered) or turbulent (chaotic, mixing). A
+      <strong>RANS</strong> (Reynolds-Averaged Navier-Stokes) model like SST $k$-$\omega$ solves for the mean flow and
+      models the turbulent fluctuations. A laminar simulation solves the raw Navier-Stokes without a turbulence model:
+      accurate at low Re, but unable to capture turbulence at high Re without extreme grid resolution (DNS).
+    </p>
 
-<h3>Reynolds Number</h3>
-<p>The governing dimensionless parameter for all flows considered:</p>
+    <p>This project uses <strong>two solvers</strong> at different fidelity levels to bracket the real physics, exactly
+      as industrial aerospace teams operate.</p>
 
-<div class="eq-box">
-$$ Re = \frac{\rho U L}{\mu} = \frac{U L}{\nu} $$
-<div class="eq-label">(2) Ratio of inertial to viscous forces</div>
-</div>
+    <h2>Governing Equations</h2>
 
-<p>where $U$ is the freestream velocity, $L$ is the characteristic length (ball diameter or cylinder diameter), and $\mu$ is dynamic viscosity.</p>
+    <h3>Navier-Stokes</h3>
+    <p>All CFD simulations in this project (both &Phi;Flow and SU2) solve the incompressible Navier-Stokes equations,
+      which enforce conservation of mass and momentum at every point in the fluid:</p>
 
-<h3>Drag Crisis</h3>
-<p>At $Re \approx 2 \times 10^5$, a sphere experiences a sudden drop in drag coefficient $C_d$ from $\sim 0.5$ to $\sim 0.1$: the <strong>drag crisis</strong>. This occurs when the boundary layer transitions from laminar to turbulent, moving the separation point aft and reducing the pressure drag.</p>
+    <div class="eq-box">
+      $$ \nabla \cdot \mathbf{u} = 0 $$
+      $$ \frac{\partial \mathbf{u}}{\partial t} + (\mathbf{u} \cdot \nabla) \mathbf{u} = -\frac{1}{\rho} \nabla p + \nu
+      \nabla^2 \mathbf{u} $$
+      <div class="eq-label">Conservation of mass (top) and momentum (bottom)</div>
+    </div>
 
-<div class="stats">
-<div class="stat">
-  <div class="num">0.5</div>
-  <div class="lbl">Sub-critical $C_d$</div>
-</div>
-<div class="stat">
-  <div class="num">0.1</div>
-  <div class="lbl">Super-critical $C_d$</div>
-</div>
-<div class="stat">
-  <div class="num">$2 \times 10^5$</div>
-  <div class="lbl">Critical Re</div>
-</div>
-</div>
+    <p>where $\mathbf{u}$ is the velocity field, $p$ is pressure, $\rho$ is density, and $\nu$ is kinematic viscosity.
+    </p>
 
-<h3>Magnus Effect</h3>
-<p>A rotating body in a crossflow experiences a lift force perpendicular to the freestream:</p>
+    <div class="callout-box theory">
+      <strong>&Phi;Flow approach:</strong> Semi-Lagrangian advection + iterative CG pressure solve on a staggered MAC
+      grid. Fast and differentiable: ideal for parametric sweeps.
+    </div>
 
-<div class="eq-box">
-$$ F_L = C_L \cdot \frac{1}{2} \rho A U^2 $$
-<div class="eq-label">(3) Magnus lift force</div>
-</div>
+    <div class="callout-box detail">
+      <strong>SU2 approach:</strong> Finite-volume RANS with Menter SST $k$-$\omega$ turbulence model. Unstructured
+      meshes resolve boundary layers for accurate skin friction and separation points.
+    </div>
 
-<p>The spin creates an asymmetric boundary layer: faster flow on one side reduces pressure (Bernoulli), slower flow on the other increases pressure. The resulting pressure differential deflects the body's trajectory.</p>
+    <h3>Reynolds Number</h3>
+    <p>The governing dimensionless parameter for all flows considered:</p>
 
-<h3>Continuum Mechanics Analogy</h3>
-<p>Team formations are modelled as a stress field $\sigma$:</p>
+    <div class="eq-box">
+      $$ Re = \frac{\rho U L}{\mu} = \frac{U L}{\nu} $$
+      <div class="eq-label">(2) Ratio of inertial to viscous forces</div>
+    </div>
 
-<div class="eq-box">
-$$ \sigma(\mathbf{x}) = \tanh\left(\frac{A(\mathbf{x}) - D(\mathbf{x})}{s}\right) $$
-<div class="eq-label">(4) Tactical stress field</div>
-</div>
+    <p>where $U$ is the freestream velocity, $L$ is the characteristic length (ball diameter or cylinder diameter), and
+      $\mu$ is dynamic viscosity.</p>
 
-<p>where $A$ and $D$ are attacker and defender influence fields (anisotropic Gaussians), and $s$ is a smoothing parameter. Yield points are local maxima where $\sigma &gt; 0.4$, indicating structural breaches in the defensive block.</p>
+    <h3>Drag Crisis</h3>
+    <p>At $Re \approx 2 \times 10^5$, a sphere experiences a sudden drop in drag coefficient $C_d$ from $\sim 0.5$ to
+      $\sim 0.1$: the <strong>drag crisis</strong>. This occurs when the boundary layer transitions from laminar to
+      turbulent, moving the separation point aft and reducing the pressure drag.</p>
 
-<h3>Darcy Permeability</h3>
-<p>Passing lane availability is quantified using a porous media analogy:</p>
+    <div class="stats">
+      <div class="stat">
+        <div class="num">0.5</div>
+        <div class="lbl">Sub-critical $C_d$</div>
+      </div>
+      <div class="stat">
+        <div class="num">0.1</div>
+        <div class="lbl">Super-critical $C_d$</div>
+      </div>
+      <div class="stat">
+        <div class="num">$2 \times 10^5$</div>
+        <div class="lbl">Critical Re</div>
+      </div>
+    </div>
 
-<div class="eq-box">
-$$ \kappa = \frac{\text{Area where } \phi(\mathbf{x}) &lt; \text{threshold}}{\text{Total defensive half area}} $$
-<div class="eq-label">(5) Defensive permeability</div>
-</div>
+    <h3>Magnus Effect</h3>
+    <p>A rotating body in a crossflow experiences a lift force perpendicular to the freestream:</p>
 
-<p>where $\phi(\mathbf{x})$ is the cumulative defensive influence. Lower $\kappa$ means a more compact, less permissive defensive shape.</p>
+    <div class="eq-box">
+      $$ F_L = C_L \cdot \frac{1}{2} \rho A U^2 $$
+      <div class="eq-label">(3) Magnus lift force</div>
+    </div>
 
-</main>
+    <p>The spin creates an asymmetric boundary layer: faster flow on one side reduces pressure (Bernoulli), slower flow
+      on the other increases pressure. The resulting pressure differential deflects the body's trajectory.</p>
 
-<footer class="site-footer">
-  <p>&copy; 2026 &middot; The Physics of Play &middot; Built with <a href="https://github.com/tum-pbs/PhiFlow">&Phi;Flow</a>, <a href="https://su2code.github.io/">SU2</a>, and <a href="https://pyvista.org/">PyVista</a></p>
-  <p style="margin-top: 6px;"><a href="https://github.com/ajeet-krish/Soccer-CFD">[ GitHub Repo ]</a> &middot; <a href="https://ajeetkrishnasamy.com">[ Portfolio ]</a> &middot; <a href="https://www.linkedin.com/in/ajeetkrishnasamy/">[ LinkedIn ]</a></p>
-</footer>
+    <h3>Continuum Mechanics Analogy</h3>
+    <p>Team formations are modelled as a stress field $\sigma$:</p>
 
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  renderMathInElement(document.body, {
-    delimiters: [
-      {left: "$$", right: "$$", display: true},
-      {left: "$", right: "$", display: false}
-    ],
-    throwOnError: false
-  });
-  initScrollAnimations();
-});
+    <div class="eq-box">
+      $$ \sigma(\mathbf{x}) = \tanh\left(\frac{A(\mathbf{x}) - D(\mathbf{x})}{s}\right) $$
+      <div class="eq-label">(4) Tactical stress field</div>
+    </div>
 
-function initScrollAnimations() {
-  const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links');
-  els.forEach(el => el.classList.add('fade-in'));
+    <p>where $A$ and $D$ are attacker and defender influence fields (anisotropic Gaussians), and $s$ is a smoothing
+      parameter. Yield points are local maxima where $\sigma &gt; 0.4$, indicating structural breaches in the defensive
+      block.</p>
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
+    <h3>Darcy Permeability</h3>
+    <p>Passing lane availability is quantified using a porous media analogy:</p>
+
+    <div class="eq-box">
+      $$ \kappa = \frac{\text{Area where } \phi(\mathbf{x}) &lt; \text{threshold}}{\text{Total defensive half area}} $$
+      <div class="eq-label">(5) Defensive permeability</div>
+    </div>
+
+    <p>where $\phi(\mathbf{x})$ is the cumulative defensive influence. Lower $\kappa$ means a more compact, less
+      permissive defensive shape.</p>
+
+    <h3>Gaussian Influence Fields</h3>
+    <p>Every defender generates a zone of influence around their position. The strength of that influence decays
+      smoothly with distance following a Gaussian (bell-shaped) curve:</p>
+
+    <div class="eq-box">
+      $$ G_i(\mathbf{x}) = \exp\left(-\frac{\|\mathbf{x} - \mathbf{x}_i\|^2}{2\sigma_i^2}\right) $$
+      <div class="eq-label">(6) Gaussian influence of defender $i$</div>
+    </div>
+
+    <p>where $\mathbf{x}_i$ is the defender's position and $\sigma_i$ controls the radius of influence. A centre-back
+      with $\sigma = 4.0$ exerts wide zone control spanning the penalty area. A winger with $\sigma = 2.5$ has a
+      narrow, concentrated influence reflecting their touchline role. The total pressure at any point on the pitch is
+      the sum of all 11 individual influence fields:</p>
+
+    <div class="eq-box">
+      $$ p(\mathbf{x}) = \sum_{i=1}^{11} G_i(\mathbf{x}) $$
+      <div class="eq-label">(7) Total defensive pressure field (superposition)</div>
+    </div>
+
+    <p>This is the <strong>superposition principle</strong>: the same mathematical framework used in CFD to solve
+      complex flow fields. In potential flow theory, the velocity at any point is the sum of contributions from all
+      sources, sinks, and vortices. Here, the pressure at any point is the sum of contributions from all 11 defenders.
+      The result is a 2D kernel density estimate of the defending team's spatial structure, a heatmap that
+      reveals exactly where space exists and where it is congested.</p>
+
+    <div class="callout-box theory">
+      <strong>The CFD connection:</strong> In CFD, the superposition principle lets us build complex flow solutions from
+      simple building blocks. A cylinder in a crossflow is modelled as a doublet + uniform flow. A team formation is
+      modelled the same way &mdash; 11 individual influence zones stacked together to reveal the team's structural
+      strengths and weaknesses.
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 &middot; The Physics of Play &middot; Built with <a
+        href="https://github.com/tum-pbs/PhiFlow">&Phi;Flow</a>, <a href="https://su2code.github.io/">SU2</a>, and <a
+        href="https://pyvista.org/">PyVista</a></p>
+    <p style="margin-top: 6px;"><a href="https://github.com/ajeet-krish/Soccer-CFD">[ GitHub Repo ]</a> &middot; <a
+        href="https://ajeetkrishnasamy.com">[ Portfolio ]</a> &middot; <a
+        href="https://www.linkedin.com/in/ajeetkrishnasamy/">[ LinkedIn ]</a></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false }
+        ],
+        throwOnError: false
+      });
+      initScrollAnimations();
     });
-  }, { threshold: 0.1 });
 
-  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-}
-</script>
+    function initScrollAnimations() {
+      const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links');
+      els.forEach(el => el.classList.add('fade-in'));
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    }
+  </script>
 </body>
+
 </html>

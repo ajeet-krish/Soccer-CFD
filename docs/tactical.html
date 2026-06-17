@@ -40,30 +40,69 @@
     <h1>Tactical Positioning</h1>
 
     <h2>Overview</h2>
-    <p>Seven simulation modules exploring the aerodynamics and continuum mechanics of team formations. Players are
-      modelled as bluff bodies, Gaussian influence fields, and dynamic sliding arrays: revealing drafting benefits,
-      defensive stress concentrations, passing lane permeability, and the fluid-structure analogy of tactical movement.
-    </p>
+    <p>Every formation leaves gaps. The five-lane system shows you exactly where they are. By modelling each player as
+      an overlapping influence zone, we can build <strong>formation pressure maps</strong> that reveal open spaces and
+      congested areas across the pitch. The five-lane framework isn't just a theory. It's how elite coaches see
+      the game. Pep Guardiola attacks through half-space pockets to create 3v2 overloads. J&uuml;rgen Klopp pins
+      wide midfielders to the touchline, opening central channels for arriving runners. Mikel Arteta inverts his
+      fullbacks into midfield to win numerical battles. Roberto De Zerbi uses a &ldquo;free man&rdquo; in the centre
+      to attract pressure, then releases into open lanes. As the saying goes: <em>&ldquo;the centre is a trap, the
+        half-spaces are freedom.&rdquo;</em> The five lanes below are the grid every coach reads from. Click or hover
+      over any lane to see its role across every formation.</p>
 
-    <h2 id="pressure-maps">Formation Pressure Maps</h2>
-
-    <p>Every formation creates a distinct <strong>defensive pressure field</strong> across the pitch. By modelling each
-      defender as a Gaussian influence source and superimposing their contributions, the resulting scalar field
-      $p(\mathbf{x})$ reveals exactly where space exists and where it is congested. This is the same mathematical
-      framework used in CFD: instead of modeling pressure perturbations around bluff bodies in a flow, each player
-      generates a zone of influence that attackers must navigate through, and the superposition principle (summing
-      individual contributions to obtain the total field) is identical to how CFD solves flow fields from boundary
-      conditions.</p>
-
-    <p>A <strong>Gaussian influence field</strong> is a bell-shaped function $e^{-r^2 / (2\sigma^2)}$ centered on each
-      player, where $r$ is distance from the player and $\sigma$ controls the radius of influence. The choice of
-      Gaussian is not arbitrary, it mirrors how perturbations decay in potential flow theory. A centre-back with $\sigma
-      = 4.0$ exerts wide zone control spanning the penalty area; a winger with $\sigma = 2.5$ has a narrow, concentrated
-      influence reflecting their position-specific role. Mathematically, the total pressure at any point is the sum of
-      all 11 Gaussians, which is a 2D kernel density estimate of the defending team's spatial structure.</p>
-
-    <p>The pitch is divided into <strong>five vertical lanes</strong>, a standard framework in modern soccer analysis:
-    </p>
+    <figure class="pitch-diagram-wrap">
+      <svg class="pitch-diagram" viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="pitch-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(40, 48, 40, 0.35)" />
+            <stop offset="50%" stop-color="rgba(33, 34, 44, 0.2)" />
+            <stop offset="100%" stop-color="rgba(40, 48, 40, 0.35)" />
+          </linearGradient>
+        </defs>
+        <!-- pitch outline -->
+        <rect class="pitch-bg" x="0" y="0" width="520" height="340" rx="3" />
+        <rect class="pitch-border" x="2" y="2" width="516" height="336" rx="3" />
+        <!-- center line -->
+        <line class="pitch-border" x1="260" y1="2" x2="260" y2="338" />
+        <circle class="pitch-border" cx="260" cy="170" r="40" />
+        <!-- penalty areas (16.5m deep, 40.3m wide) -->
+        <rect class="pitch-border" x="2" y="69" width="82" height="202" />
+        <rect class="pitch-border" x="436" y="69" width="82" height="202" />
+        <!-- 6-yard boxes (5.5m deep, 18.3m wide) -->
+        <rect class="pitch-border" x="2" y="124" width="27" height="92" />
+        <rect class="pitch-border" x="491" y="124" width="27" height="92" />
+        <!-- penalty spots (12 yards / 11m from goal) -->
+        <circle class="pitch-spot" cx="56" cy="170" />
+        <circle class="pitch-spot" cx="464" cy="170" />
+        <!-- goals (7.32m wide) -->
+        <rect class="pitch-goal" x="0" y="151" width="6" height="38" />
+        <rect class="pitch-goal" x="514" y="151" width="6" height="38" />
+        <!-- lane bands (horizontal, left to right across pitch width) -->
+        <!-- LW: touchline to penalty area edge (y=0..69) -->
+        <!-- LHS: penalty area edge to 6-yard box edge (y=69..124) -->
+        <!-- Center: 6-yard box / goalie's crease (y=124..216) -->
+        <!-- RHS: 6-yard box edge to penalty area edge (y=216..271) -->
+        <!-- RW: penalty area edge to touchline (y=271..340) -->
+        <rect class="lane lw" x="0" y="0" width="520" height="69" data-lane="lw" />
+        <rect class="lane lhs" x="0" y="69" width="520" height="55" data-lane="lhs" />
+        <rect class="lane cen" x="0" y="124" width="520" height="92" data-lane="cen" />
+        <rect class="lane rhs" x="0" y="216" width="520" height="55" data-lane="rhs" />
+        <rect class="lane rw" x="0" y="271" width="520" height="69" data-lane="rw" />
+        <!-- lane separator lines (dashed) -->
+        <line class="lane-sep" x1="0" y1="69" x2="520" y2="69" />
+        <line class="lane-sep" x1="0" y1="124" x2="520" y2="124" />
+        <line class="lane-sep" x1="0" y1="216" x2="520" y2="216" />
+        <line class="lane-sep" x1="0" y1="271" x2="520" y2="271" />
+        <!-- lane labels -->
+        <text x="130" y="40" class="lane-label lw-lbl" text-anchor="start">Left Wing</text>
+        <text x="130" y="97" class="lane-label lhs-lbl" text-anchor="start">L Half-Space</text>
+        <text x="130" y="175" class="lane-label cen-lbl" text-anchor="start">Center</text>
+        <text x="130" y="244" class="lane-label rhs-lbl" text-anchor="start">R Half-Space</text>
+        <text x="130" y="306" class="lane-label rw-lbl" text-anchor="start">Right Wing</text>
+      </svg>
+      <figcaption>Five lanes across the pitch. Each lane represents a distinct tactical corridor with unique
+        pressure characteristics.</figcaption>
+    </figure>
 
     <table>
       <tr>
@@ -95,29 +134,25 @@
       </tr>
     </table>
 
-    <p>The half-spaces are tactically decisive because passing angles through them bypass the central density wall. Each
-      formation lane analysis below reports the average defensive pressure per lane as a percentage of the maximum lane
-      average across all formations, providing a <strong>direct quantitative comparison</strong> of structural strengths
-      and weaknesses.</p>
+    <h2 id="pressure-maps">Formation Pressure Maps</h2>
 
-    <p>The colormap uses <code>turbo</code> (blue to yellow to red): <strong>dark blue = open space</strong> (low
-      defensive pressure), <strong>yellow/orange = moderate</strong>, <strong>red = congested</strong> (high defensive
-      pressure). Animated transitions show each formation morphing from attacking to defensive shape, revealing how
-      space closes during the defensive transition.</p>
+    <p>Every formation creates a distinct <strong>defensive pressure field</strong>. Each defender is modelled as an
+      influence zone whose strength drops off with distance (a Gaussian bell curve). Stack all 11 players together and
+      you get a map that shows exactly where the defence is compact and where gaps exist. A centre-back controls a wide
+      zone spanning the penalty area. A winger's influence is narrow and concentrated, reflecting their touchline role.
+      The result is the same kind of overlay you would see in a heatmap of team shape, just built from first
+      principles instead of tracking data.</p>
 
-    <div class="stats">
-      <div class="stat">
-        <div class="num">4.0</div>
-        <div class="lbl">&sigma; for CBs (wide zone control)</div>
-      </div>
-      <div class="stat">
-        <div class="num">3.5</div>
-        <div class="lbl">&sigma; for fullbacks</div>
-      </div>
-      <div class="stat">
-        <div class="num">2.5</div>
-        <div class="lbl">&sigma; for wingers &amp; strikers (narrow)</div>
-      </div>
+    <p>Each lane's pressure is reported as a percentage of the highest lane average across all formations, giving a
+      direct comparison of structural strengths. The colormap runs from <strong>dark blue (open)</strong> through
+      <strong>yellow (moderate)</strong> to <strong>red (congested)</strong>. Animated transitions show each formation
+      morphing from attacking to defending, revealing how space closes as players drop back.
+    </p>
+
+    <div class="callout-box detail">
+      <strong>How to read the maps:</strong> Each formation below is shown as a coloured pressure field. <strong>Dark
+        blue</strong> means open space (low defensive presence). <strong>Yellow</strong> means moderate pressure.
+      <strong>Red</strong> means congested. The lower the lane pressure percentage, the more space available to attack.
     </div>
 
     <div class="img-row single">
@@ -127,6 +162,12 @@
           congested. The 3-5-2 shows the most extreme pattern: a dense central wall with wide-open flanks.</figcaption>
       </figure>
     </div>
+
+    <p>
+      <strong>Watch the pattern:</strong> As formations add midfielders, the centre tightens and the flanks open. The
+      4-3-3 and 4-2-3-1 both show centre-heavy pressure. The 3-5-2 is the most extreme: five players packed in the
+      central column, leaving the wings wide open. Below you can attack each formation lane by lane.
+    </p>
 
     <h3>4-3-3</h3>
     <div class="img-row single">
@@ -145,27 +186,27 @@
       <tr>
         <td>Left Wing</td>
         <td>32%</td>
-        <td>Open. Switch play quickly to exploit the far side before the CDM can shift over.</td>
+        <td>Open. Switch play to the far side before the CDM shifts over. The wide areas are your escape valve.</td>
       </tr>
       <tr>
         <td>Left Half-Space</td>
         <td>57%</td>
-        <td>Moderate. The LCM covers this zone; use quick 1-2s to bypass.</td>
+        <td>Moderate. The LCM covers this zone. Quick 1-2s can bypass him before the CDM slides across.</td>
       </tr>
       <tr>
         <td>Center</td>
         <td>81%</td>
-        <td>Congested. Avoid direct central combinations. CDM + 2 CMs form a compact triangle.</td>
+        <td>Congested. CDM + two CMs form a compact triangle. Avoid central combinations.</td>
       </tr>
       <tr>
         <td>Right Half-Space</td>
         <td>57%</td>
-        <td>Moderate. Mirror of left. Best used as a transition zone, not a sustained attack channel.</td>
+        <td>Moderate. The RCM drifts wide here. Transition through quickly before he locks on.</td>
       </tr>
       <tr>
         <td>Right Wing</td>
         <td>32%</td>
-        <td>Open. Overload with fullback overlaps. The winger and FB can create 2v1 against the LB.</td>
+        <td>Open. Overlap the winger with the fullback for a 2v1 against the LB. Cross or cut back.</td>
       </tr>
     </table>
 
@@ -186,28 +227,27 @@
       <tr>
         <td>Left Wing</td>
         <td>38%</td>
-        <td>Open. LM pushes high but leaves space in behind. Target with diagonals.</td>
+        <td>Open. LM pushes high leaving space behind. Hit diagonals in behind the fullback.</td>
       </tr>
       <tr>
         <td>Left Half-Space</td>
         <td>68%</td>
-        <td>Compressed. LM and LCM squeeze this zone. Through balls here are low percentage.</td>
+        <td>Compressed. LM and LCM pinch this zone. Through balls here are low percentage.</td>
       </tr>
       <tr>
         <td>Center</td>
         <td>50%</td>
-        <td>Moderate. Two CMs leave the center less packed than 4-3-3. Vertical passes between the strikers and midfield
-          are viable.</td>
+        <td>Moderate. Only two CMs. Vertical passes between the striker and midfield are viable.</td>
       </tr>
       <tr>
         <td>Right Half-Space</td>
         <td>68%</td>
-        <td>Compressed. Mirror of left. The flat midfield four creates symmetric pressure in the half-spaces.</td>
+        <td>Compressed. The RM tracks back hard here. Quick switches to escape the squeeze.</td>
       </tr>
       <tr>
         <td>Right Wing</td>
         <td>38%</td>
-        <td>Open. The RM&rsquo;s defensive duties leave the flank exposed. Overlap and cross.</td>
+        <td>Open. The RM's defensive duties leave the flank exposed. Overlap and cross early.</td>
       </tr>
     </table>
 
@@ -228,30 +268,27 @@
       <tr>
         <td>Left Wing</td>
         <td>32%</td>
-        <td>Very open. The LW pushes high and the LB is isolated. Exploit with quick switches and overlapping runs.</td>
+        <td>Very open. LW pushes high, LB isolated. Quick switches and overlapping runs punish the gap.</td>
       </tr>
       <tr>
         <td>Left Half-Space</td>
         <td>51%</td>
-        <td>Moderate. The left CDM covers this zone but has ground to make up. A quick transition through here catches
-          the pivot out of position.</td>
+        <td>Moderate. The left CDM covers this zone but has ground to make up. Catch the pivot in transition.</td>
       </tr>
       <tr>
         <td>Center</td>
         <td>93%</td>
-        <td>Extremely congested. Avoid playing through the middle at all costs. The double pivot + CAM create a
-          three-player density wall.</td>
+        <td>Extremely congested. Double pivot + CAM create a three-player wall. Do not play through the middle.</td>
       </tr>
       <tr>
         <td>Right Half-Space</td>
         <td>51%</td>
-        <td>Moderate. Mirror of left. The CDM rotation leaves brief windows of vulnerability in transition.</td>
+        <td>Moderate. The right CDM rotates wide here. Windows of vulnerability open during his shift.</td>
       </tr>
       <tr>
         <td>Right Wing</td>
         <td>32%</td>
-        <td>Very open. Same as left. The 4-2-3-1 gives up width for central control. Attack the flanks relentlessly.
-        </td>
+        <td>Very open. The 4-2-3-1 gives up both flanks for central control. Attack wide relentlessly.</td>
       </tr>
     </table>
 
@@ -272,32 +309,27 @@
       <tr>
         <td>Left Wing</td>
         <td>21%</td>
-        <td>Very open. The LWB pushes high, leaving the touchline unprotected. Quick switches and overlapping runs will
-          find acres of space.</td>
+        <td>Very open. LWB pushes high leaving acres behind. Quick switches and overlapping runs find space.</td>
       </tr>
       <tr>
         <td>Left Half-Space</td>
         <td>65%</td>
-        <td>Moderate. The left-sided CDM and LWB converge here. A quick transition can catch the wing-back out of
-          position before the CDM can shift over.</td>
+        <td>Moderate. LWB and left CDM converge here. Catch the wing-back upfield before the CDM arrives.</td>
       </tr>
       <tr>
         <td>Center</td>
         <td>100%</td>
-        <td>Extremely congested. Three CBs, two CDMs, and the CAM create a five-player column through the center. Any
-          central attack faces a wall of bodies.</td>
+        <td>Extremely congested. Three CBs, two CDMs, and a CAM = five players in one column. A wall of bodies.</td>
       </tr>
       <tr>
         <td>Right Half-Space</td>
         <td>65%</td>
-        <td>Moderate. Mirror of left. The RWB&rsquo;s advanced starting position leaves brief windows of vulnerability
-          in transition.</td>
+        <td>Moderate. The RWB's advanced start leaves windows in transition before the CDM can cover.</td>
       </tr>
       <tr>
         <td>Right Wing</td>
         <td>22%</td>
-        <td>Very open. Same as left. The 3-5-2 trades wide defensive solidity for midfield numerical superiority. Attack
-          the flanks with pace.</td>
+        <td>Very open. Wing-backs sacrifice defensive width for midfield numbers. Attack with pace down the flanks.</td>
       </tr>
     </table>
 
@@ -344,23 +376,24 @@
     </div>
 
     <h2 id="aero">Formation Aerodynamics</h2>
-    <p>In soccer, overlapping runs are a fundamental attacking tactic: the fullback sprints past the winger on the
-      outside, receiving the ball in space behind the defence. The physics behind its effectiveness has a clear
-      fluid-dynamic explanation — <strong>tandem drag reduction</strong>.</p>
 
-    <p>Two players aligned streamwise form a tandem bluff-body configuration. The downstream player (the overlapping
-      fullback) enters the low-pressure wake of the upstream player (the winger). Within this wake, the oncoming flow
-      speed is reduced and the dynamic pressure head is lower, producing a <strong>26.1% drag reduction</strong> for the
-      trailing player. This is exactly the drafting effect familiar from cycling time-trials and Formula 1
-      slipstreaming, where a following vehicle experiences significantly less aerodynamic resistance.</p>
+    <div class="callout-box theory">
+      <strong>Why overlapping runs work: drafting.</strong> When a fullback sprints past a winger, they enter the
+      winger's low-pressure wake. It's the same drafting effect that Formula 1 drivers use for slipstream
+      passes and cyclists use in a time-trial pace line. The trailing player experiences
+      <strong>26.1% less drag</strong>, meaning they burn less energy to maintain the same speed. That conserved energy
+      is what powers the cross at the byline.
+    </div>
 
-    <p>The flow was modelled using $\Phi$Flow with two rectangular bluff bodies (width $w = 0.3$ m, height $h = 1.8$ m)
-      at $Re = 2 \times 10^5$, spaced one body-length apart in the streamwise direction.</p>
+    <p>The setup is simple: two rectangular bodies (width 0.3&thinsp;m, height 1.8&thinsp;m, approximating a player)
+      spaced one body-length apart at a Reynolds number of $2 \times 10^5$. The simulation, run with $\Phi$Flow,
+      measures the drag on the trailing body relative to a solo runner at the same speed. The result: a 26.1% reduction.
+    </p>
 
-    <div class="callout-box result">
-      <strong>Tactical insight:</strong> A 26.1% drag reduction means the overlapping player expends significantly less
-      energy to maintain sprint speed. This is the fluid-dynamic basis for why overlapping runs are so effective in the
-      final third: the attacking player arrives at the byline with more energy reserved for the cross.
+    <div class="callout-box detail">
+      <strong>Coefficient of drag ($C_D$):</strong> The solo runner registered $C_D \approx 1.08$. The trailing
+      (overlapping) runner dropped to $C_D \approx 0.80$. That is a 26.1% saving, enough to separate a good cross from a
+      tired one in the 80th minute.
     </div>
 
   </main>
@@ -378,6 +411,39 @@
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <script>
+    // ---------- Cross-highlight SVG ↔ table rows ----------
+    const laneKey = { 'Left Wing': 'lw', 'Left Half-Space': 'lhs', 'Center': 'cen', 'Right Half-Space': 'rhs', 'Right Wing': 'rw' };
+    const laneColors = { 'lw': 'var(--cyan)', 'lhs': 'var(--green)', 'cen': 'var(--purple)', 'rhs': 'var(--green)', 'rw': 'var(--cyan)' };
+
+    // auto-annotate data rows with data-lane + lane color
+    document.querySelectorAll('table tr').forEach(tr => {
+      const first = tr.querySelector('td:first-child');
+      if (first && laneKey[first.textContent.trim()]) {
+        const key = laneKey[first.textContent.trim()];
+        tr.dataset.lane = key;
+        first.style.color = laneColors[key];
+        if (key === 'cen') first.style.fontWeight = '';
+      }
+    });
+
+    function highlightLane(lane, state) {
+      if (!lane) return;
+      const add = state === 'add';
+      document.querySelector(`.pitch-diagram .lane[data-lane="${lane}"]`)?.classList.toggle('lane-hovered', add);
+      document.querySelectorAll(`table tr[data-lane="${lane}"]`).forEach(r => r.classList.toggle('hl', add));
+    }
+
+    // SVG hover ↔ table rows
+    document.querySelectorAll('.pitch-diagram .lane').forEach(el => {
+      el.addEventListener('mouseenter', () => highlightLane(el.dataset.lane, 'add'));
+      el.addEventListener('mouseleave', () => highlightLane(el.dataset.lane, 'remove'));
+    });
+    document.querySelectorAll('table tr[data-lane]').forEach(tr => {
+      tr.addEventListener('mouseenter', () => highlightLane(tr.dataset.lane, 'add'));
+      tr.addEventListener('mouseleave', () => highlightLane(tr.dataset.lane, 'remove'));
+    });
+
+    // ---------- Scroll animations ----------
     document.addEventListener("DOMContentLoaded", function () {
       renderMathInElement(document.body, {
         delimiters: [
@@ -390,13 +456,16 @@
     });
 
     function initScrollAnimations() {
-      const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links');
+      const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links, .pitch-diagram-wrap');
       els.forEach(el => el.classList.add('fade-in'));
 
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             entry.target.classList.add('visible');
+            if (entry.target.classList.contains('pitch-diagram-wrap')) {
+              entry.target.querySelectorAll('.lane, .lane-label').forEach(el => el.classList.add('visible'));
+            }
             observer.unobserve(entry.target);
           }
         });

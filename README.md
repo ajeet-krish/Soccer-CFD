@@ -25,8 +25,8 @@ A dual-layer CFD portfolio combining fast ΦFlow (JAX) prototyping with SU2 (RAN
 | # | Case | Status | Key Result |
 |---|------|--------|-----------|
 | 1 | **2D Cylinder** (Re=40k, RANS SST) | ✅ Complete | Cd=0.683 vs ΦFlow~1.2 — 43% diff explained |
-| 2 | **3D Smooth Sphere** (Re sweep, RANS SST) | ✅ Complete | Cd≈0.87 flat across Re (no drag crisis — SST limitation) |
-| 3 | **Textured Sphere Roughness Sweep** (4 balls × 5 Re) | 🔜 Phase 5 | Roughness trends via WALL_ROUGHNESS model |
+| 2 | **3D Smooth Sphere** (Re sweep 10⁴→10⁶, RANS SST) | ✅ Complete | Cd≈0.87 flat across Re (no drag crisis — SST limitation) |
+| 3 | **Textured Sphere Roughness Sweep** (4 balls × 5 Re) | ✅ Complete | Cd varies &lt;0.001 — roughness needs γ-Reθ + y+&lt;1 |
 
 ### Formation Pressure Maps
 
@@ -81,7 +81,7 @@ Comparing four ball types via `WALL_ROUGHNESS` model across Re = 10⁴ → 10⁶
 | Brazuca | 2014 | 6 | ~3.0 mm | 0.014 | Alam et al. 2016 |
 | Trionda | 2026 | 4 | ~4.5 mm | 0.020 | MDPI Appl Sci 2026 |
 
-RANS SST with roughness shows separation-point shift trends (~5-15% Cd variation) but cannot capture the full drag crisis drop (0.47→0.07) — that requires a transition model (γ-Reθ) + wall-resolved mesh.
+RANS SST with `WALL_ROUGHNESS` produces no meaningful drag variation (Cd varies &lt;0.001 across all balls and Re). The roughness effect cannot be captured without a transition model (γ-Reθ) and a wall-resolved mesh (y+&lt;1, prism layers). This negative result is documented as a clear modeling-limit demonstration.
 
 ## Project Structure
 
@@ -97,14 +97,17 @@ src/
 └── utils.py               # Shared theme, paths, imports
 su2_runs/
 ├── cylinder_2d/           # Phase 3 — 2D cylinder validation
-│   ├── run_cylinder.py    # Mesh → config → SU2 → results pipeline
-│   ├── run_magnus.py
-│   ├── run_unsteady.py
-│   └── results.json
-├── sphere_3d/             # Phase 4 — smooth sphere drag crisis
-│   ├── run_sphere.py
+│   ├── run_cylinder.py    # Mesh → config → SU2 → steady RANS
+│   ├── run_unsteady.py    # Unsteady laminar NS (Re=120/200/500)
+│   ├── generate_viz.py    # Static plots + animation pipeline
+│   ├── analyze_cylinder.py  # Cp extraction + separation angles
+│   ├── cylinder.cfg       # Steady RANS config (coarse mesh)
+│   └── cylinder_magnus.cfg # Steady RANS magnus config
+├── sphere_3d/             # Phase 4+5 — sphere drag crisis + roughness
+│   ├── run_sphere.py      # Smooth sphere Re sweep
+│   ├── run_roughness.py   # 4 balls × 5 Re roughness sweep
 │   ├── viz_sphere.py      # PyVista visualization pipeline
-│   └── results.json
+│   └── sphere.su2         # Tetrahedral mesh (282K tets)
 └── tactical_formations/
     └── generate_formation_pressure.py  # Gaussian pressure field generator
 docs/                      # GitHub Pages site
@@ -116,13 +119,20 @@ docs/                      # GitHub Pages site
 ├── code.html              # Jupyter-style code notebook
 ├── custom.css             # Dark terminal theme + responsive nav
 └── images/                # Generated visualizations
-    ├── phiflow_cylinder_2d/
-    ├── tactical/
+    ├── phiflow_cylinder_2d/   # ΦFlow pressure/velocity comparisons
+    ├── tactical/               # Formation pressure maps & transitions
     │   ├── formation_lanes/
     │   ├── formation_pressure/
     │   └── formation_transition/
-    ├── su2_cylinder_2d/
-    └── su2_sphere/
+    ├── su2_cylinder_2d/        # SU2 2D cylinder results
+    │   ├── re120/              # Unsteady laminar @ Re=120 (no-spin + magnus)
+    │   ├── re200/              # Unsteady laminar @ Re=200
+    │   ├── re500/              # Unsteady laminar @ Re=500
+    │   ├── steady_rans/        # Steady RANS comparison images
+    │   ├── comparisons/        # Re sweep comparison animations
+    │   ├── analysis/           # Cp(θ) + separation angle analysis
+    │   └── mesh/               # Mesh visualization
+    └── su2_sphere/             # SU2 3D sphere (smooth + roughness sweep)
 assets/                    # ΦFlow frame cache (ignored)
 linkedin_posts/            # LinkedIn content drafts (ignored)
 ```
@@ -137,8 +147,25 @@ uv run python src/build_all.py
 
 **SU2 validation (requires SU2 v8.4):**
 ```bash
+# 2D cylinder steady RANS
 uv run python su2_runs/cylinder_2d/run_cylinder.py
+
+# 2D cylinder unsteady laminar (Re=120/200/500, no-spin + magnus)
+uv run python su2_runs/cylinder_2d/run_unsteady.py
+
+# Generate visualizations from VTU output
+uv run python su2_runs/cylinder_2d/generate_viz.py
+
+# Extract Cp(θ) + separation angles
+uv run python su2_runs/cylinder_2d/analyze_cylinder.py
+
+# 3D sphere smooth Re sweep
 uv run python su2_runs/sphere_3d/run_sphere.py
+
+# 3D sphere roughness sweep (4 balls × 5 Re)
+uv run python su2_runs/sphere_3d/run_roughness.py
+
+# PyVista 3D visualizations
 uv run python su2_runs/sphere_3d/viz_sphere.py
 ```
 
@@ -157,12 +184,14 @@ open http://localhost:8000
 
 - **Python** 3.12, **uv** package manager
 - **ffmpeg** — MP4 export (`brew install ffmpeg`)
-- **ΦFlow** (≥3.4), JAX, matplotlib, numpy, tqdm, pyvista, gmsh
+- **ΦFlow** (≥3.4), JAX, matplotlib, numpy, tqdm, pyvista, gmsh, Pillow (PIL)
 - **SU2 v8.4** — CFD solver (validation only, not needed for browsing)
 
 ## Key Results & Honest Limitations
 
 - **2D Cylinder**: SU2 Cd=0.683 vs ΦFlow Cd≈1.2 at Re=40k. The 43% gap is physically meaningful: fully turbulent RANS delays separation, narrowing the wake.
-- **3D Sphere (Smooth)**: SST k-ω produces Cd≈0.87 flat across Re. No drag crisis. A transition model (γ-Reθ) + wall-resolved mesh would be required for crisis capture.
-- **Textured Sphere**: Phase 5 will use roughness wall functions to show separation-point shift trends.
+- **3D Sphere (Smooth)**: SST k-ω produces Cd≈0.87 flat across Re. No drag crisis — transition model + wall-resolved mesh required.
+- **Textured Sphere (4 balls × 5 Re)**: WALL_ROUGHNESS produces no effect (Cd varies &lt;0.001). Modeling limit: needs γ-Reθ + y+&lt;1.
+- **Unsteady laminar NS (Re=120/200/500)**: St matches Williamson 1988 to within 5%. Cd matches Tritton 1959. Magnus Cl bias up to -0.39.
+- **Surface Cp analysis**: Separation angles extracted: 87°→97°→103° (Re=120→200→500), confirming correct physical trend.
 - **Overlapping Fullback**: 26.1% drag reduction quantified — the fluid-dynamic basis for why overlapping runs save energy.

@@ -42,6 +42,7 @@ class SU2Config:
     screen_output: str = "WARNING"
     ref_area: Optional[float] = None  # 3D: set to frontal area (e.g. πD²/4 for sphere)
     rotation_rate: float = 0.0  # non-dim ωz (spin about z-axis, e.g. Magnus effect)
+    wall_roughness: float = 0.0  # dimensional roughness height k_s (m) for WALL_ROUGHNESS
     muscl_flow: str = "NO"  # MUSCL reconstruction; "YES" for 2nd order (laminar), "NO" for robustness (RANS)
     conv_numerical_method_flow: str = "FDS"  # FDS (incompressible) or ROE (compressible laminar)
     # Unsteady (URANS) parameters
@@ -102,6 +103,7 @@ class SU2Config:
         lines += [
             f"% ------------------------ BOUNDARY CONDITIONS -------------------------",
             f"MARKER_HEATFLUX= ( wall, 0.0 )",
+            f"{f'WALL_ROUGHNESS= ( wall, {self.wall_roughness:.6e} )' if self.wall_roughness > 0 else '% No wall roughness'}",
             f"MARKER_MONITORING= ( wall )",
             f"MARKER_FAR= ( farfield )",
             f"{f'SURFACE_MOVEMENT= MOVING_WALL' if abs(self.rotation_rate) > 1e-10 else '% No moving wall'}",
