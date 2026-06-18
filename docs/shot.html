@@ -287,8 +287,8 @@
     <p>The Magnus cases show systematic asymmetry in the C<sub>p</sub> distribution: the top (advancing) side
       has lower pressure, the bottom (retreating) side has higher pressure. The integrated difference produces
       the lift coefficient C<sub>l</sub> that drives the curving trajectory. At Re=200, the Magnus lift bias
-      is strongest at C<sub>l</sub> = &minus;0.39, corresponding to a spin parameter S = &omega;D/2U &approx; 0.2
-      for a full-size soccer ball spinning at ~600 rpm.</p>
+      is strongest at C<sub>l</sub> = &minus;0.39, corresponding to a spin parameter S = &omega;R/U &approx; 0.12
+      for a full-size soccer ball spinning at ~310 rpm.</p>
 
     <h3>Reynolds Number Comparison Animations</h3>
     <p>The shedding frequency evolves with Reynolds number: higher Re produces faster shedding (higher Strouhal
@@ -302,8 +302,11 @@
       <video controls preload="metadata">
         <source src="images/su2_cylinder_2d/comparisons/cylinder_magnus_pressure_re_comparison.mp4" type="video/mp4">
       </video>
-      <div class="cap">Re sweep: no-spin pressure (L), magnus pressure (R). Re=120 (left panel), Re=200 (center),
-        Re=500 (right). The wake narrows and shedding accelerates with increasing Re.</div>
+      <div class="cap"><strong>What to watch:</strong> In the no-spin sweep (left), the dark low-pressure vortices in the
+        wake become smaller and faster from left panel (Re=120) to right panel (Re=500) &mdash; the wake narrows and
+        shedding accelerates. In the Magnus sweep (right), the spin locks the low-pressure region to the advancing
+        (bottom) side across all three Re, suppressing the alternating pattern entirely. The difference between the two
+        columns is the difference between a knuckleball and a curving free kick.</div>
     </div>
 
     <h4>Quantitative Validation Table</h4>
@@ -370,6 +373,18 @@
       Tritton (1959) to within 3%. The Magnus cases show that spin increases drag (C<sub>d</sub> rises by
       10-60% vs no-spin) because the spin disrupts the wake and forces earlier top-side separation &mdash;
       a key insight: <strong>spin does not just curve the ball, it also slows it down.</strong></p>
+
+    <div class="callout-box result">
+      <strong>What this means for a free kick:</strong> The alternating von K&aacute;rm&aacute;n vortices behind a
+      non-spinning ball tug it left, then right, then left again &mdash; each tug at the shedding frequency.
+      At Re=500 (St=0.20), the cylinder sheds at 0.67 Hz, meaning the lateral force flips roughly every 1.5 seconds.
+      For a real knuckleball (Re&sim;400k, St&sim;0.20), the shedding rate is &sim;30 Hz &mdash; too fast for the
+      ball to fully respond, but enough to create the erratic jitter. The Magnus case tells a different story:
+      a C<sub>l</sub> of &minus;0.39 at Re=200 means the lateral force is steady and predictable. For a free kick
+      at 30 m/s, that same C<sub>l</sub> produces a sideways acceleration of ~3 m/s&sup2;, bending the ball
+      by about a meter over a 25-yard flight. That is the difference between hitting the top corner and sending
+      it wide.
+    </div>
 
   </main>
 

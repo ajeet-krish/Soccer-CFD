@@ -30,6 +30,7 @@ class SU2Config:
     angle_of_attack: float = 0.0
     solver: str = "INC_RANS"
     turbulence_model: str = "SST"
+    kind_trans_model: str = ""  # e.g. "LM" for γ-Reθ (Langtry-Menter)
     inc_density_model: str = "CONSTANT"
     inc_energy_eq: str = "NO"
     inc_velocity_init: tuple = (1.0, 0.0, 0.0)
@@ -69,6 +70,7 @@ class SU2Config:
             f"% ------- CONFIG FILE (auto-generated) --------",
             f"SOLVER= {self.solver}",
             f"{('KIND_TURB_MODEL= ' + self.turbulence_model) if ('RANS' in self.solver or 'rans' in self.solver) else ('KIND_TURB_MODEL= NONE' if self.turbulence_model == 'NONE' else '% No turbulence model (laminar)')}",
+            f"{f'KIND_TRANS_MODEL= {self.kind_trans_model}' if self.kind_trans_model else '% No transition model'}",
             f"MATH_PROBLEM= DIRECT",
             f"RESTART_SOL= NO",
             f"SYSTEM_MEASUREMENTS= SI",
@@ -232,6 +234,115 @@ class MeshGenerator:
         far_phys = gmsh.model.addPhysicalGroup(1, [outer_tag])
         gmsh.model.setPhysicalName(1, far_phys, "farfield")
         surf_phys = gmsh.model.addPhysicalGroup(2, [surface])
+        gmsh.model.setPhysicalName(2, surf_phys, "fluid")
+
+        gmsh.model.mesh.createTopology()
+
+        out = Path(f"{name}.su2")
+        gmsh.write(str(out))
+        gmsh.finalize()
+        return out
+
+    @staticmethod
+    def cylinder_2d_structured(
+        radius: float = 0.3,
+        farfield_radius: float = 20.0,
+        n_radial: int = 105,
+        n_circum: int = 720,
+        growth: float = 1.1,
+        name: str = "cylinder_structured",
+    ) -> Path:
+        """Create a 2D cylinder structured quad mesh (O-grid) with y+≈1 at Re=140k.
+
+        The domain is split into 4 quadrants, each meshed with transfinite
+        quad elements. Radial distribution uses geometric progression for
+        boundary-layer resolution: first cell height ≈ 86 μm.
+
+        Args:
+            n_radial: Number of radial layers
+            n_circum: Number of circumferential divisions (must be divisible by 4)
+            growth: Geometric growth rate for radial spacing
+        """
+        import gmsh
+
+        n_quad = n_circum // 4
+        R = radius
+        FF = farfield_radius
+
+        gmsh.initialize()
+        gmsh.model.add(name)
+
+        # Quarter points on cylinder
+        p_r = gmsh.model.geo.addPoint(R, 0, 0)
+        p_t = gmsh.model.geo.addPoint(0, R, 0)
+        p_l = gmsh.model.geo.addPoint(-R, 0, 0)
+        p_b = gmsh.model.geo.addPoint(0, -R, 0)
+
+        # Quarter points on farfield
+        f_r = gmsh.model.geo.addPoint(FF, 0, 0)
+        f_t = gmsh.model.geo.addPoint(0, FF, 0)
+        f_l = gmsh.model.geo.addPoint(-FF, 0, 0)
+        f_b = gmsh.model.geo.addPoint(0, -FF, 0)
+
+        c = gmsh.model.geo.addPoint(0, 0, 0)  # center for arcs
+
+        # Cylinder arcs (90° each)
+        cyl_tr = gmsh.model.geo.addCircleArc(p_r, c, p_t)
+        cyl_tl = gmsh.model.geo.addCircleArc(p_t, c, p_l)
+        cyl_bl = gmsh.model.geo.addCircleArc(p_l, c, p_b)
+        cyl_br = gmsh.model.geo.addCircleArc(p_b, c, p_r)
+
+        # Farfield arcs (90° each)
+        far_tr = gmsh.model.geo.addCircleArc(f_r, c, f_t)
+        far_tl = gmsh.model.geo.addCircleArc(f_t, c, f_l)
+        far_bl = gmsh.model.geo.addCircleArc(f_l, c, f_b)
+        far_br = gmsh.model.geo.addCircleArc(f_b, c, f_r)
+
+        # Radial lines
+        line_r = gmsh.model.geo.addLine(p_r, f_r)
+        line_t = gmsh.model.geo.addLine(p_t, f_t)
+        line_l = gmsh.model.geo.addLine(p_l, f_l)
+        line_b = gmsh.model.geo.addLine(p_b, f_b)
+
+        # 4 curve loops (quadrants)
+        loop_tr = gmsh.model.geo.addCurveLoop([cyl_tr, line_t, -far_tr, -line_r])
+        loop_tl = gmsh.model.geo.addCurveLoop([cyl_tl, line_l, -far_tl, -line_t])
+        loop_bl = gmsh.model.geo.addCurveLoop([cyl_bl, line_b, -far_bl, -line_l])
+        loop_br = gmsh.model.geo.addCurveLoop([cyl_br, line_r, -far_br, -line_b])
+
+        # 4 surfaces
+        surf_tr = gmsh.model.geo.addPlaneSurface([loop_tr])
+        surf_tl = gmsh.model.geo.addPlaneSurface([loop_tl])
+        surf_bl = gmsh.model.geo.addPlaneSurface([loop_bl])
+        surf_br = gmsh.model.geo.addPlaneSurface([loop_br])
+
+        gmsh.model.geo.synchronize()
+
+        # Transfinite curves
+        for line in [line_r, line_t, line_l, line_b]:
+            gmsh.model.mesh.setTransfiniteCurve(line, n_radial, "Progression", growth)
+        for arc in [cyl_tr, cyl_tl, cyl_bl, cyl_br, far_tr, far_tl, far_bl, far_br]:
+            gmsh.model.mesh.setTransfiniteCurve(arc, n_quad + 1)
+
+        # Transfinite surfaces with recombination to quads
+        surfaces = [
+            (surf_tr, [p_r, p_t, f_t, f_r]),
+            (surf_tl, [p_t, p_l, f_l, f_t]),
+            (surf_bl, [p_l, p_b, f_b, f_l]),
+            (surf_br, [p_b, p_r, f_r, f_b]),
+        ]
+        for surf, corners in surfaces:
+            gmsh.model.mesh.setTransfiniteSurface(surf, "Left", corners)
+            gmsh.model.mesh.setRecombine(2, surf)
+
+        gmsh.model.mesh.generate(2)
+
+        # Physical groups
+        wall_phys = gmsh.model.addPhysicalGroup(1, [cyl_tr, cyl_tl, cyl_bl, cyl_br])
+        gmsh.model.setPhysicalName(1, wall_phys, "wall")
+        far_phys = gmsh.model.addPhysicalGroup(1, [far_tr, far_tl, far_bl, far_br])
+        gmsh.model.setPhysicalName(1, far_phys, "farfield")
+        surf_phys = gmsh.model.addPhysicalGroup(2, [surf_tr, surf_tl, surf_bl, surf_br])
         gmsh.model.setPhysicalName(2, surf_phys, "fluid")
 
         gmsh.model.mesh.createTopology()

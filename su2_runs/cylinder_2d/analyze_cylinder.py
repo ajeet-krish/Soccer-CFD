@@ -27,10 +27,10 @@ R_TOL = 0.001     # tolerance for wall node detection
 def discover_cases():
     """Return list of (dir_name, spin_name, re) sorted."""
     cases = []
-    for d in sorted(WORKDIR.glob("output_*_lam_re*_fine")):
+    for d in sorted(WORKDIR.glob("output_*_lam_re*")):
         parts = d.name.split("_")
         spin = parts[1]
-        re = int(parts[3].replace("re", ""))
+        re = int(parts[3].replace("re", "").replace("_fine", ""))
         cases.append((d, spin, re))
     return cases
 

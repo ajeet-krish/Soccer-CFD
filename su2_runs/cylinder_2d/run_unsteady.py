@@ -15,7 +15,7 @@ import numpy as np
 WORKDIR = Path(__file__).parent
 IMAGES = WORKDIR.parent.parent / "docs" / "images" / "su2_cylinder_2d"
 
-SPIN_RATE = 0.4  # S = ω·R/U∞ = 0.2
+SPIN_RATE = 0.4  # ωz = 0.4 rad/s (dimensional); S = ω·R/U = 0.12
 INNER_ITER = 15
 DT = 0.3
 N_TIME = 300
@@ -126,7 +126,7 @@ def per_time_step(rows: list[dict], dt: float) -> tuple:
 # ── Build case list: (label, spin_name, spin_rate, re, dir_suffix) ──
 spin_cases = [
     ("No Spin", 0.0, "nospin"),
-    ("Magnus (S=0.2)", SPIN_RATE, "magnus"),
+    ("Magnus (S=0.12)", SPIN_RATE, "magnus"),
 ]
 
 all_cases = []  # (label, spin_rate, out_dir_name, re)

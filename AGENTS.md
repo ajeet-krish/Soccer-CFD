@@ -134,7 +134,8 @@ AGENTS.md                      # This file
 | 3+ | Unsteady URANS SST + laminar NS (no-spin vs magnus) | ✅ Both regimes done |
 | 4 | 3D sphere drag crisis (Re sweep) | ✅ Cd≈0.87 constant (no drag crisis) |
 | 5 | Textured sphere roughness sweep (4 balls × 5 Re) | ✅ No effect (Cd varies &lt;0.001) |
-| 6 | Deformed ball, altitude effects | ⏳ |
+| 6 | γ-Reθ transition model study | ❌ Negative — see below |
+| 7 | Deformed ball, altitude effects | ⏳ |
 
 ## Key Results
 - **SU2 2D cylinder @ Re=40k (RANS SST)**: Cd=0.683, Cl=-0.032
@@ -146,6 +147,7 @@ AGENTS.md                      # This file
 - **Steady magnus (S=0.2)**: Cl=-0.172 (steady bias)
 - **Overlapping fullback**: 26.1% drag reduction (tandem bluff-body drafting)
 - **Formation pressure maps**: 4-3-3 center 81% (wings open), 4-4-2 half-spaces 68% (balanced), 4-2-3-1 center 93% (congested middle, wings 32%), 3-5-2 center 100% (five-player central wall) with wings at 21% (extremely exposed flanks)
+- **γ-Reθ on 2D cylinder — negative (3 attempts)**: (1) y+≈13 coarse mesh → Cd=0.645 (all 3 Re, identical to SST fully turbulent; sensors don't trigger). (2) y+≈1 structured mesh steady → Cd drifts 1.36→1.34/8k iters, never converges (mesh too well-resolved, von Kármán develops but steady solver suppresses it). (3) y+≈1 URANS → Cd decays 3.92→-0.04 over 300 steps, Cl=0 always (SST eddy viscosity precludes separation, no LSB forms). **Root cause**: γ-Reθ works for attached-flow transition only. Cylinder separation-induced transition requires DDES/LES — RANS-based transition models pre-emptively damp the separated shear layer, preventing LSB formation. Correct approaches for this toolchain: laminar NS (Re<500, St validated), steady RANS SST (Re>40k, Cd validated).
 
 ## Tactical Page Structure
 ```

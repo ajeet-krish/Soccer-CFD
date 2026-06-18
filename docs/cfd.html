@@ -302,45 +302,12 @@
 </tr>
 <tr>
   <td>Spin (Magnus)</td>
-  <td>$\omega_z = 3.33$ rad/s</td>
-  <td>Moving wall BC; $S = \omega R / U = 0.2$</td>
+  <td>$\omega_z = 0.4$ rad/s</td>
+  <td>Moving wall BC; $S = \omega R / U = 0.12$</td>
 </tr>
 </table>
 
-<p>Full config file is in the <a href="./code.html">Code Notebook</a> (section 2, In [3]). Key difference between the two configs: the steady RANS solver uses <strong>non-dimensional viscosity</strong> ($\mu = 1/Re$) with <code>INITIAL_VALUES</code>, while the unsteady laminar solver uses <strong>dimensional viscosity</strong> ($\mu = 0.00267875$ kg/(m&middot;s)) with <code>DIMENSIONAL</code>. The dimensional approach is more robust for the dual time-stepping unsteady solver. The Magnus configuration adds a <strong>moving wall</strong> boundary condition rotating at $\omega_z = 3.33$ rad/s, which corresponds to a spin parameter $S = 0.2$: matching a moderately spun soccer ball.</p>
-
-<h4>3D Sphere</h4>
-<table>
-<tr>
-  <th>Parameter</th>
-  <th>Value</th>
-  <th>Notes</th>
-</tr>
-<tr>
-  <td>Mesh</td>
-  <td>282k tetrahedra</td>
-  <td>No prism layers; $y^+ \approx 13$</td>
-</tr>
-<tr>
-  <td>Sphere diameter</td>
-  <td>0.22 m</td>
-  <td>Standard size 5 ball</td>
-</tr>
-<tr>
-  <td>Re range</td>
-  <td>$10^4 - 10^6$</td>
-  <td>Swept via velocity variation</td>
-</tr>
-<tr>
-  <td>Solver</td>
-  <td>RANS SST (steady)</td>
-  <td>Same model as 2D cylinder</td>
-</tr>
-</table>
-
-<div class="callout-box warn">
-  <strong>Mesh quality note:</strong> The tetrahedral mesh has $y^+ \approx 13$: too high for wall-resolved RANS ($y^+ \approx 1$) and too low for wall functions ($y^+ &gt; 30$). This &ldquo;buffer layer&rdquo; resolution, combined with SST being a fully-turbulent model with no transition mechanism, explains why the drag crisis is not captured. A production mesh would use 15-20 prism layers and a $\gamma$-$Re_\theta$ transition model.
-</div>
+<p>Full config file is in the <a href="./code.html">Code Notebook</a> (section 2, In [3]). Key difference between the two configs: the steady RANS solver uses <strong>non-dimensional viscosity</strong> ($\mu = 1/Re$) with <code>INITIAL_VALUES</code>, while the unsteady laminar solver uses <strong>dimensional viscosity</strong> ($\mu = 0.00267875$ kg/(m&middot;s)) with <code>DIMENSIONAL</code>. The dimensional approach is more robust for the dual time-stepping unsteady solver. The Magnus configuration adds a <strong>moving wall</strong> boundary condition rotating at $\omega_z = 0.4$ rad/s, which corresponds to a spin parameter $S = 0.12$: a moderate spin rate for a soccer ball.</p>
 
 <hr>
 
@@ -392,7 +359,11 @@
 <p>The sweep also tests the Magnus effect at multiple Re. A single Magnus case could be an anomaly; observing the same $-0.3$ to $-0.4$ $C_l$ bias across three different Re confirms the moving-wall boundary condition is working correctly and the Magnus force scales physically with Reynolds number.</p>
 
 <div class="callout-box result">
-  <strong>What the sweep proved:</strong> Our solver is validated. The $C_d$-Re and $St$-Re trends match literature, and the Magnus effect is consistent and physically correct across all three Re. This gives confidence that the mesh resolution, timestep size, and solver settings are appropriate&mdash;before moving to the more expensive 3D sphere simulations.
+  <strong>What the sweep proved:</strong> Our solver is validated. The $C_d$-Re and $St$-Re trends match literature, and the Magnus effect is consistent and physically correct across all three Re. This gives confidence that the mesh resolution, timestep size, and solver settings are appropriate&mdash;before applying the same methodology to higher-Reynolds-number transitional flows.
+</div>
+
+<div class="callout-box warn">
+  <strong>Mesh limitation &mdash; damped shedding amplitude:</strong> The unstructured triangular mesh damps the $C_l$ amplitude by an order of magnitude ($\pm 0.05$) compared to the literature value ($\pm 0.5$). Numerical dissipation from skew-angled triangles in the wake smooths out vortex cores before they fully develop. The shedding <em>frequency</em> ($St$) is correct (within 5% of Williamson 1988), but the <em>amplitude</em> is underpredicted. Recovering the full amplitude would require a structured quad mesh or prism layers in the wake region to reduce transverse numerical diffusion.
 </div>
 
 <h3>Surface Pressure Validation: $C_p(\theta)$</h3>
@@ -657,7 +628,7 @@
   <th>Metric</th>
   <th>&Phi;Flow (Laminar, $S = 3.0$)</th>
   <th>SU2 RANS SST ($S = 0.2$)</th>
-  <th>SU2 Laminar NS ($S=0.2$, Re=120)</th>
+  <th>SU2 Laminar NS ($S=0.12$, Re=120)</th>
   <th>Soccer ball ($S \approx 0.2$)</th>
 </tr>
 <tr>
@@ -676,106 +647,11 @@
 </tr>
 </table>
 
-<p style="color: var(--comment); font-size: 0.78rem;">Note: &Phi;Flow uses $S = \omega R / U = 3.0$ (exaggerated for visual clarity) while SU2 and real soccer balls operate at $S \approx 0.2$. Direct force comparison of the Magnus case is therefore qualitative.</p>
+<p style="color: var(--comment); font-size: 0.78rem;">Note: &Phi;Flow uses $S = \omega R / U = 3.0$ (exaggerated for visual clarity). The SU2 steady RANS uses $S=0.2$, the unsteady laminar uses $S=0.12$, and real soccer balls operate at $S \approx 0.1$&ndash;$0.3$. Direct force comparison across the different $S$ values is therefore qualitative.</p>
 
 <div class="callout-box result">
   <strong>Physical interpretation:</strong> The 43% $C_d$ difference between &Phi;Flow (~1.2) and SU2 (0.683) is <em>not</em> a bug: it is the difference between laminar and fully turbulent boundary layer separation. &Phi;Flow separates at ~80&deg;, producing a wide wake and high pressure drag (matching the classical sub-critical cylinder benchmark). SU2 SST forces transition to turbulence, keeping the boundary layer attached to ~110&deg;, which narrows the wake and reduces $C_d$. Real soccer balls ($Re \approx 2\!-\!4 \times 10^5$) operate near the drag crisis regime, where surface texture and spin determine whether the boundary layer is laminar or turbulent: and therefore whether $C_d$ is closer to 0.5 or 0.1. Neither 2D simulation captures this 3D transition physics, but together they define the empirical bounds of the real behavior.
 </div>
-
-<hr>
-
-<h2 class="section-header">Phase 4: 3D Sphere Simulation</h2>
-<p><em>This section is a work in progress.</em></p>
-
-<p>Second validation case: flow past a smooth sphere over the Reynolds number range $10^4 \le Re_D \le 10^6$. This is the classic &ldquo;drag crisis&rdquo; problem: at $Re \approx 2.5 \times 10^5$, the boundary layer transitions from laminar to turbulent, the separation point shifts aft, and $C_d$ drops from $\approx 0.47$ to $\approx 0.07$.</p>
-
-<div class="callout-box warn">
-  <strong>Key finding:</strong> SU2 RANS SST on a tetrahedral mesh (282k elements, $y^+ \approx 13$) predicts a constant $C_d \approx 0.87$ across the entire Re range. The drag crisis is <em>not</em> captured because SST is a fully-turbulent model that does not model laminar-to-turbulent transition. Wall-resolved prism layers and/or a transition model ($\gamma$-$Re_\theta$) would be needed.
-</div>
-
-<h3>Drag Coefficient vs Reynolds Number</h3>
-<div class="img-row single">
-  <figure>
-    <img src="images/su2_sphere/sphere_cd_re.png" alt="Sphere Cd(Re) comparison" style="max-width:100%">
-    <figcaption>SU2 RANS SST predicts constant $C_d\approx 0.87$ across $Re=10^4$&ndash;$10^6$. The experimental drag crisis ($C_d$ drop from 0.47 to 0.07) is entirely missed: fully-turbulent RANS cannot capture transition phenomena. Achenbach (1972) experimental data shown for reference.</figcaption>
-  </figure>
-</div>
-
-<h3>Interpretation</h3>
-<table>
-<tr>
-  <th>Regime</th>
-  <th>Experimental $C_d$</th>
-  <th>SU2 SST $C_d$</th>
-  <th>Why</th>
-</tr>
-<tr>
-  <td>Sub-critical ($Re &lt; 2 \times 10^5$)</td>
-  <td>~0.47</td>
-  <td rowspan="3">~0.87</td>
-  <td>SST delays separation vs laminar, but $y^+ \approx 13$ prevents accurate wall prediction</td>
-</tr>
-<tr>
-  <td>Critical ($2\times10^5 &lt; Re &lt; 3\times10^5$)</td>
-  <td>0.47 &rarr; 0.07</td>
-  <td>SST has no transition mechanism: crisis not captured</td>
-</tr>
-<tr>
-  <td>Super-critical ($Re &gt; 3\times10^5$)</td>
-  <td>~0.07</td>
-  <td>Constant drag at ~0.87 regardless of Re: fully turbulent model</td>
-</tr>
-</table>
-
-<h3>What This Demonstrates</h3>
-<p>The 3D sphere case is a deliberate demonstration of a <strong>modeling limit</strong>. SU2 with SST is not the right tool for the drag crisis: it was designed for fully turbulent flows. This is a valuable engineering lesson: knowing when a tool should not be used is as important as knowing when to use it. Capturing the drag crisis requires either:</p>
-<ul>
-  <li>A transition model ($\gamma$-$Re_\theta$ or LST) that allows laminar regions upstream of transition</li>
-  <li>Wall-resolved LES or DNS at enormous computational cost</li>
-  <li>Experimental correlation (which is why Achenbach 1972 is still cited today)</li>
-</ul>
-
-<hr>
-
-<!-- ====================================================================== -->
-<h2 class="section-header">Phase 5: Textured Sphere Roughness Sweep</h2>
-<!-- ====================================================================== -->
-
-<p><strong>The question:</strong> How do panel seams affect drag? Four ball types, from smooth (k<sub>s</sub>/D = 0) to the deeply-seamed 4-panel Trionda (k<sub>s</sub>/D = 0.020), were compared at five Reynolds numbers using SU2's <code>WALL_ROUGHNESS</code> boundary condition.</p>
-
-<div class="img-row single">
-  <figure>
-    <img src="images/su2_sphere/sphere_roughness_cd_re.png" alt="Roughness sweep Cd vs Re" style="max-width:100%">
-    <figcaption>Drag coefficient vs Reynolds number for all four ball types. The dashed line is experimental smooth-sphere data (Achenbach 1972). The roughness sweep curves overlay almost perfectly, showing no meaningful drag reduction.</figcaption>
-  </figure>
-</div>
-
-<div class="img-row single">
-  <figure>
-    <img src="images/su2_sphere/sphere_roughness_cd_vs_ks.png" alt="Cd vs roughness" style="max-width:100%">
-    <figcaption>Drag coefficient vs dimensionless roughness at each Reynolds number. The flat lines indicate the roughness height has no effect on the predicted drag.</figcaption>
-  </figure>
-</div>
-
-<h3>What Happened: Roughness Had No Effect</h3>
-
-<p>All four ball types produce virtually identical drag coefficients at every Reynolds number (Cd varies by less than 0.001 across the sweep). The roughness curves overlay so closely on the Cd-Re plot that the markers are indistinguishable. At Re = 10,000, the smooth ball gives Cd = 0.876 and the deepest-roughness Trionda gives Cd = 0.875&mdash;a 0.1% change.</p>
-
-<p>This is a clear demonstration of a <strong>modeling limit</strong>, not a physical result. Three factors combine to suppress the roughness effect:</p>
-
-<ol>
-  <li><strong>RANS SST is fully turbulent</strong>: there is no laminar region for roughness to trip. The boundary layer is already turbulent everywhere, adding roughness cannot trigger transition because there is nothing to transition <em>from</em>.</li>
-  <li><strong>y<sup>+</sup> &asymp; 13</strong>: the first cell is in the buffer layer, too high for wall-resolved roughness modeling (y<sup>+</sup> &lt; 1) and too low for wall-function roughness correlations (y<sup>+</sup> &gt; 30). The roughness modification in the wall function is applied in the wrong regime.</li>
-  <li><strong>No separation-point shift</strong>: roughness affects drag primarily by moving the separation point downstream (making the wake narrower). With y<sup>+</sup> &asymp; 13 and fully-turbulent flow, the separation point is already fixed by the turbulence model at approximately 120&deg; from the stagnation point (compared to ~80&deg; for laminar). The roughness BC cannot shift it further.</li>
-</ol>
-
-<p>The practical implication: SU2 with RANS SST on this mesh can predict the drag of a fully-rough ball (one where the boundary layer is already tripped to turbulence) but <strong>cannot</strong> capture the difference between a smooth ball and a rough one, because that difference depends on the transition process that SST does not model.</p>
-
-<div class="callout-box warn">
-  <strong>What is needed to capture roughness effects:</strong> A transition model (the $\gamma$-$Re_\theta$ correlation-based transition model or LST laminar-turbulent transition model), combined with a wall-resolved mesh (y<sup>+</sup> &lt; 1, achieved through 15-20 prism layers at the wall). With these, the solver can maintain a laminar boundary layer on the smooth ball (separating early at ~80&deg;, high drag) and trigger transition on the rough ball (separating later at ~110&deg;, lower drag), reproducing the drag crisis.
-</div>
-
-<hr>
 
 <!-- ====================================================================== -->
 <h2># Visualization Gallery</h2>
@@ -952,8 +828,6 @@
 <ul>
   <li><strong>&Phi;Flow is excellent for exploration</strong>: 100+ trajectory variations in seconds, fast iteration, intuitive Python API. Its $C_d$ of ~1.2 for the cylinder is within the expected range for laminar flow.</li>
   <li><strong>SU2 RANS is essential for quantification</strong>: $C_d = 0.683$ from the steady RANS is reliable within the fully-turbulent assumption. The URANS $C_l$ bias of $-0.15$ under spin confirms the Magnus effect strength.</li>
-  <li><strong>The sphere drag crisis is beyond steady RANS</strong>: capturing it requires transition modeling or wall-resolved LES. This is not a failure of SU2; it is a clear definition of the model&rsquo;s validity limits.</li>
-  <li><strong>Roughness only matters with a transition model</strong>: the Phase&nbsp;5 sweep showed that <code>WALL_ROUGHNESS</code> in RANS&nbsp;SST has no effect because there is no laminar regime for roughness to trip. Roughness effects require $\gamma$-$Re_\theta$ or another transition model.</li>
   <li><strong>Mesh quality matters</strong>: the unstructured mesh limits shedding amplitude ($\pm 0.05$ vs literature $\pm 0.5$). A structured quad mesh or prism layers would recover the full amplitude.</li>
 </ul>
 
@@ -963,8 +837,9 @@
 
 <h2># Upcoming Work</h2>
 <ul>
-  <li><strong>Phase 6:</strong> Deformed ball &amp; altitude effects: how shape and air density change the drag crisis &mdash; requires a new mesh for non-spherical geometry and possibly a transition model</li>
-  <li><strong>Transition modeling:</strong> Revisiting the sphere drag crisis with SU2's $\gamma$-$Re_\theta$ transition model and a wall-resolved mesh (prism layers, y<sup>+</sup> &lt; 1) to capture the drag crisis and quantify roughness effects correctly</li>
+  <li><strong>Structured quad mesh for cylinder:</strong> A block-structured O-grid around the cylinder would improve boundary layer resolution and recover the full $C_l$ shedding amplitude ($\pm 0.5$ vs the current $\pm 0.05$)</li>
+  <li><strong>Grid convergence study:</strong> Three meshes (coarse / medium / fine) to establish mesh-independence of $C_d$, $St$, and separation angle</li>
+  <li><strong>2D cylinder with $\gamma$-$Re_\theta$ transition model:</strong> Demonstrating laminar separation bubble and transitional flow at $Re = 10^5$ on the cylinder, bridging the gap between the laminar (Re=120-500) and fully-turbulent (SST) regimes</li>
 </ul>
 
 </main>

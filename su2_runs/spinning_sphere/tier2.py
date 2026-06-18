@@ -1,7 +1,8 @@
-"""Tier 1: Steady RANS SST baseline for 3D spinning sphere with Magnus effect.
+"""Tier 2: Prism-layer mesh + γ-Reθ transition model for 3D spinning sphere.
 
-Generates a refined tetrahedral mesh with wake refinement box, runs SU2
-steady RANS SST with rotation (S=0.3), and saves structured results.
+Generates a tetrahedral mesh with prism boundary layers on the sphere surface,
+runs SU2 steady RANS SST + γ-Reθ (Langtry-Menter) with rotation (S=0.3),
+and saves structured results.
 """
 
 import json
@@ -13,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from src.su2_runner import SU2Config, SU2Solver
 
 WORKDIR = Path(__file__).parent
-TIER1_DIR = WORKDIR / "tier1"
-IMAGES = WORKDIR.parent.parent / "docs" / "images" / "su2_spinning_sphere" / "tier1"
+TIER2_DIR = WORKDIR / "tier2"
+IMAGES = WORKDIR.parent.parent / "docs" / "images" / "su2_spinning_sphere" / "tier2"
 
 SPHERE_RADIUS = 0.11
 SPHERE_DIAMETER = 0.22
@@ -22,21 +23,31 @@ SPHERE_AREA = 3.14159265 * SPHERE_DIAMETER**2 / 4
 
 RE = 372000  # 25 m/s on size-5 ball
 SPIN_PARAMETER_S = 0.3
-
-# Non-dim rotation rate: S = ωR/U, so ω = S * U / R
 ROTATION_RATE = SPIN_PARAMETER_S * 1.0 / SPHERE_RADIUS
+
+# First-layer height for y+ < 1 at Re=3.72e5
+# Cf ≈ 0.058/Re^0.2 (turbulent flat plate), u_τ = U*sqrt(Cf/2), ν = 1/Re
+_CF = 0.058 / (RE**0.2)
+_U_TAU = 1.0 * (_CF / 2) ** 0.5
+_NU = 1.0 / RE
+FIRST_LAYER_H = 0.8 * _NU / _U_TAU  # y+ ≈ 0.8 < 1
+BL_GROWTH_RATE = 1.2
+BL_LAYERS = 25
+BL_TOTAL_H = FIRST_LAYER_H * (BL_GROWTH_RATE**BL_LAYERS - 1) / (BL_GROWTH_RATE - 1)
+
+FARFIELD_SIZE = 3.0
 
 
 def generate_mesh() -> Path:
-    """Tier 1 mesh: refined tetrahedral with wake refinement box."""
+    """Tier 2 mesh: tetrahedral with 25 prism boundary layers on sphere surface."""
     import gmsh
 
     gmsh.initialize()
-    gmsh.model.add("spinning_sphere_tier1")
+    gmsh.model.add("spinning_sphere_tier2")
 
     sphere = gmsh.model.occ.addSphere(0, 0, 0, SPHERE_RADIUS)
 
-    ff = 3.0
+    ff = FARFIELD_SIZE
     box = gmsh.model.occ.addBox(-ff, -ff, -ff, 2 * ff, 2 * ff, 2 * ff)
 
     fluid_vols, _ = gmsh.model.occ.cut([(3, box)], [(3, sphere)])
@@ -57,23 +68,38 @@ def generate_mesh() -> Path:
         elif (abs(dz) < 0.01 and abs(dx - 2 * ff) < 0.1 * ff and abs(dy - 2 * ff) < 0.1 * ff):
             outer_tags.append(ent[1])
 
-    # Size fields — set BEFORE mesh generation
+    # Background mesh size field (gradation from sphere to farfield)
     gmsh.model.mesh.field.add("Distance", 1)
     gmsh.model.mesh.field.setNumbers(1, "SurfacesList", inner_tags)
     gmsh.model.mesh.field.add("Threshold", 2)
     gmsh.model.mesh.field.setNumber(2, "InField", 1)
-    gmsh.model.mesh.field.setNumber(2, "SizeMin", 0.004)
+    gmsh.model.mesh.field.setNumber(2, "SizeMin", 0.006)
     gmsh.model.mesh.field.setNumber(2, "SizeMax", 0.15)
     gmsh.model.mesh.field.setNumber(2, "DistMin", 0)
     gmsh.model.mesh.field.setNumber(2, "DistMax", SPHERE_RADIUS)
 
+    # Boundary layer field — prism layers on sphere surface edges
+    sphere_curves = []
+    for tag in inner_tags:
+        boundary = gmsh.model.getBoundary([(2, tag)])
+        for bdim, btag in boundary:
+            if bdim == 1:
+                sphere_curves.append(btag)
+
+    bl_field = gmsh.model.mesh.field.add("BoundaryLayer")
+    gmsh.model.mesh.field.setNumbers(bl_field, "CurvesList", sphere_curves)
+    gmsh.model.mesh.field.setNumber(bl_field, "Size", FIRST_LAYER_H)
+    gmsh.model.mesh.field.setNumber(bl_field, "Ratio", BL_GROWTH_RATE)
+    gmsh.model.mesh.field.setNumber(bl_field, "Thickness", BL_TOTAL_H)
+
+    # Combine fields (Min of background + BL)
     gmsh.model.mesh.field.add("Min", 10)
-    gmsh.model.mesh.field.setNumbers(10, "FieldsList", [2])
+    gmsh.model.mesh.field.setNumbers(10, "FieldsList", [2, bl_field])
     gmsh.model.mesh.field.setAsBackgroundMesh(10)
 
     gmsh.model.mesh.generate(3)
 
-    # Physical groups after mesh generation
+    # Physical groups
     if inner_tags:
         wall = gmsh.model.addPhysicalGroup(2, inner_tags)
         gmsh.model.setPhysicalName(2, wall, "wall")
@@ -87,8 +113,8 @@ def generate_mesh() -> Path:
 
     gmsh.model.mesh.createTopology()
 
-    TIER1_DIR.mkdir(parents=True, exist_ok=True)
-    out = TIER1_DIR / "mesh.su2"
+    TIER2_DIR.mkdir(parents=True, exist_ok=True)
+    out = TIER2_DIR / "mesh.su2"
     gmsh.write(str(out))
     gmsh.finalize()
 
@@ -96,27 +122,21 @@ def generate_mesh() -> Path:
 
 
 def print_mesh_info(mesh_path: Path) -> None:
-    """Print mesh element/node counts from .su2 file."""
     text = mesh_path.read_text()
-    n_elems = text.count("NELEM=")
-    n_points = text.count("NPOIN=")
-    n_lines = len(text.splitlines())
-    # Count element type markers
     for marker in ("TRIANGLE", "TETRAHEDRON", "PRISM", "HEXAHEDRON"):
         cnt = text.count(marker)
         if cnt:
             print(f"  {cnt:>6} {marker}s")
-    print(f"  File: {n_lines} lines, {mesh_path.stat().st_size / 1024:.0f} KB")
+    print(f"  File: {mesh_path.stat().st_size / 1024:.0f} KB")
 
 
-def run_tier1() -> dict:
-    """Execute Tier 1 simulation."""
-    TIER1_DIR.mkdir(parents=True, exist_ok=True)
+def run_tier2() -> dict:
+    """Execute Tier 2 simulation."""
+    TIER2_DIR.mkdir(parents=True, exist_ok=True)
     IMAGES.mkdir(parents=True, exist_ok=True)
 
-    # 1. Mesh
     print("=" * 60)
-    print("Tier 1: Mesh Generation")
+    print("Tier 2: Mesh Generation (prism boundary layers)")
     print("=" * 60)
     t0 = time.time()
     mesh_path = generate_mesh()
@@ -124,30 +144,31 @@ def run_tier1() -> dict:
     print(f"  Mesh: {mesh_path.name}")
     print_mesh_info(mesh_path)
     print(f"  Time: {t1 - t0:.1f}s")
+    print(f"  BL first layer: {FIRST_LAYER_H:.2e} ({FIRST_LAYER_H*SPHERE_DIAMETER*1000:.3f} mm)")
+    print(f"  BL layers: {BL_LAYERS}, growth: {BL_GROWTH_RATE}, total: {BL_TOTAL_H:.4f}")
 
-    # 2. Config
     print("\n" + "=" * 60)
-    print("Tier 1: Config")
+    print("Tier 2: Config (γ-Reθ transition model)")
     print("=" * 60)
     config = SU2Config.from_re(Re=RE, length=SPHERE_DIAMETER, incompressible=True)
     config.ref_area = SPHERE_AREA
-    config.iterations = 500
+    config.iterations = 2000
     config.cfl_number = 0.5
     config.conv_residual_minval = -6
     config.screen_output = "WARNING"
     config.rotation_rate = ROTATION_RATE
+    config.kind_trans_model = "LM"
 
-    cfg_path = TIER1_DIR / "sphere_magnus.cfg"
+    cfg_path = TIER2_DIR / "sphere_magnus_transition.cfg"
     config.write(cfg_path)
     print(f"  Config: {cfg_path.name}")
-    print(f"  Re = {RE:.0f}")
-    print(f"  S = {SPIN_PARAMETER_S}  (ωz = {ROTATION_RATE:.3f} non-dim)")
+    print(f"  Re = {RE:.0f}, S = {SPIN_PARAMETER_S}  (ωz = {ROTATION_RATE:.3f})")
+    print(f"  Transition model: γ-Reθ (LM)")
 
-    # 3. Solver
     print("\n" + "=" * 60)
-    print("Tier 1: SU2 Solver")
+    print("Tier 2: SU2 Solver")
     print("=" * 60)
-    solver = SU2Solver(workdir=TIER1_DIR)
+    solver = SU2Solver(workdir=TIER2_DIR)
     t2 = time.time()
     result = solver.run(cfg_path, mesh_path, timeout=7200)
     t3 = time.time()
@@ -157,21 +178,23 @@ def run_tier1() -> dict:
     print(f"  Iterations = {result.iterations}")
     print(f"  Wall time: {t3 - t2:.0f}s ({((t3 - t2) / 60):.1f} min)")
 
-    # 4. Save results JSON
     output = {
-        "tier": 1,
-        "case": "3D spinning sphere — steady RANS SST",
+        "tier": 2,
+        "case": "3D spinning sphere — γ-Reθ transition model with prism layers",
         "mesh": {
-            "cl_surface": 0.004,
+            "cl_surface": 0.006,
             "cl_farfield": 0.15,
-            "farfield_radius": 3.0,
+            "farfield_radius": FARFIELD_SIZE,
+            "bl_first_layer": FIRST_LAYER_H,
+            "bl_growth_rate": BL_GROWTH_RATE,
+            "bl_layers": BL_LAYERS,
         },
         "physics": {
             "reynolds_number": RE,
             "spin_parameter": SPIN_PARAMETER_S,
             "rotation_rate_non_dim": ROTATION_RATE,
             "solver": "INC_RANS",
-            "turbulence_model": "SST",
+            "turbulence_model": "SST + γ-Reθ",
             "ref_area": SPHERE_AREA,
         },
         "result": {
@@ -182,7 +205,7 @@ def run_tier1() -> dict:
             "wall_time_s": round(t3 - t2, 1),
         },
     }
-    results_path = TIER1_DIR / "results.json"
+    results_path = TIER2_DIR / "results.json"
     results_path.write_text(json.dumps(output, indent=2))
     print(f"\n  Results saved: {results_path}")
 
@@ -190,7 +213,7 @@ def run_tier1() -> dict:
 
 
 if __name__ == "__main__":
-    result = run_tier1()
+    result = run_tier2()
     print(f"\n{'=' * 60}")
-    print(f"Tier 1 complete: Cd={result['result']['cd']:.4f}, Cl={result['result']['cl']:.4f}")
+    print(f"Tier 2 complete: Cd={result['result']['cd']:.4f}, Cl={result['result']['cl']:.4f}")
     print(f"{'=' * 60}")
