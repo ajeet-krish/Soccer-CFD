@@ -132,7 +132,9 @@
     <div class="hero" style="text-align: left; padding: 1.5rem 0;">
       <h1 style="font-size: clamp(1.4rem, 3vw, 2rem);">Code <span class="highlight">Notebook</span></h1>
       <p>All the source code behind the simulations, visualizations, and analysis: presented as a Jupyter-style
-        notebook. Click the copy button on any code block to grab the full snippet.</p>
+        notebook. The six sections below form a complete pipeline: &Phi;Flow exploration &rarr; SU2 configs &rarr;
+        mesh generation &rarr; solver execution &rarr; visualization &rarr; orchestration. See the
+        <a href="./cfd.html">CFD Methodology page</a> for the results this code produces.</p>
     </div>
 
     <!-- ================================================================== -->
@@ -373,7 +375,7 @@ def cylinder_2d(radius=0.3, farfield_radius=15.0,
       <div class="nb-output">
         <div class="out-label">Output: SU2 mesh file</div>
         <div class="out-data">Nodes: 44,710 | Triangles: 89,422 | cl@wall: 0.008 | cl@wake: 0.04</div>
-        <img src="images/su2_cylinder_2d/cylinder_mesh_zoom.png" alt="Cylinder mesh zoomed" style="max-width:100%;margin-top:8px;">
+        <img src="images/su2_cylinder_2d/mesh/cylinder_mesh_zoom.png" alt="Cylinder mesh zoomed" style="max-width:100%;margin-top:8px;">
       </div>
     </div>
 
@@ -468,7 +470,7 @@ def make_animation(frame_dir, output_mp4, fps=20):
       <div class="nb-output">
         <div class="out-label">Output: MP4 animation</div>
         <div class="out-data">200 frames @ 20fps = 10s animation | Resolution: 1920×1080</div>
-        <video src="images/su2_cylinder_2d/cylinder_compare_flow.mp4" autoplay loop muted playsinline
+        <video src="images/su2_cylinder_2d/comparisons/cylinder_nospin_pressure_re_comparison.mp4" autoplay loop muted playsinline
           style="max-width:100%;margin-top:8px;border-radius:4px;"></video>
       </div>
     </div>

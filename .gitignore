@@ -55,3 +55,6 @@ docs/images/tactical/formation_lanes/
 docs/images/tactical/formation_pressure/
 docs/images/tactical/formation_transition/
 
+# Overlap drafting outputs (regeneratable by wake_drafting.py / gap_sweep.py)
+docs/images/tactical/drafting/
+

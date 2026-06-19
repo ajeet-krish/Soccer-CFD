@@ -308,7 +308,7 @@ hr {
 
 /* --- 6. Main Content Layout --- */
 .main-content {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 2rem 20px 4rem;
 }
@@ -562,6 +562,7 @@ hr {
   margin: 1.5rem 0;
 }
 .vid-grid.single { grid-template-columns: 1fr; }
+.vid-grid figure:only-child { grid-column: 1 / -1; }
 .vid-grid video {
   width: 100%;
   border-radius: 6px;
@@ -583,6 +584,7 @@ hr {
   margin: 1.5rem 0;
 }
 .img-row.single { grid-template-columns: 1fr; }
+.img-row.triple { grid-template-columns: 1fr 1fr 1fr; }
 .img-row figure { margin: 0; }
 .img-row figcaption {
   font-size: 0.78rem;
@@ -827,6 +829,7 @@ hr {
   .main-content { padding: 1.5rem 16px 3rem; }
   .vid-grid { grid-template-columns: 1fr; }
   .img-row { grid-template-columns: 1fr; }
+  .img-row.triple { grid-template-columns: 1fr; }
   .video-row { grid-template-columns: 1fr; }
   .video-row.triple { grid-template-columns: 1fr; }
   .iframe-row { grid-template-columns: 1fr; }

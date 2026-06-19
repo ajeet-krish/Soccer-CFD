@@ -43,6 +43,23 @@
       around the wall. A knuckleball zigzags like it's possessed. To understand why, we need to look at what happens
       when a cylinder (the 2D analogue of a soccer ball) moves through a fluid with and without spin.</p>
 
+    <div class="callout-box theory">
+      <strong>The math behind it all: Navier-Stokes.</strong> Every simulation on this page starts with the same two
+      principles: conservation of mass and conservation of momentum. Together they form the
+      <strong>Navier-Stokes equations</strong>, the fundamental laws of fluid motion. The swirling vortex street
+      behind a knuckleball, the steady pressure asymmetry that bends a Magnus shot: both emerge from solving these
+      equations at thousands of points around the cylinder.
+    </div>
+
+    <div class="eq-box" style="margin-top: 0;">
+      $$ \nabla \cdot \mathbf{u} = 0 \qquad \frac{D\mathbf{u}}{Dt} = -\frac{1}{\rho}\nabla p + \nu \nabla^2 \mathbf{u}
+      $$
+      <div class="eq-label">Navier-Stokes: mass conservation (left) and momentum (right)</div>
+    </div>
+
+    <p>See the <a href="./theory.html">Theory page</a> for the full derivation, the Reynolds number, and all governing
+      equations used across this project.</p>
+
     <h3>Magnus Effect: The Predictable Curve</h3>
     <p>When a player strikes a ball with high spin, the rotation drags air faster on one side and slower on the other.
       This creates a pocket of low pressure on the fast-moving side, physically pulling the ball sideways in a smooth,
@@ -55,11 +72,10 @@
       <div class="eq-label">Magnus lift force</div>
     </div>
 
-    <p>In soccer, this is the physics behind every great free kick taker's weapon. <strong>David Beckham</strong> could
+    <p>In soccer, this is the physics behind every great free kick taker. <strong>David Beckham</strong> could
       make the ball dip and swerve with devastating precision. <strong>Lionel Messi's</strong> curled finishes into the
-      top corner are a masterclass in applying the right spin at the right moment. <strong>Roberto Carlos's</strong>
-      infamous 1997 free kick against France bent so dramatically that it seemed to defy physics, but it was
-      pure Magnus effect in action. The goalkeeper sees the spin, reads the curve, and dives. It's hard to save, but
+      top corner are a masterclass in applying the right spin at the right moment. The goalkeeper sees the spin, reads
+      the curve, and dives. It's hard to save, but
       it's predictable. </p>
     <p>Watch this ridiculous spin on a Messi free kick:</p>
 
@@ -154,7 +170,7 @@
       <video controls preload="metadata">
         <source src="images/phiflow_cylinder_2d/velocity_comparison.mp4" type="video/mp4">
       </video>
-      <div class="cap">Velocity comparison: Magnus (R) vs Knuckleball (L). The Magnus wake is narrow and steady;
+      <div class="cap">Velocity comparison: Magnus (L) vs Knuckleball (R). The Magnus wake is narrow and steady;
         the Knuckleball wake is wide with rolling vortices.</div>
     </div>
 
@@ -211,7 +227,8 @@
     <p>The visualizations above come from &Phi;Flow, which solves the laminar Navier-Stokes equations on a
       structured grid. To verify that the physics is correct, we cross-validate against <strong>SU2</strong>, a
       high-fidelity finite-volume RANS solver. For a full breakdown of the methodology, simulation conditions, and
-      quantitative comparisons across six cases (3 Re &times; 2 spin states), see the <a href="./cfd.html">CFD section</a>.</p>
+      quantitative comparisons across six cases (3 Re &times; 2 spin states), see the <a href="./cfd.html">CFD
+        section</a>.</p>
 
     <p>Below are interactive sliders comparing SU2 pressure and velocity fields at Re=120 (the most dynamically
       interesting regime) for no-spin vs Magnus spin. In each slider, drag the divider to reveal either field fully.</p>
@@ -253,16 +270,16 @@
     <div class="img-row single">
       <figure>
         <img src="images/su2_cylinder_2d/steady_rans/cylinder_pressure_comparison.png"
-             alt="Steady RANS pressure comparison">
-        <figcaption>Steady RANS: no-spin (L) vs Magnus (R). The asymmetric pressure dipole from the magnus
+          alt="Steady RANS pressure comparison">
+        <figcaption>Steady RANS: no-spin (L) vs Magnus (R). The asymmetric pressure dipole from the Magnus
           effect is visible: higher pressure on the retreating side, lower on the advancing side.</figcaption>
       </figure>
     </div>
     <div class="img-row single">
       <figure>
         <img src="images/su2_cylinder_2d/steady_rans/cylinder_streamline_comparison.png"
-             alt="Steady RANS streamline comparison">
-        <figcaption>Steady RANS streamlines: no-spin (L) vs Magnus (R). The magnus wake is deflected downward
+          alt="Steady RANS streamline comparison">
+        <figcaption>Steady RANS streamlines: no-spin (L) vs Magnus (R). The Magnus wake is deflected downward
           with narrower recirculation zone.</figcaption>
       </figure>
     </div>
@@ -276,8 +293,8 @@
 
     <div class="img-row single">
       <figure>
-        <img src="images/su2_cylinder_2d/analysis/cylinder_cp_comparison.png"
-             alt="Cp(theta) comparison all cases" style="max-width:100%">
+        <img src="images/su2_cylinder_2d/analysis/cylinder_cp_comparison.png" alt="Cp(theta) comparison all cases"
+          style="max-width:100%">
         <figcaption>Surface pressure coefficient C<sub>p</sub>(&theta;) for all six cases. No-spin cases (blue)
           show symmetric distributions; Magnus cases (red) show asymmetry. The right panel zooms on the rear
           surface where the pressure plateau marks the separation point.</figcaption>
@@ -302,7 +319,8 @@
       <video controls preload="metadata">
         <source src="images/su2_cylinder_2d/comparisons/cylinder_magnus_pressure_re_comparison.mp4" type="video/mp4">
       </video>
-      <div class="cap"><strong>What to watch:</strong> In the no-spin sweep (left), the dark low-pressure vortices in the
+      <div class="cap"><strong>What to watch:</strong> In the no-spin sweep (left), the dark low-pressure vortices in
+        the
         wake become smaller and faster from left panel (Re=120) to right panel (Re=500) &mdash; the wake narrows and
         shedding accelerates. In the Magnus sweep (right), the spin locks the low-pressure region to the advancing
         (bottom) side across all three Re, suppressing the alternating pattern entirely. The difference between the two
@@ -345,26 +363,26 @@
       </tr>
       <tr>
         <td>Magnus Re=120</td>
-        <td>0.72</td>
-        <td>-0.17</td>
-        <td>0.16</td>
-        <td>0.168</td>
+        <td>0.68</td>
+        <td>-0.18</td>
+        <td>0.04</td>
+        <td>&mdash;</td>
         <td>85&deg; (top)</td>
       </tr>
       <tr>
         <td>Magnus Re=200</td>
-        <td>0.75</td>
-        <td><strong>-0.39</strong></td>
-        <td>0.18</td>
-        <td>0.183</td>
+        <td>0.68</td>
+        <td>-0.15</td>
+        <td>0.04</td>
+        <td>&mdash;</td>
         <td>85&deg; (top)</td>
       </tr>
       <tr>
         <td>Magnus Re=500</td>
-        <td>0.75</td>
-        <td>-0.34</td>
-        <td>0.20</td>
-        <td>0.200</td>
+        <td>0.79</td>
+        <td>-0.12</td>
+        <td>0.06</td>
+        <td>&mdash;</td>
         <td>60&deg; (top)</td>
       </tr>
     </table>
@@ -377,13 +395,13 @@
     <div class="callout-box result">
       <strong>What this means for a free kick:</strong> The alternating von K&aacute;rm&aacute;n vortices behind a
       non-spinning ball tug it left, then right, then left again &mdash; each tug at the shedding frequency.
-      At Re=500 (St=0.20), the cylinder sheds at 0.67 Hz, meaning the lateral force flips roughly every 1.5 seconds.
+      At Re=500 (St=0.20), the cylinder sheds at 0.33 Hz, meaning the lateral force flips roughly every 3.0 seconds.
       For a real knuckleball (Re&sim;400k, St&sim;0.20), the shedding rate is &sim;30 Hz &mdash; too fast for the
       ball to fully respond, but enough to create the erratic jitter. The Magnus case tells a different story:
-      a C<sub>l</sub> of &minus;0.39 at Re=200 means the lateral force is steady and predictable. For a free kick
-      at 30 m/s, that same C<sub>l</sub> produces a sideways acceleration of ~3 m/s&sup2;, bending the ball
-      by about a meter over a 25-yard flight. That is the difference between hitting the top corner and sending
-      it wide.
+      the lateral force is steady and predictable, not alternating. For a free kick at 30 m/s with spin parameter
+      $S \approx 0.2$, real soccer balls experience a sideways acceleration of 5&ndash;10 m/s$^2$ (Carre et al. 2002),
+      bending the ball by 1&ndash;3 m over a 25-yard flight. That is the difference between hitting the top corner
+      and sending it wide.
     </div>
 
   </main>

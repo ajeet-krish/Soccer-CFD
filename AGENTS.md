@@ -44,9 +44,9 @@ docs/                          # GitHub Pages site (standalone HTML)
   images/
     phiflow_cylinder_2d/       # ΦFlow cylinder visualizations (MP4)
     tactical/                  # Tactical simulations
-      formation_pressure/      # 4 formations, Gaussian pressure fields (PNG)
       formation_lanes/         # 5-lane pressure analysis per formation (PNG)
       formation_transition/    # Offence to Defence transition videos (MP4)
+      drafting/                # Overlap drafting: solo + inline pressure fields (PNG)
     su2_cylinder_2d/           # SU2 2D cylinder (PNG, MP4)
       re120/                   #   Re=120 laminar (no-spin + magnus)
       re200/                   #   Re=200 laminar
@@ -73,6 +73,10 @@ su2_runs/
     sphere.su2                 # 282K tetrahedral mesh
   tactical_formations/
     generate_formation_pressure.py  # Gaussian pressure field generator
+    run_drafting.py                 # ΦFlow drafting sweep (obsolete — use wake_drafting.py)
+    wake_drafting.py                # ΦFlow wake drafting: solo/inline/offset comparison (main)
+    gap_sweep.py                    # Gap distance sweep: 2m/3m/4m inline only
+    viz_drafting.py                 # Legacy drafting visualization (obsolete)
 src/
   su2_runner.py                # SU2Config (incl wall_roughness), MeshGenerator, SU2Solver, PyVista viz
   build_site.py                # Nav-sync utility (optional)
@@ -110,10 +114,6 @@ AGENTS.md                      # This file
 | `su2_sphere/sphere_roughness_cd_re.png` | PNG | Roughness sweep Cd(Re): 4 ball types |
 | `su2_sphere/sphere_roughness_cd_vs_ks.png` | PNG | Cd vs kₛ/D at each Re |
 | `tactical/formation_comparison.png` | PNG | 2x2 comparison grid, 4 formations, turbo colormap |
-| `tactical/formation_pressure/433.png` | PNG | 4-3-3 Gaussian defensive pressure field |
-| `tactical/formation_pressure/442.png` | PNG | 4-4-2 Gaussian defensive pressure field |
-| `tactical/formation_pressure/4231.png` | PNG | 4-2-3-1 Gaussian defensive pressure field |
-| `tactical/formation_pressure/352.png` | PNG | 3-5-2 Gaussian defensive pressure field |
 | `tactical/formation_lanes/433.png` | PNG | 4-3-3 five-lane pressure analysis with percentages |
 | `tactical/formation_lanes/442.png` | PNG | 4-4-2 five-lane pressure analysis with percentages |
 | `tactical/formation_lanes/4231.png` | PNG | 4-2-3-1 five-lane pressure analysis with percentages |
@@ -122,7 +122,17 @@ AGENTS.md                      # This file
 | `tactical/formation_transition/attacking_to_defending_442.mp4` | MP4 | 4-4-2 attacking→defending morph animation |
 | `tactical/formation_transition/attacking_to_defending_4231.mp4` | MP4 | 4-2-3-1 attacking→defending morph animation |
 | `tactical/formation_transition/attacking_to_defending_352.mp4` | MP4 | 3-5-2 attacking→defending morph animation |
-
+| `tactical/drafting/drafting_wake_comparison.mp4` | MP4 | 3-panel velocity animation (no streamlines): solo v inline v echelon |
+| `tactical/drafting/drafting_solo_wake_t25.png` | PNG | Solo velocity + streamlines at t=25.2s (viridis) |
+| `tactical/drafting/drafting_inline_wake_t25.png` | PNG | Inline velocity + streamlines at t=25.2s (viridis) |
+| `tactical/drafting/drafting_offset_wake_t25.png` | PNG | Offset velocity + streamlines at t=25.2s (viridis) |
+| `tactical/drafting/drafting_solo_pressure_t25.png` | PNG | Solo pressure at t=25.2s (seismic, 99th pctl clip) |
+| `tactical/drafting/drafting_inline_pressure_t25.png` | PNG | Inline pressure at t=25.2s (seismic, 99th pctl clip) |
+| `tactical/drafting/drafting_offset_pressure_t25.png` | PNG | Offset pressure at t=25.2s (seismic, 99th pctl clip) |
+| `tactical/drafting/drafting_gap_2m.png` | PNG | Gap sweep 2m: velocity + streamlines at t=25.2s |
+| `tactical/drafting/drafting_gap_3m.png` | PNG | Gap sweep 3m: velocity + streamlines at t=25.2s |
+| `tactical/drafting/drafting_gap_4m.png` | PNG | Gap sweep 4m: velocity + streamlines at t=25.2s |
+| `tactical/drafting/drafting_gap_comparison.mp4` | MP4 | Gap sweep comparison: 2m/3m/4m stacked velocity (no streamlines) |
 ## Progress Status
 | Phase | Description | Status |
 |-------|-------------|--------|
@@ -136,6 +146,7 @@ AGENTS.md                      # This file
 | 5 | Textured sphere roughness sweep (4 balls × 5 Re) | ✅ No effect (Cd varies &lt;0.001) |
 | 6 | γ-Reθ transition model study | ❌ Negative — see below |
 | 7 | Deformed ball, altitude effects | ⏳ |
+| O | Overlap drafting study (ΦFlow sweep + 3-panel velocity/streamline video) | ✅ 42.2% (256×128, 2m gap, 48s sim) + inline/echelon/solo comparison + gap sweep 2m/3m/4m |
 
 ## Key Results
 - **SU2 2D cylinder @ Re=40k (RANS SST)**: Cd=0.683, Cl=-0.032
@@ -145,7 +156,8 @@ AGENTS.md                      # This file
 - **Unsteady laminar NS @ Re=120**: St=0.16 (Lit: ~0.17); Cl ±0.05 (mesh-limited amplitude); magnus bias ≈ -0.15
 - **3D sphere SST**: Cd≈0.87 constant (no drag crisis); 282k tets, y⁺≈13 insufficient
 - **Steady magnus (S=0.2)**: Cl=-0.172 (steady bias)
-- **Overlapping fullback**: 26.1% drag reduction (tandem bluff-body drafting)
+- **Overlapping fullback**: 42.2% drag reduction (256×128, 2m gap, 48s sim); offset (0.35m lateral) yields 3.9%
+- **Gap distance sweep**: 2m=42.2%, 3m=37.3%, 4m=27.8% — monotonic decay as trailer exits leader's wake
 - **Formation pressure maps**: 4-3-3 center 81% (wings open), 4-4-2 half-spaces 68% (balanced), 4-2-3-1 center 93% (congested middle, wings 32%), 3-5-2 center 100% (five-player central wall) with wings at 21% (extremely exposed flanks)
 - **γ-Reθ on 2D cylinder — negative (3 attempts)**: (1) y+≈13 coarse mesh → Cd=0.645 (all 3 Re, identical to SST fully turbulent; sensors don't trigger). (2) y+≈1 structured mesh steady → Cd drifts 1.36→1.34/8k iters, never converges (mesh too well-resolved, von Kármán develops but steady solver suppresses it). (3) y+≈1 URANS → Cd decays 3.92→-0.04 over 300 steps, Cl=0 always (SST eddy viscosity precludes separation, no LSB forms). **Root cause**: γ-Reθ works for attached-flow transition only. Cylinder separation-induced transition requires DDES/LES — RANS-based transition models pre-emptively damp the separated shear layer, preventing LSB formation. Correct approaches for this toolchain: laminar NS (Re<500, St validated), steady RANS SST (Re>40k, Cd validated).
 
@@ -160,7 +172,14 @@ h1 Tactical Positioning
     h3 3-5-2
     h3 Offence to Defence Transition
   h2 Formation Aerodynamics
-    (Overlapping fullback science only — tandem drag reduction, 26.1%)
+    (3-panel wake comparison video + individual case analysis)
+    h3 Individual Case Analysis
+      (solo / inline / offset — stacked figure+paragraph per case)
+    h3 Callout detail (drag comparison)
+    h3 Energy Model
+    h3 Tactical Connection
+    h3 Fullback Distance Analysis
+      (gap comparison video + 2m/3m/4m stacked figure+paragraph)
 ```
 
 ## Phase 5: Textured Sphere Roughness Sweep
@@ -210,4 +229,13 @@ uv run python su2_runs/sphere_3d/run_roughness.py
 
 # Generate tactical formation pressure maps
 uv run python su2_runs/tactical_formations/generate_formation_pressure.py
+
+# Run overlap drafting sweep (ΦFlow, 124×93, ~7 min)
+uv run python su2_runs/tactical_formations/run_drafting.py
+
+# Generate drafting solo/inline/offset comparison (13 outputs, 256×128, ~5 min)
+uv run python su2_runs/tactical_formations/wake_drafting.py
+
+# Generate gap distance sweep (2m/3m/4m inline only, 7 outputs, ~4 min)
+uv run python su2_runs/tactical_formations/gap_sweep.py
 ```

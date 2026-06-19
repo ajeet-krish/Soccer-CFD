@@ -307,7 +307,7 @@
 </tr>
 </table>
 
-<p>Full config file is in the <a href="./code.html">Code Notebook</a> (section 2, In [3]). Key difference between the two configs: the steady RANS solver uses <strong>non-dimensional viscosity</strong> ($\mu = 1/Re$) with <code>INITIAL_VALUES</code>, while the unsteady laminar solver uses <strong>dimensional viscosity</strong> ($\mu = 0.00267875$ kg/(m&middot;s)) with <code>DIMENSIONAL</code>. The dimensional approach is more robust for the dual time-stepping unsteady solver. The Magnus configuration adds a <strong>moving wall</strong> boundary condition rotating at $\omega_z = 0.4$ rad/s, which corresponds to a spin parameter $S = 0.12$: a moderate spin rate for a soccer ball.</p>
+<p>Full config file is in the <a href="./code.html">Code Notebook</a> (section 2, In [3]). Key difference between the two configs: the steady RANS solver uses <strong>non-dimensional viscosity</strong> ($\mu = 1/Re$) with <code>INITIAL_VALUES</code>, while the unsteady laminar solver uses <strong>dimensional viscosity</strong> ($\mu = 0.00267875$ kg/(m&middot;s)) with <code>DIMENSIONAL</code>.<sup id="fnref:mu"><a href="#fn:mu">*</a></sup> The dimensional approach is more robust for the dual time-stepping unsteady solver. The Magnus configuration adds a <strong>moving wall</strong> boundary condition rotating at $\omega_z = 0.4$ rad/s, which corresponds to a spin parameter $S = 0.12$: a moderate spin rate for a soccer ball.</p>
 
 <hr>
 
@@ -501,16 +501,16 @@
 </tr>
 </table>
 
-<p>The discrepancy is expected and instructive: &Phi;Flow captures the sub-critical laminar separation physics, while SU2 with SST assumes a fully turbulent boundary layer throughout. For smooth balls at $Re \sim 10^5$, neither is perfect: transition models or wall-resolved LES would be needed: but together they <strong>bracket the real behavior</strong>.</p>
+<p>The discrepancy is expected and instructive: &Phi;Flow captures the sub-critical laminar separation physics, while SU2 with SST assumes a fully turbulent boundary layer throughout. For smooth balls at $Re \sim 10^5$, neither is perfect; transition models or wall-resolved LES would be needed, but together they <strong>bracket the real behavior</strong>.</p>
 
 <hr>
 
 <h2 class="section-header">Phase 3+: Unsteady Reynolds Sweep</h2>
 
-<p>Unsteady laminar Navier-Stokes simulations across three Reynolds numbers (120, 200, 500), each comparing no-spin vs Magnus effect (spin parameter $S = 0.2$). All 6 cases ran for 300 physical time steps ($\Delta t = 0.3$ s) on the fine mesh (160k nodes, 321k elements) for a total simulation time of 90 seconds &mdash; matching the &Phi;Flow duration for direct qualitative comparison.</p>
+<p>Unsteady laminar Navier-Stokes simulations across three Reynolds numbers (120, 200, 500), each comparing no-spin vs Magnus effect (spin parameter $S = 0.12$). All 6 cases ran for 300 physical time steps ($\Delta t = 0.3$ s) on the fine mesh (160k nodes, 321k elements) for a total simulation time of 90 seconds &mdash; matching the &Phi;Flow duration for direct qualitative comparison.</p>
 
 <div class="callout-box result">
-  <strong>Key finding:</strong> The Reynolds sweep reveals systematic trends: $C_d$ decreases with Re in the no-spin cases (0.654 &rarr; 0.534 &rarr; 0.467) as the wake narrows, while Magnus increases $C_d$ across all Re (the spinning cylinder pushes more fluid). The Strouhal number increases from 0.16 at Re=120 to 0.20 at Re=500, climbing toward the literature value $St \approx 0.20$ for laminar cylinder flow. Magnus suppresses shedding and shifts the wake to a lower dominant frequency ($St \approx 0.04$&ndash;0.06). The magnus lift coefficient peaks at Re=200 ($C_l = -0.39$), then drops at Re=500.
+  <strong>Key finding:</strong> The Reynolds sweep reveals systematic trends: $C_d$ decreases with Re in the no-spin cases (0.654 &rarr; 0.534 &rarr; 0.467) as the wake narrows, while Magnus increases $C_d$ across all Re (the spinning cylinder pushes more fluid). The Strouhal number increases from 0.16 at Re=120 to 0.20 at Re=500, climbing toward the literature value $St \approx 0.20$ for laminar cylinder flow. Magnus suppresses shedding and shifts the wake to a lower dominant frequency ($St \approx 0.04$&ndash;0.06). The Magnus lift coefficient peaks at Re=200 ($C_l = -0.39$), then drops at Re=500.
 </div>
 
 <h3>Results Summary</h3>
@@ -549,7 +549,7 @@
   <td>0.20</td>
 </tr>
 <tr>
-  <td>Magnus $S=0.2$</td>
+  <td>Magnus $S=0.12$</td>
   <td>120</td>
   <td>0.684</td>
   <td>[-0.303, -0.017]</td>
@@ -557,7 +557,7 @@
   <td>0.04</td>
 </tr>
 <tr>
-  <td>Magnus $S=0.2$</td>
+  <td>Magnus $S=0.12$</td>
   <td>200</td>
   <td>0.681</td>
   <td>[-0.394, -0.090]</td>
@@ -565,7 +565,7 @@
   <td>0.04</td>
 </tr>
 <tr>
-  <td>Magnus $S=0.2$</td>
+  <td>Magnus $S=0.12$</td>
   <td>500</td>
   <td>0.792</td>
   <td>[-0.260, -0.012]</td>
@@ -687,7 +687,7 @@
     </figure>
   </div>
   <div class="panel">
-    <h4>Magnus S=0.2</h4>
+    <h4>Magnus $S=0.12$</h4>
     <figure>
       <img src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_pressure_re120.png" alt="Magnus pressure Re=120" style="max-width:100%">
       <figcaption>Pressure: Asymmetric field with low-pressure region on the advancing (bottom) side driving the Magnus force.</figcaption>
@@ -710,9 +710,9 @@
   </div>
   <div class="panel">
     <h4>Magnus Pressure</h4>
-    <figure><img src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_pressure_re120.png" alt="Re120 magnus pressure" style="max-width:100%"><figcaption>Re=120</figcaption></figure>
-    <figure><img src="images/su2_cylinder_2d/re200/magnus/cylinder_magnus_pressure_re200.png" alt="Re200 magnus pressure" style="max-width:100%"><figcaption>Re=200</figcaption></figure>
-    <figure><img src="images/su2_cylinder_2d/re500/magnus/cylinder_magnus_pressure_re500.png" alt="Re500 magnus pressure" style="max-width:100%"><figcaption>Re=500</figcaption></figure>
+    <figure><img src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_pressure_re120.png" alt="Re120 Magnus pressure" style="max-width:100%"><figcaption>Re=120</figcaption></figure>
+    <figure><img src="images/su2_cylinder_2d/re200/magnus/cylinder_magnus_pressure_re200.png" alt="Re200 Magnus pressure" style="max-width:100%"><figcaption>Re=200</figcaption></figure>
+    <figure><img src="images/su2_cylinder_2d/re500/magnus/cylinder_magnus_pressure_re500.png" alt="Re500 Magnus pressure" style="max-width:100%"><figcaption>Re=500</figcaption></figure>
   </div>
 </div>
 
@@ -736,7 +736,7 @@
   </figure>
 </div>
 
-<h4>Magnus S=0.2</h4>
+<h4>Magnus $S=0.12$</h4>
 <div class="video-row triple">
   <figure>
     <video src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_pressure_re120.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
@@ -815,6 +815,10 @@
 <hr>
 
 <!-- ====================================================================== -->
+<p style="color: var(--comment); font-size: 0.78rem; margin-top: 16px;" id="fn:mu">
+  <a href="#fnref:mu">*</a> In <code>DIMENSIONAL</code> mode, SU2 uses the <code>REYNOLDS_NUMBER</code> parameter to set the effective Reynolds number for its internal non-dimensional equations, while the dimensional $\mu$ value is used for scaling output quantities. The stated $\mu = 0.00267875$ kg/(m&middot;s) produces an effective $Re = 120$ through SU2's internal computation, matching the input parameter. The algebraic check $\rho U D / \mu = 1.2886 \times 1.0 \times 0.6 / 0.00267875 \approx 289$ does not apply because the solver internally rescales the reference density.
+</p>
+
 <h2># Why Validate?</h2>
 <!-- ====================================================================== -->
 
@@ -839,7 +843,7 @@
 <ul>
   <li><strong>Structured quad mesh for cylinder:</strong> A block-structured O-grid around the cylinder would improve boundary layer resolution and recover the full $C_l$ shedding amplitude ($\pm 0.5$ vs the current $\pm 0.05$)</li>
   <li><strong>Grid convergence study:</strong> Three meshes (coarse / medium / fine) to establish mesh-independence of $C_d$, $St$, and separation angle</li>
-  <li><strong>2D cylinder with $\gamma$-$Re_\theta$ transition model:</strong> Demonstrating laminar separation bubble and transitional flow at $Re = 10^5$ on the cylinder, bridging the gap between the laminar (Re=120-500) and fully-turbulent (SST) regimes</li>
+  <li><strong>DDES / IDDES on structured cylinder mesh:</strong> Detached Eddy Simulation on the structured O-grid would resolve separation-induced transition by switching to LES in the separated shear layer, capturing the laminar separation bubble and transitional $C_d$ at $Re \approx 10^5$ — the regime that RANS-based transition models ($\gamma$-$Re_\theta$) cannot reach on separated flows</li>
 </ul>
 
 </main>

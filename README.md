@@ -18,7 +18,7 @@ A dual-layer CFD portfolio combining fast ΦFlow (JAX) prototyping with SU2 (RAN
 | # | Module | Method | Key Result |
 |---|--------|--------|-----------|
 | 1 | **Shot Aerodynamics** | Navier-Stokes (256×128) | Magnus lift from rotating cylinder; knuckleball unsteady wake |
-| 2 | **Tactical Positioning** | Navier-Stokes (248×186) | 26.1% drag reduction via wake shielding (overlapping fullback) |
+| 2 | **Tactical Positioning** | Navier-Stokes (256×128) | 42.2% drag reduction via wake shielding (overlapping fullback) |
 
 ### SU2 Validation
 
@@ -45,15 +45,18 @@ A cylinder in crossflow at Re ≈ 2×10⁵, comparing a rotating case (ω = 10 r
 
 ### 2. Tactical Positioning — Overlapping Fullback
 
-The fluid-dynamic basis of the overlapping run: two rectangular bluff bodies in tandem at Re = 2×10⁵. The downstream player (fullback) enters the winger's low-pressure wake, producing **26.1% drag reduction** — the drafting effect familiar from cycling and motorsport, now quantified for soccer.
+The fluid-dynamic basis of the overlapping run: two rectangular bluff bodies in tandem at Re ≈ 2×10⁴ (8&thinsp;m × 4&thinsp;m domain, U = 1&thinsp;m/s). The downstream player (fullback) enters the winger's low-pressure wake, producing **42.2% drag reduction** at 2&thinsp;m gap — the drafting effect familiar from cycling and motorsport, now quantified for soccer. A lateral offset of just 0.35&thinsp;m drops the benefit to 3.9%. A gap distance sweep (2&thinsp;m → 3&thinsp;m → 4&thinsp;m) shows monotonic decay: 42.2% → 37.3% → 27.8%.
 
 | Parameter | Value |
 |-----------|-------|
 | Player width | 0.3 m |
 | Player height | 1.8 m |
-| Streamwise spacing | 2.0 m |
-| Inlet velocity | 10 m/s |
-| Drag reduction | 26.1% |
+| Streamwise spacing | 2.0 m (inline), 0.35&thinsp;m lateral (offset) |
+| Domain | 8.0 × 4.0 m |
+| Grid | 256 × 128 |
+| Inlet velocity | 1.0 m/s |
+| Drag reduction (inline) | 42.2% |
+| Drag reduction (offset) | 3.9% |
 
 ### 3. SU2 2D Cylinder Validation
 
@@ -109,7 +112,9 @@ su2_runs/
 │   ├── viz_sphere.py      # PyVista visualization pipeline
 │   └── sphere.su2         # Tetrahedral mesh (282K tets)
 └── tactical_formations/
-    └── generate_formation_pressure.py  # Gaussian pressure field generator
+    ├── generate_formation_pressure.py  # Gaussian pressure field generator
+    ├── wake_drafting.py                # ΦFlow wake drafting: solo/inline/offset comparison
+    └── gap_sweep.py                    # Gap distance sweep: 2m/3m/4m inline
 docs/                      # GitHub Pages site
 ├── index.html             # Landing page hub
 ├── theory.html            # Background fluid dynamics theory
@@ -120,10 +125,11 @@ docs/                      # GitHub Pages site
 ├── custom.css             # Dark terminal theme + responsive nav
 └── images/                # Generated visualizations
     ├── phiflow_cylinder_2d/   # ΦFlow pressure/velocity comparisons
-    ├── tactical/               # Formation pressure maps & transitions
+    ├── tactical/               # Formation pressure maps, transitions, drafting
     │   ├── formation_lanes/
     │   ├── formation_pressure/
-    │   └── formation_transition/
+    │   ├── formation_transition/
+    │   └── drafting/           # Wake drafting: solo/inline/offset + gap sweep
     ├── su2_cylinder_2d/        # SU2 2D cylinder results
     │   ├── re120/              # Unsteady laminar @ Re=120 (no-spin + magnus)
     │   ├── re200/              # Unsteady laminar @ Re=200
@@ -174,6 +180,15 @@ uv run python su2_runs/sphere_3d/viz_sphere.py
 uv run python su2_runs/tactical_formations/generate_formation_pressure.py
 ```
 
+**Overlap drafting analysis (ΦFlow, 256×128):**
+```bash
+# Solo/inline/offset comparison (13 outputs)
+uv run python su2_runs/tactical_formations/wake_drafting.py
+
+# Gap distance sweep (2m/3m/4m inline)
+uv run python su2_runs/tactical_formations/gap_sweep.py
+```
+
 **Website (local preview):**
 ```bash
 python -m http.server -d docs 8000
@@ -194,4 +209,4 @@ open http://localhost:8000
 - **Textured Sphere (4 balls × 5 Re)**: WALL_ROUGHNESS produces no effect (Cd varies &lt;0.001). Modeling limit: needs γ-Reθ + y+&lt;1.
 - **Unsteady laminar NS (Re=120/200/500)**: St matches Williamson 1988 to within 5%. Cd matches Tritton 1959. Magnus Cl bias up to -0.39.
 - **Surface Cp analysis**: Separation angles extracted: 87°→97°→103° (Re=120→200→500), confirming correct physical trend.
-- **Overlapping Fullback**: 26.1% drag reduction quantified — the fluid-dynamic basis for why overlapping runs save energy.
+- **Overlapping Fullback**: 42.2% drag reduction at 2&thinsp;m gap (inline); 3.9% at 0.35&thinsp;m lateral offset. Gap sweep (2m/3m/4m): 42.2% → 37.3% → 27.8% — monotonic decay as trailer exits leader's wake. Each configuration generates velocity field animations with animated streamlines, static pressure images clipped to 99th percentile (seismic colormap), and drag-table output.

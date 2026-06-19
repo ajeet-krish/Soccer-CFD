@@ -139,7 +139,7 @@ def animate_pressure_comparison(frames_magnus, frames_knuckle):
         ax.set_ylim(0.5, 3.5)
 
         p0 = frames[0]["pressure"]
-        im = ax.imshow(p0.T, origin="lower", cmap="magma", aspect="auto", extent=[0, 8, 0, 4])
+        im = ax.imshow(p0.T, origin="lower", cmap="Spectral", aspect="auto", extent=[0, 8, 0, 4])
         ax.add_patch(Circle(CENTER, RADIUS, facecolor="black", edgecolor="white", linewidth=2.0))
         imgs.append(im)
 
@@ -216,7 +216,7 @@ def animate_magnus_pressure(frames):
     all_p = np.concatenate([f["pressure"].ravel() for f in frames[1:]])
     _animate_single(frames, IMAGES / "phiflow_cylinder_2d" / "magnus_pressure.mp4",
                     title="Magnus Effect — Pressure Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
-                    cmap="magma", vmin=float(all_p.min()), vmax=float(all_p.max()),
+                    cmap="Spectral", vmin=float(all_p.min()), vmax=float(all_p.max()),
                     cbar_label="Pressure (Pa)",
                     data_fn=lambda f: f["pressure"])
 
@@ -247,7 +247,7 @@ def animate_knuckle_pressure(frames):
     all_p = np.concatenate([f["pressure"].ravel() for f in frames[1:]])
     _animate_single(frames, IMAGES / "phiflow_cylinder_2d" / "knuckleball_pressure_individual.mp4",
                     title="Knuckleball — Pressure Field  (U = 1.0 m/s, Re = 4\u00d710\u2074)",
-                    cmap="magma", vmin=float(all_p.min()), vmax=float(all_p.max()),
+                    cmap="Spectral", vmin=float(all_p.min()), vmax=float(all_p.max()),
                     cbar_label="Pressure (Pa)",
                     data_fn=lambda f: f["pressure"])
 
@@ -279,18 +279,13 @@ PHIFLOW_IMAGES = IMAGES / "phiflow_cylinder_2d"
 
 
 def extract_static_frames(frames_magnus, frames_knuckle, output_dir=None):
-    """Extract static PNG frames at animation time 6-10s (frames 60-95, every 5th).
-
-    Total: 2 cases × 2 fields × 8 frames = 32 PNGs.
-    """
+    """Extract static PNG frames at frame 095 (last frame)."""
     if output_dir is None:
         output_dir = PHIFLOW_IMAGES
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Animation: 100 frames total @ 10fps → 10s. Frame 0 = t=0s, frame 99 = t=9.9s.
-    # Animation time 6-10s → frames 60-99. Select every 5th frame.
-    frame_indices = list(range(60, min(100, len(next(iter(frames_magnus.values() if isinstance(frames_magnus, dict) else frames_magnus)) if isinstance(next(iter(frames_magnus.values() if isinstance(frames_magnus, dict) else frames_magnus)), list) else frames_magnus)), 5))  # noqa
+    frame_indices = [95]
 
     x_s = np.linspace(0, 8.0, 256)
     y_s = np.linspace(0, 4.0, 128)
@@ -339,14 +334,14 @@ def extract_static_frames(frames_magnus, frames_knuckle, output_dir=None):
     pmin = min(float(all_p_m.min()), float(all_p_k.min()))
     pmax = max(float(all_p_m.max()), float(all_p_k.max()))
 
-    _extract(frames_magnus, "magnus", "Magnus", "pressure", "pressure", "magma", pmin, pmax, "Pressure (Pa)")
-    _extract(frames_knuckle, "knuckleball", "Knuckleball", "pressure", "pressure", "magma", pmin, pmax, "Pressure (Pa)")
+    _extract(frames_magnus, "magnus", "Magnus", "pressure", "pressure", "Spectral", pmin, pmax, "Pressure (Pa)")
+    _extract(frames_knuckle, "knuckleball", "Knuckleball", "pressure", "pressure", "Spectral", pmin, pmax, "Pressure (Pa)")
 
     # Velocity fields
     _extract(frames_magnus, "magnus", "Magnus (Spin)", "velocity", "velocity", "inferno", 0, 1.5, "Velocity (m/s)")
     _extract(frames_knuckle, "knuckleball", "Knuckleball (No Spin)", "velocity", "velocity", "inferno", 0, 1.5, "Velocity (m/s)")
 
-    print(f"\nExtracted {len(frame_indices) * 4} static PNGs to {output_dir}/")
+    print(f"\nExtracted {len(frame_indices) * 4} static PNGs to {output_dir}/ (frame {frame_indices[0]})")
 
 
 if __name__ == "__main__":
