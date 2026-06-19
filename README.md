@@ -1,212 +1,163 @@
 # The Physics of Play
 
-**Aerodynamics in Summer Sports & FIFA World Cup 2026**
-
-A dual-layer CFD portfolio combining fast ΦFlow (JAX) prototyping with SU2 (RANS) high-fidelity validation, built as a standalone HTML website.
+**Aerodynamics in Soccer & FIFA World Cup 2026**
 
 [**View the portfolio site →**](https://ajeet-krish.github.io/Soccer-CFD/)
 
-## Project Overview
+This project explores fluid dynamics through soccer, building CFD simulations with &Phi;Flow and SU2 to reveal the hidden structure in everyday play.
 
-| Layer | Tool | Role |
-|-------|------|------|
-| **Fast prototyping** | ΦFlow (2D, JAX) | Real-time sweeps, differentiable flow, tactical space optimization |
-| **High-fidelity validation** | SU2 (3D RANS) | Production-grade aerodynamic coefficients, boundary layer analysis |
+---
 
-### ΦFlow Modules
+### 1. Theory — The Physics Behind the Simulations
 
-| # | Module | Method | Key Result |
-|---|--------|--------|-----------|
-| 1 | **Shot Aerodynamics** | Navier-Stokes (256×128) | Magnus lift from rotating cylinder; knuckleball unsteady wake |
-| 2 | **Tactical Positioning** | Navier-Stokes (256×128) | 42.2% drag reduction via wake shielding (overlapping fullback) |
+What is CFD and how the simulations work under the hood: from the Navier-Stokes equations to the Magnus effect, Reynolds number, and the Strouhal number that governs vortex shedding.
 
-### SU2 Validation
+Key topics: boundary layers, separation, the Magnus effect, Bernoulli's principle, and how these translate to soccer scenarios.
 
-| # | Case | Status | Key Result |
-|---|------|--------|-----------|
-| 1 | **2D Cylinder** (Re=40k, RANS SST) | ✅ Complete | Cd=0.683 vs ΦFlow~1.2 — 43% diff explained |
-| 2 | **3D Smooth Sphere** (Re sweep 10⁴→10⁶, RANS SST) | ✅ Complete | Cd≈0.87 flat across Re (no drag crisis — SST limitation) |
-| 3 | **Textured Sphere Roughness Sweep** (4 balls × 5 Re) | ✅ Complete | Cd varies &lt;0.001 — roughness needs γ-Reθ + y+&lt;1 |
+[→ Theory page](https://ajeet-krish.github.io/Soccer-CFD/theory.html)
 
-### Formation Pressure Maps
+---
 
-Each formation modelled as a superposition of Gaussian influence fields (one per defender), revealing defensive pressure patterns across five vertical lanes. Four formations compared: 4-3-3, 4-4-2, 4-2-3-1, 3-5-2. Animated offence-to-defence transitions show how space closes during the counter-attack.
+### 2. CFD Methodology — How the Simulations Are Built
 
-## Simulation Details
+A two-solver pipeline designed for both speed and accuracy:
 
-### 1. Shot Aerodynamics — Magnus vs Knuckleball
+| Layer | Tool | Fidelity | Purpose |
+|-------|------|----------|---------|
+| Rapid prototyping | &Phi;Flow (2D) | Laminar, no turbulence model | 100+ parametric sweeps, identify interesting regimes |
+| High-fidelity validation | SU2 (2D / 3D) | RANS SST $k$-$\omega$, unstructured mesh | Accurate $C_d$, $C_l$, boundary layer profiles |
+| Visualization | PyVista | N/A | 3D pressure contours, stream ribbons, comparison renders |
 
-A cylinder in crossflow at Re ≈ 2×10⁵, comparing a rotating case (ω = 10 rad/s) with a non-rotating case (ω = 0).
+All meshes are generated programmatically with gmsh's Python API, combining distance-based wall refinement with a wake refinement box for vortex resolution. The full mesh has 160k nodes and 321k triangular elements.
 
-- **Domain**: 8.0 × 4.0 m, cylinder radius 0.3 m at (2.0, 2.0)
-- **Grid**: 256 × 128, staggered (MAC)
-- **Solver**: Semi-Lagrangian advection + CG pressure solve
-- **Inlet**: Uniform 1.0 m/s from left (x⁻) boundary
+Six unsteady laminar cases (Re=120, 200, 500 × no-spin, Magnus) validate the solver against Williamson 1988 and Tritton 1959 — Strouhal number matches to within 5%. Separation angles extracted from surface $C_p$ curves confirm the physical trend (87° → 97° → 103°).
 
-### 2. Tactical Positioning — Overlapping Fullback
+[→ CFD page](https://ajeet-krish.github.io/Soccer-CFD/cfd.html)
 
-The fluid-dynamic basis of the overlapping run: two rectangular bluff bodies in tandem at Re ≈ 2×10⁴ (8&thinsp;m × 4&thinsp;m domain, U = 1&thinsp;m/s). The downstream player (fullback) enters the winger's low-pressure wake, producing **42.2% drag reduction** at 2&thinsp;m gap — the drafting effect familiar from cycling and motorsport, now quantified for soccer. A lateral offset of just 0.35&thinsp;m drops the benefit to 3.9%. A gap distance sweep (2&thinsp;m → 3&thinsp;m → 4&thinsp;m) shows monotonic decay: 42.2% → 37.3% → 27.8%.
+---
 
-| Parameter | Value |
-|-----------|-------|
-| Player width | 0.3 m |
-| Player height | 1.8 m |
-| Streamwise spacing | 2.0 m (inline), 0.35&thinsp;m lateral (offset) |
-| Domain | 8.0 × 4.0 m |
-| Grid | 256 × 128 |
-| Inlet velocity | 1.0 m/s |
-| Drag reduction (inline) | 42.2% |
-| Drag reduction (offset) | 3.9% |
+### 3. Shot Aerodynamics — Magnus vs Knuckleball
 
-### 3. SU2 2D Cylinder Validation
+Animations comparing the Magnus effect (topspin) against the knuckleball (no-spin) on a 2D cylinder proxy for a soccer ball at Re ≈ 4×10⁴.
 
-SU2 RANS SST on a circular cylinder at Re=40k, matching the ΦFlow shot domain.
+- **Magnus**: Rotating cylinder at $\omega = 10$ rad/s ($S = 3.0$). The asymmetric wake produces a downward force, bending the trajectory.
+- **Knuckleball**: Non-rotating. Alternating vortex shedding creates an unsteady wake, producing the unpredictable "dancing" motion of a knuckleball free kick.
+- **SU2 validation**: RANS SST predicts $C_d = 0.68$ (fully turbulent), while &Phi;Flow predicts $C_d \approx 1.2$ (laminar) — the 43% difference reflects the physical distinction between laminar and turbulent separation. Together they bracket the real behavior of a soccer ball in flight.
 
-- **Mesh**: gmsh-generated, 2D quadrilateral-dominant
-- **Solver**: INC_RANS, SST turbulence model, FDS convective scheme
-- **Results**: Cd=0.683 (SU2) vs ~1.2 (ΦFlow) — difference explained by fully turbulent RANS delaying separation (~110° vs ~80°), producing a narrower wake
+[→ Shooting page](https://ajeet-krish.github.io/Soccer-CFD/shot.html)
 
-### 4. SU2 3D Sphere: Drag Crisis (Smooth)
+---
 
-Steady RANS (SST k-ω) on a smooth sphere sweeping Re = 10⁴ → 10⁶.
+### 4. Tactical Positioning — Formation Pressure Maps
 
-- **Mesh**: Coarse tetrahedral (45K nodes, 282K tets, y+ ~13)
-- **Limitation**: SST is fully turbulent — no drag crisis captured (Cd ≈ 0.87 flat). Consistent with RANS behaviour.
+Players modeled as Gaussian influence fields to examine defensive pressure across five vertical lanes. Four formations compared:
 
-### 5. SU2 3D Sphere: Textured Ball Roughness
+| Formation | Center pressure | Flanks |
+|-----------|----------------|--------|
+| 4-3-3 | 81% | Wings open, wide attacking options |
+| 4-4-2 | 68% | Balanced half-spaces |
+| 4-2-3-1 | 93% | Congested middle, wings at 32% |
+| 3-5-2 | 100% | Central wall, wings at 21% |
 
-Comparing four ball types via `WALL_ROUGHNESS` model across Re = 10⁴ → 10⁶:
+Animated offence-to-defence transitions show how space closes during the counter-attack.
 
-| Ball | Year | Panels | Est. Seam Depth | kₛ/D | Source |
-|------|------|--------|----------------|------|--------|
-| Smooth (baseline) | — | ∞ | 0.0 mm | 0.0 | — |
-| Jabulani | 2010 | 8 | ~1.5 mm | 0.007 | Goff et al. 2022 |
-| Brazuca | 2014 | 6 | ~3.0 mm | 0.014 | Alam et al. 2016 |
-| Trionda | 2026 | 4 | ~4.5 mm | 0.020 | MDPI Appl Sci 2026 |
+[→ Tactical page](https://ajeet-krish.github.io/Soccer-CFD/tactical.html)
 
-RANS SST with `WALL_ROUGHNESS` produces no meaningful drag variation (Cd varies &lt;0.001 across all balls and Re). The roughness effect cannot be captured without a transition model (γ-Reθ) and a wall-resolved mesh (y+&lt;1, prism layers). This negative result is documented as a clear modeling-limit demonstration.
+---
 
-## Project Structure
+### 5. Overlap Run Analysis — Wake Drafting
 
-```
-src/
-├── __init__.py
-├── build_all.py           # ΦFlow orchestrator
-├── build_site.py          # Nav-sync utility (optional)
-├── domain.py              # Domain constants (grid, bounds, dt)
-├── shot_aero.py           # Magnus + Knuckleball (cylinder in crossflow)
-├── tactical.py            # Tactical positioning (overlapping fullback)
-├── su2_runner.py          # SU2Config, MeshGenerator, SU2Solver, PyVista viz
-└── utils.py               # Shared theme, paths, imports
-su2_runs/
-├── cylinder_2d/           # Phase 3 — 2D cylinder validation
-│   ├── run_cylinder.py    # Mesh → config → SU2 → steady RANS
-│   ├── run_unsteady.py    # Unsteady laminar NS (Re=120/200/500)
-│   ├── generate_viz.py    # Static plots + animation pipeline
-│   ├── analyze_cylinder.py  # Cp extraction + separation angles
-│   ├── cylinder.cfg       # Steady RANS config (coarse mesh)
-│   └── cylinder_magnus.cfg # Steady RANS magnus config
-├── sphere_3d/             # Phase 4+5 — sphere drag crisis + roughness
-│   ├── run_sphere.py      # Smooth sphere Re sweep
-│   ├── run_roughness.py   # 4 balls × 5 Re roughness sweep
-│   ├── viz_sphere.py      # PyVista visualization pipeline
-│   └── sphere.su2         # Tetrahedral mesh (282K tets)
-└── tactical_formations/
-    ├── generate_formation_pressure.py  # Gaussian pressure field generator
-    ├── wake_drafting.py                # ΦFlow wake drafting: solo/inline/offset comparison
-    └── gap_sweep.py                    # Gap distance sweep: 2m/3m/4m inline
-docs/                      # GitHub Pages site
-├── index.html             # Landing page hub
-├── theory.html            # Background fluid dynamics theory
-├── shot.html              # Shot aerodynamics (ΦFlow + SU2)
-├── tactical.html          # Tactical positioning & formation pressure maps
-├── cfd.html               # CFD methodology & validation
-├── code.html              # Jupyter-style code notebook
-├── custom.css             # Dark terminal theme + responsive nav
-└── images/                # Generated visualizations
-    ├── phiflow_cylinder_2d/   # ΦFlow pressure/velocity comparisons
-    ├── tactical/               # Formation pressure maps, transitions, drafting
-    │   ├── formation_lanes/
-    │   ├── formation_pressure/
-    │   ├── formation_transition/
-    │   └── drafting/           # Wake drafting: solo/inline/offset + gap sweep
-    ├── su2_cylinder_2d/        # SU2 2D cylinder results
-    │   ├── re120/              # Unsteady laminar @ Re=120 (no-spin + magnus)
-    │   ├── re200/              # Unsteady laminar @ Re=200
-    │   ├── re500/              # Unsteady laminar @ Re=500
-    │   ├── steady_rans/        # Steady RANS comparison images
-    │   ├── comparisons/        # Re sweep comparison animations
-    │   ├── analysis/           # Cp(θ) + separation angle analysis
-    │   └── mesh/               # Mesh visualization
-    └── su2_sphere/             # SU2 3D sphere (smooth + roughness sweep)
-assets/                    # ΦFlow frame cache (ignored)
-linkedin_posts/            # LinkedIn content drafts (ignored)
-```
+CFD analysis of the overlapping fullback: two rectangular bluff bodies in tandem at Re ≈ 2×10⁴. The downstream player (fullback) enters the winger's low-pressure wake, producing significant drag reduction:
+
+| Configuration | Gap | Drag reduction |
+|--------------|-----|---------------|
+| Inline | 2 m | 42.2% |
+| Inline | 3 m | 37.3% |
+| Inline | 4 m | 27.8% |
+| Offset (0.35 m lateral) | 2 m | 3.9% |
+
+The drafting effect — familiar from cycling and motorsport — is now quantified for soccer. A lateral offset of just 0.35 m drops the benefit from 42.2% to 3.9%, showing how critical the in-line overlap path is for conserving energy.
+
+[→ Overlap Run page](https://ajeet-krish.github.io/Soccer-CFD/overlap.html)
+
+---
+
+## Key Results & Honest Limitations
+
+- **2D Cylinder (Re=40k)**: SU2 Cd=0.683 vs ΦFlow Cd≈1.2 — the 43% gap is physically meaningful (laminar vs turbulent separation). Neither is perfect for real soccer balls; together they bracket the truth.
+- **3D Sphere (Smooth, Re 10⁴→10⁶)**: SST k-ω produces Cd≈0.87 flat. No drag crisis — transition model + wall-resolved mesh required.
+- **Textured Sphere (4 balls × 5 Re)**: WALL_ROUGHNESS produces no effect (Cd varies &lt;0.001). Modelling limit: needs γ-Reθ + y+&lt;1.
+- **Unsteady laminar NS (Re=120/200/500)**: St matches Williamson 1988 to within 5%. Cd matches Tritton 1959. Magnus Cl bias up to -0.39.
+- **Overlapping Fullback**: 42.2% drag reduction at 2 m gap (inline); 3.9% at 0.35 m lateral offset. Gap sweep: 42.2% → 37.3% → 27.8% — monotonic decay as trailer exits leader's wake.
+- **Mesh limitation**: Shedding amplitude is underpredicted (±0.05 vs literature ±0.5) — numerical dissipation from unstructured triangles damps vortex cores. Structured O-grid or prism layers would recover the full amplitude.
+
+---
 
 ## Getting Started
 
-**ΦFlow simulations:**
 ```bash
+# Install dependencies
 uv sync
+
+# Run ΦFlow simulations (shot + tactical)
 uv run python src/build_all.py
-```
 
-**SU2 validation (requires SU2 v8.4):**
-```bash
-# 2D cylinder steady RANS
-uv run python su2_runs/cylinder_2d/run_cylinder.py
-
-# 2D cylinder unsteady laminar (Re=120/200/500, no-spin + magnus)
+# SU2 2D cylinder validation (requires SU2 v8.4)
 uv run python su2_runs/cylinder_2d/run_unsteady.py
-
-# Generate visualizations from VTU output
-uv run python su2_runs/cylinder_2d/generate_viz.py
-
-# Extract Cp(θ) + separation angles
 uv run python su2_runs/cylinder_2d/analyze_cylinder.py
 
-# 3D sphere smooth Re sweep
+# SU2 3D sphere sweeps
 uv run python su2_runs/sphere_3d/run_sphere.py
-
-# 3D sphere roughness sweep (4 balls × 5 Re)
 uv run python su2_runs/sphere_3d/run_roughness.py
 
-# PyVista 3D visualizations
-uv run python su2_runs/sphere_3d/viz_sphere.py
-```
-
-**Tactical formation pressure maps:**
-```bash
+# Tactical formation pressure maps
 uv run python su2_runs/tactical_formations/generate_formation_pressure.py
-```
 
-**Overlap drafting analysis (ΦFlow, 256×128):**
-```bash
-# Solo/inline/offset comparison (13 outputs)
+# Overlap drafting analysis
 uv run python su2_runs/tactical_formations/wake_drafting.py
-
-# Gap distance sweep (2m/3m/4m inline)
 uv run python su2_runs/tactical_formations/gap_sweep.py
-```
 
-**Website (local preview):**
-```bash
+# Preview the site locally
 python -m http.server -d docs 8000
-open http://localhost:8000
 ```
 
 ## Requirements
 
-- **Python** 3.12, **uv** package manager
+- Python 3.12, **uv** package manager
 - **ffmpeg** — MP4 export (`brew install ffmpeg`)
-- **ΦFlow** (≥3.4), JAX, matplotlib, numpy, tqdm, pyvista, gmsh, Pillow (PIL)
-- **SU2 v8.4** — CFD solver (validation only, not needed for browsing)
+- &Phi;Flow (≥3.4), JAX, matplotlib, numpy, tqdm, pyvista, gmsh, Pillow
+- SU2 v8.4 "Harrier" — CFD solver (validation only, not needed for browsing)
 
-## Key Results & Honest Limitations
+---
 
-- **2D Cylinder**: SU2 Cd=0.683 vs ΦFlow Cd≈1.2 at Re=40k. The 43% gap is physically meaningful: fully turbulent RANS delays separation, narrowing the wake.
-- **3D Sphere (Smooth)**: SST k-ω produces Cd≈0.87 flat across Re. No drag crisis — transition model + wall-resolved mesh required.
-- **Textured Sphere (4 balls × 5 Re)**: WALL_ROUGHNESS produces no effect (Cd varies &lt;0.001). Modeling limit: needs γ-Reθ + y+&lt;1.
-- **Unsteady laminar NS (Re=120/200/500)**: St matches Williamson 1988 to within 5%. Cd matches Tritton 1959. Magnus Cl bias up to -0.39.
-- **Surface Cp analysis**: Separation angles extracted: 87°→97°→103° (Re=120→200→500), confirming correct physical trend.
-- **Overlapping Fullback**: 42.2% drag reduction at 2&thinsp;m gap (inline); 3.9% at 0.35&thinsp;m lateral offset. Gap sweep (2m/3m/4m): 42.2% → 37.3% → 27.8% — monotonic decay as trailer exits leader's wake. Each configuration generates velocity field animations with animated streamlines, static pressure images clipped to 99th percentile (seismic colormap), and drag-table output.
+## Project Structure
+
+```
+src/                       # Python source code
+├── build_all.py           # ΦFlow orchestrator
+├── shot_aero.py           # Magnus + Knuckleball simulations
+├── tactical.py            # Overlapping fullback (ΦFlow)
+├── su2_runner.py          # SU2 config, meshgen, solver, viz
+├── domain.py              # Grid and domain constants
+└── utils.py               # Shared helpers
+
+su2_runs/                  # SU2 validation scripts and configs
+├── cylinder_2d/           # 2D cylinder (steady + unsteady RANS)
+├── sphere_3d/             # 3D sphere (smooth + roughness sweep)
+└── tactical_formations/   # Formation pressure + drafting analysis
+
+docs/                      # GitHub Pages site (7 HTML pages)
+├── index.html             # Landing page
+├── theory.html            # Fluid dynamics fundamentals
+├── shot.html              # Shot aerodynamics
+├── tactical.html          # Formation pressure maps
+├── overlap.html           # Overlap run analysis
+├── cfd.html               # CFD methodology & validation
+├── code.html              # Code notebook
+├── custom.css             # Dark terminal theme
+└── images/                # All visualizations
+    ├── phiflow_cylinder_2d/
+    ├── tactical/           # Formation lanes, transitions, drafting
+    ├── su2_cylinder_2d/    # Per-Re results, mesh, comparisons
+    └── su2_sphere/         # Sphere drag curves
+```

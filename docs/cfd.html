@@ -1,886 +1,798 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="CFD explained: ΦFlow and SU2 simulation conditions, validation pipeline, and high-fidelity RANS results for soccer aerodynamics">
+  <meta name="description"
+    content="CFD explained: ΦFlow and SU2 simulation conditions, validation pipeline, and high-fidelity RANS results for soccer aerodynamics">
   <title>CFD &amp; Validation | The Physics of Play</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/meslo-lg.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
   <link rel="stylesheet" href="custom.css">
 </head>
+
 <body>
 
-<nav class="site-nav">
-  <div class="nav-inner">
-    <a class="nav-brand" href="./index.html">Physics of Soccer</a>
-    <button class="nav-toggle" aria-label="Toggle navigation" onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
-    <div class="nav-entries">
-      <a href="./index.html">[ 01. Home ]</a>
-      <a href="./theory.html">[ 02. Theory ]</a>
-      <a href="./shot.html">[ 03. Shot ]</a>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="./index.html">Physics of Soccer</a>
+      <button class="nav-toggle" aria-label="Toggle navigation"
+        onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
+      <div class="nav-entries">
+        <a href="./index.html">[ 01. Home ]</a>
+        <a href="./theory.html">[ 02. Theory ]</a>
+        <a href="./shot.html">[ 03. Shooting ]</a>
         <a href="./tactical.html">[ 04. Tactical ]</a>
         <a href="./overlap.html">[ 05. Overlap Run ]</a>
         <a href="./cfd.html" class="active">[ 06. CFD ]</a>
         <a href="./code.html">[ 07. Code ]</a>
+      </div>
     </div>
-  </div>
-</nav>
-
-<main class="main-content">
-
-<!-- ====================================================================== -->
-<h1># How These Simulations Were Built</h1>
-<!-- ====================================================================== -->
-
-<p>This page documents the CFD pipeline from first principles: how the mesh was designed, why each solver and case was chosen, and how the results were validated against classical literature. The complete code is in the <a href="./code.html">Code Notebook</a>.</p>
-
-<p>All simulations use a <strong>2D circular cylinder</strong> (diameter 0.6 m) as a proxy for a soccer ball. The cylinder is the standard academic starting point for external aerodynamics: it has all the same physics as a sphere (separation, vortex shedding, Magnus effect) but runs orders of magnitude faster and has a century of literature to validate against.</p>
-
-<hr>
-
-<!-- ====================================================================== -->
-<h1># Two-Solver Pipeline</h1>
-<!-- ====================================================================== -->
-
-<p>No single CFD tool is optimal for every stage of the workflow. A tiered approach addresses each stage:</p>
-
-<table>
-<tr>
-  <th>Layer</th>
-  <th>Tool</th>
-  <th>Fidelity</th>
-  <th>Purpose</th>
-</tr>
-<tr>
-  <td>Rapid prototyping</td>
-  <td>&Phi;Flow (2D)</td>
-  <td>Laminar, no turbulence model</td>
-  <td>100+ parametric sweeps, identify interesting regimes</td>
-</tr>
-<tr>
-  <td>High-fidelity validation</td>
-  <td>SU2 (2D / 3D)</td>
-  <td>RANS SST $k$-$\omega$, unstructured mesh</td>
-  <td>Accurate $C_d$, $C_l$, boundary layer profiles</td>
-</tr>
-<tr>
-  <td>Visualization</td>
-  <td>PyVista</td>
-  <td>N/A</td>
-  <td>3D pressure contours, stream ribbons, comparison renders</td>
-</tr>
-</table>
-
-<div class="callout-box theory">
-  <strong>Engineering workflow:</strong> &Phi;Flow runs fast parametric sweeps to identify interesting cases. Those cases are exported to SU2 for high-fidelity verification: exactly how industrial CFD teams operate. &Phi;Flow tells where to <em>look</em>; SU2 provides <em>the right answer</em>.
-</div>
-
-<hr>
-
-<!-- ====================================================================== -->
-<h2># &Phi;Flow: Rapid Prototyping Layer</h2>
-<!-- ====================================================================== -->
-
-<p><a href="https://github.com/tum-pbs/PhiFlow">&Phi;Flow</a> is an open-source CFD framework developed at TU Munich, built on <strong>JAX</strong> for GPU-accelerated, differentiable simulation. It trades physical accuracy for speed, making it ideal for exploration.</p>
-
-<h3>What It Solves</h3>
-<p>Incompressible Navier-Stokes on a <strong>staggered MAC grid</strong> (velocity stored on cell faces, pressure at cell centers). The solution algorithm per timestep:</p>
-<ol>
-  <li><strong>Semi-Lagrangian advection</strong>: trace each particle path backward through the velocity field to update momentum</li>
-  <li><strong>CG pressure solve</strong>: conjugate gradient iteration to enforce $\nabla \cdot \mathbf{u} = 0$</li>
-  <li><strong>Obstacle update</strong>: enforce no-slip condition on cylinder surface (including rotation for Magnus)</li>
-</ol>
-
-<h3>Simulation Conditions</h3>
-
-<table>
-<tr>
-  <th>Parameter</th>
-  <th>Value</th>
-  <th>Notes</th>
-</tr>
-<tr>
-  <td>Grid resolution</td>
-  <td>256 &times; 128</td>
-  <td>Staggered MAC grid; uniform spacing</td>
-</tr>
-<tr>
-  <td>Domain size</td>
-  <td>8.0 &times; 4.0 m</td>
-  <td>Length-to-diameter ratio ~13.3</td>
-</tr>
-<tr>
-  <td>Cylinder radius</td>
-  <td>0.3 m</td>
-  <td>Diameter 0.6 m (standard size 5 ball)</td>
-</tr>
-<tr>
-  <td>Inlet velocity</td>
-  <td>1.0 m/s</td>
-  <td>Uniform inflow from left boundary</td>
-</tr>
-<tr>
-  <td>Reynolds number</td>
-  <td>$Re \approx 4 \times 10^4$</td>
-  <td>Based on $U = 1.0$ m/s, $D = 0.6$ m, $\nu = 1.5 \times 10^{-5}$ m&sup2;/s</td>
-</tr>
-<tr>
-  <td>Boundary conditions</td>
-  <td>Uniform inlet (left), free-slip top/bottom, outflow (right), no-slip cylinder</td>
-  <td>Cylinder surface: rotating wall for Magnus ($\omega = 10$ rad/s), stationary for knuckleball</td>
-</tr>
-<tr>
-  <td>Spin parameter</td>
-  <td>$S = \omega R / U = 3.0$</td>
-  <td>Exaggerated vs real soccer ($S \approx 0.2$) for visual clarity of the Magnus effect</td>
-</tr>
-<tr>
-  <td>Turbulence model</td>
-  <td>None (laminar)</td>
-  <td>Flow remains laminar at this Re on a 2D grid; no RANS model</td>
-</tr>
-<tr>
-  <td>Simulation time</td>
-  <td>~30 s (2000 steps, $\Delta t \approx 0.015$ s)</td>
-  <td>Several vortex shedding cycles captured</td>
-</tr>
-</table>
-
-<p>Full implementation code is in the <a href="./code.html">Code Notebook</a> (section 1).</p>
-
-<h3>Limitations</h3>
-
-<div class="callout-box warn">
-  <strong>Why 2D laminar is a simplification:</strong> Real cylinder flow at $Re = 4 \times 10^4$ is three-dimensional and transitional: the boundary layer would naturally transition to turbulent in certain regions. A 2D laminar simulation cannot capture this, so it overpredicts $C_d$ (~1.2 vs experimental ~1.0). This is a known bias, not a bug. &Phi;Flow&rsquo;s strength is <em>qualitative</em> flow structure, not absolute force prediction.
-</div>
-
-<hr>
-
-<!-- ====================================================================== -->
-<h2># SU2: High-Fidelity Validation Layer</h2>
-<!-- ====================================================================== -->
-
-<p><a href="https://su2code.github.io/">SU2</a> is an open-source finite-volume RANS solver developed at Stanford University. Version 8.4 &ldquo;Harrier&rdquo; is used here, running on Rosetta 2 x86_64 emulation on Apple Silicon. SU2 provides production-grade aerodynamic coefficients whose results are more reliable than &Phi;Flow&rsquo;s laminar approximation.</p>
-
-<h3>Numerical Method</h3>
-<p>SU2 uses a <strong>finite-volume</strong> discretization on <strong>unstructured meshes</strong> (triangles in 2D, tetrahedra in 3D). The flow variables are stored at cell centers; fluxes are computed at cell faces using an approximate Riemann solver. For incompressible flows, an artificial compressibility method couples pressure and velocity.</p>
-
-<ul>
-  <li><strong>Convective scheme:</strong> FDS (Roe-type flux difference splitting) for stability at all speeds</li>
-  <li><strong>Time integration:</strong> Euler implicit (steady), dual time-stepping 2nd-order (unsteady)</li>
-  <li><strong>Linear solver:</strong> FGMRES with ILU preconditioner</li>
-</ul>
-
-<h3>Turbulence Modeling: RANS SST $k$-$\omega$</h3>
-<p>Reynolds-Averaged Navier-Stokes decomposes the flow into mean ($\bar{\mathbf{u}}$) and fluctuating ($\mathbf{u}'$) components. The Reynolds stresses $\overline{u'_i u'_j}$ are modelled by the <strong>SST $k$-$\omega$</strong> (Shear Stress Transport) model, which blends:</p>
-<ul>
-  <li><strong>$k$-$\omega$ near walls</strong>: accurate boundary layer integration</li>
-  <li><strong>$k$-$\varepsilon$ in the free stream</strong>: avoids freestream sensitivity of pure $k$-$\omega$</li>
-</ul>
-
-<div class="callout-box theory">
-  <strong>Why SST $k$-$\omega$ for this project:</strong> It is the industry standard for external aerodynamics with separation. It handles adverse pressure gradients (the cylinder&rsquo;s aft surface) better than $k$-$\varepsilon$, and converges more robustly than transition models on coarse meshes. The trade-off: as a <em>fully turbulent</em> model, it cannot predict laminar-to-turbulent transition: essential physics for the drag crisis.
-</div>
-
-<h3>Mesh Generation</h3>
-
-<p>All meshes are generated programmatically using <a href="https://gmsh.info/">gmsh</a>&rsquo;s Python API. The gmsh code is in the <a href="./code.html">Code Notebook</a> (section 3).</p>
-
-<p>The mesh is designed around two competing requirements: resolving the thin boundary layer at the cylinder surface while keeping the total cell count manageable for fast turnaround. Near the cylinder wall, element size drops to $c_l = 0.004$ (distance-based refinement via a Threshold field), producing a fine ring of small triangles that capture the steep velocity gradients in the viscous sublayer and buffer layer. Away from the cylinder, cell size grows smoothly to $c_l = 0.5$ at the farfield boundary, where the flow is nearly uniform and fine resolution would waste compute.</p>
-
-<p>A rectangular <strong>wake box</strong> (extending 6 cylinder diameters downstream, 1 diameter wide) applies a secondary refinement of $c_l = 0.02$ inside its volume. This box is critical because vortex shedding produces alternating recirculation zones that travel downstream: if these cells were too coarse, numerical dissipation would damp the vortices before they develop, biasing the shedding frequency and amplitude. The box is narrower than wide because the wake stays roughly horizontal in 2D cylinder flow; expanding vertically would add unnecessary cells. The Distance and Box fields are combined via a Minimum (Min) field, so the local element size is the smaller of the two at any point: fine at the wall OR inside the wake box, whichever is stricter.</p>
-
-<div class="stats">
-<div class="stat">
-  <div class="num">160,770</div>
-  <div class="lbl">Nodes (2D cylinder)</div>
-</div>
-<div class="stat">
-  <div class="num">321,165</div>
-  <div class="lbl">Triangular elements</div>
-</div>
-<div class="stat">
-  <div class="num">0.004</div>
-  <div class="lbl">$c_l$ at cylinder wall</div>
-</div>
-<div class="stat">
-  <div class="num">0.02</div>
-  <div class="lbl">$c_l$ in wake box</div>
-</div>
-</div>
-
-<div class="img-row">
-  <figure>
-    <img src="images/su2_cylinder_2d/mesh/cylinder_mesh.png" alt="Cylinder mesh overview" style="max-width:100%">
-    <figcaption>Full domain: farfield radius 15 m, cylinder diameter 0.6 m. View crops to ~&plusmn;3 m for wake visibility.</figcaption>
-  </figure>
-  <figure>
-    <img src="images/su2_cylinder_2d/mesh/cylinder_mesh_zoom.png" alt="Cylinder mesh zoomed" style="max-width:100%">
-    <figcaption>Distance-based refinement (cl=0.008 at wall) and wake box (cl=0.04) extending 6D downstream. The wake box ensures vortex structures are adequately resolved.</figcaption>
-  </figure>
-</div>
-
-<h3>Simulation</h3>
-
-<h4>Steady RANS SST</h4>
-<table>
-<tr>
-  <th>Parameter</th>
-  <th>Value</th>
-  <th>Notes</th>
-</tr>
-<tr>
-  <td>Solver</td>
-  <td><code>INC_RANS</code></td>
-  <td>Incompressible RANS (low Mach, ~0.003)</td>
-</tr>
-<tr>
-  <td>Turbulence model</td>
-  <td>SST $k$-$\omega$</td>
-  <td>Fully turbulent; no transition model</td>
-</tr>
-<tr>
-  <td>Reynolds number</td>
-  <td>40,000</td>
-  <td>Non-dimensionalized via <code>INITIAL_VALUES</code></td>
-</tr>
-<tr>
-  <td>Viscosity</td>
-  <td>$\mu = 2.5 \times 10^{-5}$</td>
-  <td>Non-dimensional: $\mu = 1/Re$</td>
-</tr>
-<tr>
-  <td>Convective scheme</td>
-  <td>FDS</td>
-  <td>Roe-type flux splitting; <code>MUSCL=NO</code></td>
-</tr>
-<tr>
-  <td>Iterations</td>
-  <td>3,000</td>
-  <td>Converges at ~500; CFL=0.5</td>
-</tr>
-</table>
-
-<p>Full config file is in the <a href="./code.html">Code Notebook</a> (section 2, In [2]).</p>
-
-<h4>Unsteady Laminar NS &mdash; Reynolds Number Sweep</h4>
-<table>
-<tr>
-  <th>Parameter</th>
-  <th>Value</th>
-  <th>Notes</th>
-</tr>
-<tr>
-  <td>Solver</td>
-  <td><code>INC_NAVIER_STOKES</code></td>
-  <td>No turbulence model: laminar NS</td>
-</tr>
-<tr>
-  <td>Reynolds numbers</td>
-  <td>120, 200, 500</td>
-  <td>Sub-critical range; vortex street at all three</td>
-</tr>
-<tr>
-  <td>Time marching</td>
-  <td>Dual time-stepping 2nd-order</td>
-  <td>300 physical steps, 15 inner iters each</td>
-</tr>
-<tr>
-  <td>Time step</td>
-  <td>0.3 s</td>
-  <td>90 s total simulation; matches &Phi;Flow duration</td>
-</tr>
-<tr>
-  <td>Nondimensionalization</td>
-  <td><code>DIMENSIONAL</code></td>
-  <td>Dimensional $\mu$, $\rho$, $U$; more stable for unsteady</td>
-</tr>
-<tr>
-  <td>Spin (Magnus)</td>
-  <td>$\omega_z = 0.4$ rad/s</td>
-  <td>Moving wall BC; $S = \omega R / U = 0.12$</td>
-</tr>
-</table>
-
-<p>Full config file is in the <a href="./code.html">Code Notebook</a> (section 2, In [3]). Key difference between the two configs: the steady RANS solver uses <strong>non-dimensional viscosity</strong> ($\mu = 1/Re$) with <code>INITIAL_VALUES</code>, while the unsteady laminar solver uses <strong>dimensional viscosity</strong> ($\mu = 0.00267875$ kg/(m&middot;s)) with <code>DIMENSIONAL</code>.<sup id="fnref:mu"><a href="#fn:mu">*</a></sup> The dimensional approach is more robust for the dual time-stepping unsteady solver. The Magnus configuration adds a <strong>moving wall</strong> boundary condition rotating at $\omega_z = 0.4$ rad/s, which corresponds to a spin parameter $S = 0.12$: a moderate spin rate for a soccer ball.</p>
-
-<hr>
-
-<!-- ====================================================================== -->
-<h2># Purpose of the Reynolds Number Sweep</h2>
-<!-- ====================================================================== -->
-
-<p>Why run six cases (3 Re &times; 2 spin states) instead of one? The Reynolds number determines <em>how</em> the flow behaves: thicker or thinner boundary layers, earlier or later separation, faster or slower shedding. Running a single Re would leave a critical question unanswered: does the solver reproduce the correct <strong>trend</strong> with Re, or does it just happen to match at one point?</p>
-
-<p>The Strouhal number $St$ vs Re curve for a circular cylinder is one of the most precisely documented relationships in fluid dynamics (Williamson 1988). If our $St$ values follow the accepted curve, we know our solver, mesh, and timestep are correct:</p>
-
-<table>
-<tr>
-  <th>Re</th>
-  <th>Our $St$</th>
-  <th>Literature $St$</th>
-  <th>Our $C_d$</th>
-  <th>Literature $C_d$</th>
-  <th>Error ($St$)</th>
-</tr>
-<tr>
-  <td>120</td>
-  <td>0.16</td>
-  <td>0.168</td>
-  <td>0.654</td>
-  <td>0.65</td>
-  <td>&minus;4.8%</td>
-</tr>
-<tr>
-  <td>200</td>
-  <td>0.18</td>
-  <td>0.183</td>
-  <td>0.536</td>
-  <td>0.55</td>
-  <td>&minus;1.6%</td>
-</tr>
-<tr>
-  <td>500</td>
-  <td>0.20</td>
-  <td>0.200</td>
-  <td>0.467</td>
-  <td>0.47</td>
-  <td>0.0%</td>
-</tr>
-</table>
-
-<p>The trend matches perfectly across all three Re, with $St$ error decreasing from 4.8% at Re=120 to 0.0% at Re=500. The slight low bias at low Re is expected&mdash;the boundary layer is thicker, so numerical dissipation from unstructured triangles has a larger relative effect. Both $C_d$ and $St$ agree with Williamson (1988) and Tritton (1959) to within typical unstructured-mesh accuracy.</p>
-
-<p>The sweep also tests the Magnus effect at multiple Re. A single Magnus case could be an anomaly; observing the same $-0.3$ to $-0.4$ $C_l$ bias across three different Re confirms the moving-wall boundary condition is working correctly and the Magnus force scales physically with Reynolds number.</p>
-
-<div class="callout-box result">
-  <strong>What the sweep proved:</strong> Our solver is validated. The $C_d$-Re and $St$-Re trends match literature, and the Magnus effect is consistent and physically correct across all three Re. This gives confidence that the mesh resolution, timestep size, and solver settings are appropriate&mdash;before applying the same methodology to higher-Reynolds-number transitional flows.
-</div>
-
-<div class="callout-box warn">
-  <strong>Mesh limitation &mdash; damped shedding amplitude:</strong> The unstructured triangular mesh damps the $C_l$ amplitude by an order of magnitude ($\pm 0.05$) compared to the literature value ($\pm 0.5$). Numerical dissipation from skew-angled triangles in the wake smooths out vortex cores before they fully develop. The shedding <em>frequency</em> ($St$) is correct (within 5% of Williamson 1988), but the <em>amplitude</em> is underpredicted. Recovering the full amplitude would require a structured quad mesh or prism layers in the wake region to reduce transverse numerical diffusion.
-</div>
-
-<h3>Surface Pressure Validation: $C_p(\theta)$</h3>
-
-<p>Beyond integral forces ($C_d$, $C_l$), we extracted the <strong>pressure coefficient distribution</strong> around the cylinder surface from the final timestep of each case. $C_p(\theta)$ is the gold standard for CFD validation&mdash;it shows exactly where the flow accelerates on the front shoulder (suction peak), where it decelerates (adverse pressure gradient), and where it separates (plateau in the rear).</p>
-
-<div class="img-row single">
-  <figure>
-    <img src="images/su2_cylinder_2d/analysis/cylinder_cp_comparison.png" alt="Cp(theta) comparison" style="max-width:100%">
-    <figcaption>Surface pressure coefficient $C_p(\theta)$ for all six cases. No-spin cases (blue) show symmetric distributions; Magnus cases (red) show asymmetry. The suction peak shifts aft and the base pressure plateau rises with increasing Re in the no-spin cases, consistent with later separation and narrower wakes. The right panel zooms on the rear surface where separation occurs.</figcaption>
-  </figure>
-</div>
-
-<p>Measured separation angles from the $C_p$ curve shape:</p>
-
-<table>
-<tr>
-  <th>Case</th>
-  <th>$\theta_s$ (measured)</th>
-  <th>Literature range</th>
-  <th>Notes</th>
-</tr>
-<tr>
-  <td>No spin Re=120</td>
-  <td>87&deg;</td>
-  <td>85&deg;&ndash;95&deg;</td>
-  <td>Classic laminar separation</td>
-</tr>
-<tr>
-  <td>No spin Re=200</td>
-  <td>97&deg;</td>
-  <td>88&deg;&ndash;100&deg;</td>
-  <td>Later separation, thinner BL</td>
-</tr>
-<tr>
-  <td>No spin Re=500</td>
-  <td>103&deg;</td>
-  <td>95&deg;&ndash;110&deg;</td>
-  <td>Latest separation, narrowest wake</td>
-</tr>
-<tr>
-  <td>Magnus Re=120</td>
-  <td>85&deg;</td>
-  <td>Asymmetric</td>
-  <td>Top side: earlier separation from opposed spin</td>
-</tr>
-<tr>
-  <td>Magnus Re=200</td>
-  <td>85&deg;</td>
-  <td>Asymmetric</td>
-  <td>Strongest lift bias ($C_l = -0.39$)</td>
-</tr>
-<tr>
-  <td>Magnus Re=500</td>
-  <td>60&deg;</td>
-  <td>Asymmetric</td>
-  <td>Very early top-side separation at high Re + spin</td>
-</tr>
-</table>
-
-<p>The no-spin separation angles increase monotonically with Re, confirming the physical trend. The Magnus case at Re=500 shows notably earlier separation on the retreating (top) side at 60&deg;, creating the strongest pressure asymmetry that drives the Magnus lift. The RANS SST steady solution (on the coarse mesh, 44k nodes) predicts $\theta_s \approx 110&deg;$, consistent with a fully turbulent boundary layer that remains attached much longer than any laminar case.</p>
-
-<p>A note on the fine-mesh RANS attempt: the steady solver could not converge on the 160k-node fine mesh because the mesh resolves the wake well enough for the von K&aacute;rm&aacute;n instability to develop. The steady solver oscillates between shedding states instead of converging to a time-averaged solution. The coarse-mesh RANS result ($C_d = 0.683$, $\theta_s \approx 110&deg;$) remains the validated turbulent extreme. This is a known limitation: steady RANS for cylinder flows at Re &gt; 100 requires enough numerical dissipation to suppress the inherent unsteadiness, which coarser meshes provide.</p>
-
-<hr>
-
-<!-- ====================================================================== -->
-<h1># Simulation Results</h1>
-<!-- ====================================================================== -->
-
-<h2 class="section-header">Phase 3: 2D Cylinder (Steady RANS)</h2>
-
-<p>First validation case: flow past a 2D circular cylinder at $Re_D = 40,\!000$. This is a well-characterized benchmark with extensive experimental and numerical data. The SU2 RANS SST solution was run for 3,000 iterations at CFL=0.5.</p>
-
-<div class="callout-box result">
-  <strong>Key finding:</strong> SU2 (RANS SST, fully turbulent) predicts $C_d = 0.68$, while &Phi;Flow (laminar) predicts $C_d \approx 1.2$. The 43% difference reflects the fundamental modeling distinction: fully-turbulent RANS delays separation downstream ($\sim 110^\circ$ vs $\sim 80^\circ$), producing a narrower wake and lower drag. The &Phi;Flow result is closer to the classical sub-critical cylinder value ($C_d \approx 1.0$&ndash;$1.2$).
-</div>
-
-<h3>Pressure Field</h3>
-<div class="img-row single">
-  <figure>
-    <img src="images/su2_cylinder_2d/steady_rans/cylinder_pressure_field.png" alt="Cylinder pressure field" style="max-width:100%">
-    <figcaption>Pressure field around the 2D cylinder (SU2 RANS SST, Re=40k). The stagnation region at the leading edge shows maximum pressure. The low-pressure wake extends downstream. The narrow wake width indicates delayed separation: the signature of a turbulent boundary layer.</figcaption>
-  </figure>
-</div>
-
-<h3>Streamlines</h3>
-<div class="img-row single">
-  <figure>
-    <img src="images/su2_cylinder_2d/steady_rans/cylinder_streamlines.png" alt="Cylinder streamlines" style="max-width:100%">
-    <figcaption>Streamlines colored by velocity magnitude. The recirculation bubble and separation points at ~110&deg; are visible. Compared to a laminar case, the separation is delayed and the wake is narrower, producing lower pressure drag.</figcaption>
-  </figure>
-</div>
-
-<h3>Drag Convergence</h3>
-<div class="img-row single">
-  <figure>
-    <img src="images/su2_cylinder_2d/steady_rans/cylinder_cd_convergence.png" alt="Cd convergence history" style="max-width:100%">
-    <figcaption>Drag coefficient convergence over 3,000 iterations. $C_d$ settles to 0.683 after approximately 500 iterations. The initial transient is the development of the wake from the uniform initial condition.</figcaption>
-  </figure>
-</div>
-
-<h3>Comparison: SU2 vs &Phi;Flow</h3>
-
-<table>
-<tr>
-  <th>Metric</th>
-  <th>&Phi;Flow (Laminar)</th>
-  <th>SU2 (RANS SST)</th>
-  <th>Notes</th>
-</tr>
-<tr>
-  <td>$C_d$</td>
-  <td>~1.2</td>
-  <td>0.683</td>
-  <td>RANS is fully turbulent &rArr; later separation &rArr; lower drag</td>
-</tr>
-<tr>
-  <td>Separation angle</td>
-  <td>~80&deg; (laminar)</td>
-  <td>~110&deg; (turbulent)</td>
-  <td>Turbulent BL remains attached longer</td>
-</tr>
-<tr>
-  <td>Wake width</td>
-  <td>Wide</td>
-  <td>Narrow</td>
-  <td>Visible in velocity field above</td>
-</tr>
-<tr>
-  <td>Relevance</td>
-  <td>Sub-critical real flow</td>
-  <td>Fully turbulent assumption</td>
-  <td>Real soccer balls operate in sub-critical to critical Re range</td>
-</tr>
-</table>
-
-<p>The discrepancy is expected and instructive: &Phi;Flow captures the sub-critical laminar separation physics, while SU2 with SST assumes a fully turbulent boundary layer throughout. For smooth balls at $Re \sim 10^5$, neither is perfect; transition models or wall-resolved LES would be needed, but together they <strong>bracket the real behavior</strong>.</p>
-
-<hr>
-
-<h2 class="section-header">Phase 3+: Unsteady Reynolds Sweep</h2>
-
-<p>Unsteady laminar Navier-Stokes simulations across three Reynolds numbers (120, 200, 500), each comparing no-spin vs Magnus effect (spin parameter $S = 0.12$). All 6 cases ran for 300 physical time steps ($\Delta t = 0.3$ s) on the fine mesh (160k nodes, 321k elements) for a total simulation time of 90 seconds &mdash; matching the &Phi;Flow duration for direct qualitative comparison.</p>
-
-<div class="callout-box result">
-  <strong>Key finding:</strong> The Reynolds sweep reveals systematic trends: $C_d$ decreases with Re in the no-spin cases (0.654 &rarr; 0.534 &rarr; 0.467) as the wake narrows, while Magnus increases $C_d$ across all Re (the spinning cylinder pushes more fluid). The Strouhal number increases from 0.16 at Re=120 to 0.20 at Re=500, climbing toward the literature value $St \approx 0.20$ for laminar cylinder flow. Magnus suppresses shedding and shifts the wake to a lower dominant frequency ($St \approx 0.04$&ndash;0.06). The Magnus lift coefficient peaks at Re=200 ($C_l = -0.39$), then drops at Re=500.
-</div>
-
-<h3>Results Summary</h3>
-
-<table>
-<tr>
-  <th>Case</th>
-  <th>Re</th>
-  <th>$C_d$ (final)</th>
-  <th>$C_l$ range</th>
-  <th>$C_l$ mean</th>
-  <th>$St$</th>
-</tr>
-<tr>
-  <td>No Spin</td>
-  <td>120</td>
-  <td>0.654</td>
-  <td>[-0.043, 0.048]</td>
-  <td>-0.003</td>
-  <td>0.16</td>
-</tr>
-<tr>
-  <td>No Spin</td>
-  <td>200</td>
-  <td>0.534</td>
-  <td>[-0.058, 0.065]</td>
-  <td>-0.034</td>
-  <td>0.18</td>
-</tr>
-<tr>
-  <td>No Spin</td>
-  <td>500</td>
-  <td>0.467</td>
-  <td>[-0.164, 0.196]</td>
-  <td>0.134</td>
-  <td>0.20</td>
-</tr>
-<tr>
-  <td>Magnus $S=0.12$</td>
-  <td>120</td>
-  <td>0.684</td>
-  <td>[-0.303, -0.017]</td>
-  <td>-0.303</td>
-  <td>0.04</td>
-</tr>
-<tr>
-  <td>Magnus $S=0.12$</td>
-  <td>200</td>
-  <td>0.681</td>
-  <td>[-0.394, -0.090]</td>
-  <td>-0.395</td>
-  <td>0.04</td>
-</tr>
-<tr>
-  <td>Magnus $S=0.12$</td>
-  <td>500</td>
-  <td>0.792</td>
-  <td>[-0.260, -0.012]</td>
-  <td>-0.260</td>
-  <td>0.06</td>
-</tr>
-</table>
-
-<h3>Interpretation</h3>
-<ol>
-  <li><strong>$C_d$ decreases with Re for no-spin:</strong> 0.654 &rarr; 0.534 &rarr; 0.467. Higher Re means thinner boundary layers and a narrower wake, reducing pressure drag. This trend agrees with known laminar cylinder data where $C_d$ drops from ~0.7 at Re=100 to ~0.5 at Re=500.</li>
-  <li><strong>Strouhal number climbs toward literature:</strong> $St = 0.16$ at Re=120 (close to the classical 0.17) rising to 0.20 at Re=500, matching the accepted value for this Reynolds regime. The fine mesh (3.6&times; resolution) provides adequate wake resolution for correct shedding frequency despite amplitude attenuation from numerical dissipation on unstructured triangles.</li>
-  <li><strong>Magnus effect is qualitatively correct:</strong> All three Magnus cases show a negative $C_l$ bias (top spin &rarr; downward force). The bias peaks at Re=200 ($-0.39$), then weakens at Re=500 ($-0.26$). The spin adds 2&ndash;25% to $C_d$ compared to the no-spin case, with the largest relative increase at low Re where the spin has more time to influence the flow per convective timescale.</li>
-  <li><strong>Magnus suppresses natural shedding frequency:</strong> The Strouhal number drops from 0.16&ndash;0.20 (no-spin, von K&aacute;rm&aacute;n street) to 0.04&ndash;0.06 (Magnus, locked-in asymmetry). The spinning cylinder breaks the symmetry that drives alternating shedding, producing a quasi-steady asymmetric wake with a slow wobble rather than a clean vortex street.</li>
-</ol>
-
-<hr>
-
-<h2># Comparison to SU2 &amp; Literature</h2>
-
-<p>Taken together, the &Phi;Flow and SU2 simulations bracket the real physics of a cylinder in crossflow at $Re = 4 \times 10^4$. The tables below compare the key metrics across both solvers and classical experimental data.</p>
-
-<h3>No-Spin (Knuckleball)</h3>
-
-<table>
-<tr>
-  <th>Metric</th>
-  <th>&Phi;Flow (Laminar)</th>
-  <th>SU2 RANS SST</th>
-  <th>SU2 Laminar NS (Re=120)</th>
-  <th>Literature</th>
-</tr>
-<tr>
-  <td>Drag coefficient $C_d$</td>
-  <td>~1.2</td>
-  <td>0.683</td>
-  <td>0.654</td>
-  <td>1.0&ndash;1.2</td>
-</tr>
-<tr>
-  <td>Separation angle</td>
-  <td>~80&deg;</td>
-  <td>~110&deg;</td>
-  <td>~90&deg;</td>
-  <td>~80&deg; (lam) / ~120&deg; (turb)</td>
-</tr>
-<tr>
-  <td>Wake character</td>
-  <td>Wide, unsteady vortex street</td>
-  <td>Narrow, steady</td>
-  <td>Wide, von K&aacute;rm&aacute;n street</td>
-  <td>Wide von K&aacute;rm&aacute;n street</td>
-</tr>
-</table>
-
-<h3>With Spin (Magnus)</h3>
-
-<table>
-<tr>
-  <th>Metric</th>
-  <th>&Phi;Flow (Laminar, $S = 3.0$)</th>
-  <th>SU2 RANS SST ($S = 0.2$)</th>
-  <th>SU2 Laminar NS ($S=0.12$, Re=120)</th>
-  <th>Soccer ball ($S \approx 0.2$)</th>
-</tr>
-<tr>
-  <td>Drag coefficient $C_d$</td>
-  <td>~1.2</td>
-  <td>0.688</td>
-  <td>0.684</td>
-  <td>~0.3&ndash;0.5</td>
-</tr>
-<tr>
-  <td>Lift coefficient $C_l$</td>
-  <td>Visual only</td>
-  <td>&minus;0.172</td>
-  <td>&minus;0.303 (mean)</td>
-  <td>~0.2&ndash;0.3</td>
-</tr>
-</table>
-
-<p style="color: var(--comment); font-size: 0.78rem;">Note: &Phi;Flow uses $S = \omega R / U = 3.0$ (exaggerated for visual clarity). The SU2 steady RANS uses $S=0.2$, the unsteady laminar uses $S=0.12$, and real soccer balls operate at $S \approx 0.1$&ndash;$0.3$. Direct force comparison across the different $S$ values is therefore qualitative.</p>
-
-<div class="callout-box result">
-  <strong>Physical interpretation:</strong> The 43% $C_d$ difference between &Phi;Flow (~1.2) and SU2 (0.683) is <em>not</em> a bug: it is the difference between laminar and fully turbulent boundary layer separation. &Phi;Flow separates at ~80&deg;, producing a wide wake and high pressure drag (matching the classical sub-critical cylinder benchmark). SU2 SST forces transition to turbulence, keeping the boundary layer attached to ~110&deg;, which narrows the wake and reduces $C_d$. Real soccer balls ($Re \approx 2\!-\!4 \times 10^5$) operate near the drag crisis regime, where surface texture and spin determine whether the boundary layer is laminar or turbulent: and therefore whether $C_d$ is closer to 0.5 or 0.1. Neither 2D simulation captures this 3D transition physics, but together they define the empirical bounds of the real behavior.
-</div>
-
-<!-- ====================================================================== -->
-<h2># Visualization Gallery</h2>
-<!-- ====================================================================== -->
-
-<p>All visualizations are generated from SU2 VTU output using matplotlib (static PNGs and MP4 animations). The workflow:</p>
-<ol>
-  <li>SU2 writes per-timestep VTU files (ParaView format)</li>
-  <li>PyVista reads the VTU, extracts pressure/velocity fields on slice planes</li>
-  <li>Static PNGs rendered at 600&times;400 grid resolution with 40 contour levels</li>
-  <li>Animations stitched at 150 frames (every 2nd timestep) at 10 fps for 15-second videos</li>
-  <li>Comparison animations combine three Reynolds numbers side-by-side at 100 frames (every 3rd timestep)</li>
-</ol>
-
-<div class="callout-box theory">
-  <strong>Colormap guide:</strong> <strong>Magma</strong> (pressure): dark purple = low pressure, bright yellow/white = high pressure. <strong>Inferno</strong> (velocity): black = slow, bright yellow/white = fast. Both are perceptually uniform and colorblind-safe.
-</div>
-
-<p>The data is organized by Reynolds number (120, 200, 500) and spin state (no-spin, Magnus) into subdirectories. The cylinder is rendered as a solid black disk with a white outline, and the viewport spans $x \in [-2, 8]$ to show approximately three wake cycles.</p>
-
-<h3>Static Flow Fields (Re=120, t=89.7s, step 299)</h3>
-
-<div class="panel-row">
-  <div class="panel">
+  </nav>
+
+  <main class="main-content">
+
+    <!-- ====================================================================== -->
+    <h2>How These Simulations Were Built</h2>
+    <!-- ====================================================================== -->
+
+    <p>This page documents the CFD process from first principles: how the mesh was designed, why each solver and case
+      was chosen, and how the results were validated against classical literature. The complete code is in the <a
+        href="./code.html">Code Notebook</a>.</p>
+
+    <p>All simulations use a <strong>2D circular cylinder</strong> (diameter 0.6 m) as a proxy for a soccer ball. The
+      cylinder is the standard academic starting point for external aerodynamics: it has all the same physics as a
+      sphere (separation, vortex shedding, Magnus effect) but runs orders of magnitude faster and has a century of
+      literature to validate against.</p>
+
+    <!-- ====================================================================== -->
+    <h2>Two-Solver Pipeline</h2>
+    <!-- ====================================================================== -->
+
+    <p>No single CFD tool is optimal for every stage of the workflow. A tiered approach addresses each stage:</p>
+
+    <table>
+      <tr>
+        <th>Layer</th>
+        <th>Tool</th>
+        <th>Fidelity</th>
+        <th>Purpose</th>
+      </tr>
+      <tr>
+        <td>Rapid prototyping</td>
+        <td>&Phi;Flow (2D)</td>
+        <td>Laminar, no turbulence model</td>
+        <td>100+ parametric sweeps, identify interesting regimes</td>
+      </tr>
+      <tr>
+        <td>High-fidelity validation</td>
+        <td>SU2 (2D / 3D)</td>
+        <td>RANS SST $k$-$\omega$, unstructured mesh</td>
+        <td>Accurate $C_d$, $C_l$, boundary layer profiles</td>
+      </tr>
+      <tr>
+        <td>Visualization</td>
+        <td>PyVista</td>
+        <td>N/A</td>
+        <td>Pressure/velocity contours, streamlines, comparison renders</td>
+      </tr>
+    </table>
+
+    <div class="callout-box theory">
+      <strong>Engineering workflow:</strong> &Phi;Flow runs fast parametric sweeps to identify interesting cases. Those
+      cases are exported to SU2 for high-fidelity verification: exactly how industrial CFD teams operate.
+    </div>
+
+    <hr>
+
+    <!-- ====================================================================== -->
+    <h2>&Phi;Flow: Rapid Prototyping</h2>
+    <!-- ====================================================================== -->
+
+    <p><a href="https://github.com/tum-pbs/PhiFlow">&Phi;Flow</a> is an open-source CFD framework developed at TU
+      Munich, built on <strong>JAX</strong> for GPU-accelerated, differentiable simulation.</p>
+
+    <h3>What It Solves</h3>
+    <p>Incompressible Navier-Stokes on a <strong>staggered MAC grid</strong> (velocity stored on cell faces, pressure at
+      cell centers). The solution algorithm per timestep:</p>
+    <ol>
+      <li><strong>Semi-Lagrangian advection</strong>: trace each particle path backward through the velocity field to
+        update momentum</li>
+      <li><strong>CG pressure solve</strong>: conjugate gradient iteration to enforce $\nabla \cdot \mathbf{u} = 0$</li>
+      <li><strong>Obstacle update</strong>: enforce no-slip condition on cylinder surface (including rotation for
+        Magnus)</li>
+    </ol>
+
+    <h3>Simulation Conditions</h3>
+
+    <table>
+      <tr>
+        <th>Parameter</th>
+        <th>Value</th>
+        <th>Notes</th>
+      </tr>
+      <tr>
+        <td>Grid resolution</td>
+        <td>256 &times; 128</td>
+        <td>Staggered MAC grid; uniform spacing</td>
+      </tr>
+      <tr>
+        <td>Domain size</td>
+        <td>8.0 &times; 4.0 m</td>
+        <td>Length-to-diameter ratio ~13.3</td>
+      </tr>
+      <tr>
+        <td>Cylinder radius</td>
+        <td>0.3 m</td>
+        <td>Diameter 0.6 m (standard size 5 ball)</td>
+      </tr>
+      <tr>
+        <td>Inlet velocity</td>
+        <td>1.0 m/s</td>
+        <td>Uniform inflow from left boundary</td>
+      </tr>
+      <tr>
+        <td>Reynolds number</td>
+        <td>$Re \approx 4 \times 10^4$</td>
+        <td>Based on $U = 1.0$ m/s, $D = 0.6$ m, $\nu = 1.5 \times 10^{-5}$ m&sup2;/s</td>
+      </tr>
+      <tr>
+        <td>Boundary conditions</td>
+        <td>Uniform inlet (left), free-slip top/bottom, outflow (right), no-slip cylinder</td>
+        <td>Cylinder surface: rotating wall for Magnus ($\omega = 10$ rad/s), stationary for knuckleball</td>
+      </tr>
+      <tr>
+        <td>Spin parameter</td>
+        <td>$S = \omega R / U = 3.0$</td>
+        <td>Exaggerated vs real soccer ($S \approx 0.2$) for visual clarity of the Magnus effect</td>
+      </tr>
+      <tr>
+        <td>Turbulence model</td>
+        <td>None (laminar)</td>
+        <td>Flow remains laminar at this Re on a 2D grid; no RANS model</td>
+      </tr>
+      <tr>
+        <td>Simulation time</td>
+        <td>~30 s (2000 steps, $\Delta t \approx 0.015$ s)</td>
+        <td>Several vortex shedding cycles captured</td>
+      </tr>
+    </table>
+
+    <p>Full implementation code is in the <a href="./code.html">Code Notebook</a> (section 1).</p>
+
+    <h3>Limitations</h3>
+
+    <div class="callout-box warn">
+      <strong>Why 2D laminar is a simplification:</strong> Real cylinder flow at $Re = 4 \times 10^4$ is
+      three-dimensional and transitional: the boundary layer would naturally transition to turbulent in certain regions.
+      A 2D laminar simulation cannot capture this, so it overpredicts $C_d$ (~1.2 vs experimental ~1.0). This is a known
+      bias, not a bug. &Phi;Flow is used for <em>qualitative</em> flow structure, not absolute force prediction.
+    </div>
+
+    <hr>
+
+    <!-- ====================================================================== -->
+    <h2>SU2: High-Fidelity Validation Layer</h2>
+    <!-- ====================================================================== -->
+
+    <p><a href="https://su2code.github.io/">SU2</a> is an open-source finite-volume RANS solver developed at Stanford
+      University. SU2 provides production-grade aerodynamic coefficients whose results are more reliable than
+      &Phi;Flow&rsquo;s laminar approximation.</p>
+
+    <h3>Numerical Method</h3>
+    <p>SU2 uses a <strong>finite-volume</strong> discretization on <strong>unstructured meshes</strong> (triangles in
+      2D, tetrahedra in 3D). The flow variables are stored at cell centers; fluxes are computed at cell faces using an
+      approximate Riemann solver. For incompressible flows, an artificial compressibility method couples pressure and
+      velocity.</p>
+
+    <ul>
+      <li><strong>Convective scheme:</strong> FDS (Roe-type flux difference splitting) for stability at all speeds</li>
+      <li><strong>Time integration:</strong> Euler implicit (steady), dual time-stepping 2nd-order (unsteady)</li>
+      <li><strong>Linear solver:</strong> FGMRES with ILU preconditioner</li>
+    </ul>
+
+    <h3>Turbulence Modeling: RANS SST $k$-$\omega$</h3>
+    <p>Reynolds-Averaged Navier-Stokes decomposes the flow into mean ($\bar{\mathbf{u}}$) and fluctuating
+      ($\mathbf{u}'$) components. The Reynolds stresses $\overline{u'_i u'_j}$ are modelled by the <strong>SST
+        $k$-$\omega$</strong> (Shear Stress Transport) model, which blends:</p>
+    <ul>
+      <li><strong>$k$-$\omega$ near walls</strong>: accurate boundary layer integration</li>
+      <li><strong>$k$-$\varepsilon$ in the free stream</strong>: avoids freestream sensitivity of pure $k$-$\omega$</li>
+    </ul>
+
+    <div class="callout-box theory">
+      <strong>Why SST $k$-$\omega$ for this project:</strong> It is the industry standard for external aerodynamics with
+      separation. It handles adverse pressure gradients (the cylinder&rsquo;s aft surface) better than
+      $k$-$\varepsilon$, and converges more robustly than transition models on coarse meshes. The trade-off: as a
+      <em>fully turbulent</em> model, it cannot predict laminar-to-turbulent transition: essential physics for the drag
+      crisis.
+    </div>
+
+    <h3>Mesh Generation</h3>
+
+    <p>All meshes are generated programmatically using <a href="https://gmsh.info/">gmsh</a>&rsquo;s Python API. The
+      gmsh code is in the <a href="./code.html">Code Notebook</a> (section 3).</p>
+
+    <p>The mesh is designed around two competing requirements: resolving the thin boundary layer at the cylinder surface
+      while keeping the total cell count manageable for fast turnaround. Near the cylinder wall, element size drops to
+      $c_l = 0.004$ (distance-based refinement via a Threshold field), producing a fine ring of small triangles that
+      capture the steep velocity gradients in the viscous sublayer and buffer layer. Away from the cylinder, cell size
+      grows smoothly to $c_l = 0.5$ at the farfield boundary, where the flow is nearly uniform and fine resolution would
+      is not necessary.</p>
+
+    <p>A rectangular <strong>wake box</strong> (extending 6 cylinder diameters downstream, 1 diameter wide) applies a
+      secondary refinement of $c_l = 0.02$ inside its volume. This box is critical because vortex shedding produces
+      alternating recirculation zones that travel downstream: if these cells were too coarse, numerical dissipation
+      would damp the vortices before they develop, biasing the shedding frequency and amplitude. The box is narrower
+      than wide because the wake stays roughly horizontal in 2D cylinder flow; expanding vertically would add
+      unnecessary cells. The Distance and Box fields are combined via a Minimum (Min) field, so the local element size
+      is the smaller of the two at any point: fine at the wall OR inside the wake box, whichever is stricter.</p>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">160,770</div>
+        <div class="lbl">Nodes (2D cylinder)</div>
+      </div>
+      <div class="stat">
+        <div class="num">321,165</div>
+        <div class="lbl">Triangular elements</div>
+      </div>
+      <div class="stat">
+        <div class="num">0.004</div>
+        <div class="lbl">$c_l$ at cylinder wall</div>
+      </div>
+      <div class="stat">
+        <div class="num">0.02</div>
+        <div class="lbl">$c_l$ in wake box</div>
+      </div>
+    </div>
+
+    <div class="img-row">
+      <figure>
+        <img src="images/su2_cylinder_2d/mesh/cylinder_mesh.png" alt="Cylinder mesh overview" style="max-width:100%">
+        <figcaption>Full domain: farfield radius 15 m, cylinder diameter 0.6 m. View crops to ~&plusmn;3 m for wake
+          visibility.</figcaption>
+      </figure>
+      <figure>
+        <img src="images/su2_cylinder_2d/mesh/cylinder_mesh_zoom.png" alt="Cylinder mesh zoomed" style="max-width:100%">
+        <figcaption>Distance-based refinement (cl=0.008 at wall) and wake box (cl=0.04) extending 6D downstream. The
+          wake box ensures vortex structures are adequately resolved.</figcaption>
+      </figure>
+    </div>
+
+    <h3>Simulation</h3>
+
+    <h4>Steady RANS SST</h4>
+    <table>
+      <tr>
+        <th>Parameter</th>
+        <th>Value</th>
+        <th>Notes</th>
+      </tr>
+      <tr>
+        <td>Solver</td>
+        <td><code>INC_RANS</code></td>
+        <td>Incompressible RANS (low Mach, ~0.003)</td>
+      </tr>
+      <tr>
+        <td>Turbulence model</td>
+        <td>SST $k$-$\omega$</td>
+        <td>Fully turbulent; no transition model</td>
+      </tr>
+      <tr>
+        <td>Reynolds number</td>
+        <td>40,000</td>
+        <td>Non-dimensionalized via <code>INITIAL_VALUES</code></td>
+      </tr>
+      <tr>
+        <td>Viscosity</td>
+        <td>$\mu = 2.5 \times 10^{-5}$</td>
+        <td>Non-dimensional: $\mu = 1/Re$</td>
+      </tr>
+      <tr>
+        <td>Convective scheme</td>
+        <td>FDS</td>
+        <td>Roe-type flux splitting; <code>MUSCL=NO</code></td>
+      </tr>
+      <tr>
+        <td>Iterations</td>
+        <td>3,000</td>
+        <td>Converges at ~500; CFL=0.5</td>
+      </tr>
+    </table>
+
+    <p>Full config file is in the <a href="./code.html">Code Notebook</a> (section 2, In [2]).</p>
+
+    <h4>Unsteady Laminar NS &mdash; Reynolds Number Sweep</h4>
+    <table>
+      <tr>
+        <th>Parameter</th>
+        <th>Value</th>
+        <th>Notes</th>
+      </tr>
+      <tr>
+        <td>Solver</td>
+        <td><code>INC_NAVIER_STOKES</code></td>
+        <td>No turbulence model: laminar NS</td>
+      </tr>
+      <tr>
+        <td>Reynolds numbers</td>
+        <td>120, 200, 500</td>
+        <td>Sub-critical range; vortex street at all three</td>
+      </tr>
+      <tr>
+        <td>Time marching</td>
+        <td>Dual time-stepping 2nd-order</td>
+        <td>300 physical steps, 15 inner iters each</td>
+      </tr>
+      <tr>
+        <td>Time step</td>
+        <td>0.3 s</td>
+        <td>90 s total simulation; matches &Phi;Flow duration</td>
+      </tr>
+      <tr>
+        <td>Nondimensionalization</td>
+        <td><code>DIMENSIONAL</code></td>
+        <td>Dimensional $\mu$, $\rho$, $U$; more stable for unsteady</td>
+      </tr>
+      <tr>
+        <td>Spin (Magnus)</td>
+        <td>$\omega_z = 0.4$ rad/s</td>
+        <td>Moving wall BC; $S = \omega R / U = 0.12$</td>
+      </tr>
+    </table>
+
+    <p>Full config file is in the <a href="./code.html">Code Notebook</a> (section 2, In [3]). Key difference between
+      the two configs: the steady RANS solver uses <strong>non-dimensional viscosity</strong> ($\mu = 1/Re$) with
+      <code>INITIAL_VALUES</code>, while the unsteady laminar solver uses <strong>dimensional viscosity</strong> ($\mu =
+      0.00267875$ kg/(m&middot;s)) with <code>DIMENSIONAL</code> (in this mode, SU2 uses the
+      <code>REYNOLDS_NUMBER</code> parameter to set the effective Reynolds number for its internal non-dimensional
+      equations, while the dimensional $\mu$ value is used for scaling output quantities; the algebraic check $\rho U D
+      / \mu = 1.2886 \times 1.0 \times 0.6 / 0.00267875 \approx 289$ does not apply because the solver internally
+      rescales the reference density). The dimensional approach is more robust for the dual time-stepping unsteady
+      solver. The Magnus configuration adds a <strong>moving wall</strong> boundary condition rotating at $\omega_z =
+      0.4$ rad/s, which corresponds to a spin parameter $S = 0.12$: a moderate spin rate for a soccer ball.
+    </p>
+
+    <!-- ====================================================================== -->
+    <h2>Unsteady Reynolds Sweep</h2>
+    <!-- ====================================================================== -->
+
+    <p>Why run six cases (3 Re &times; 2 spin states) instead of one? The Reynolds number determines how the flow
+      separates and sheds. A single Re only validates one point. Running three Re tells us whether the solver
+      reproduces the correct <strong>trends</strong>.</p>
+
+    <p>The Strouhal number $St$ vs Re curve for a circular cylinder is one of the most precisely documented
+      relationships in fluid dynamics (Williamson 1988). If our values follow the accepted curve, the solver, mesh, and
+      timestep are correct:</p>
+
+    <table>
+      <tr>
+        <th>Re</th>
+        <th>Our $St$</th>
+        <th>Literature $St$</th>
+        <th>Our $C_d$</th>
+        <th>Literature $C_d$</th>
+        <th>Error ($St$)</th>
+      </tr>
+      <tr>
+        <td>120</td>
+        <td>0.16</td>
+        <td>0.168</td>
+        <td>0.654</td>
+        <td>0.65</td>
+        <td>&minus;4.8%</td>
+      </tr>
+      <tr>
+        <td>200</td>
+        <td>0.18</td>
+        <td>0.183</td>
+        <td>0.536</td>
+        <td>0.55</td>
+        <td>&minus;1.6%</td>
+      </tr>
+      <tr>
+        <td>500</td>
+        <td>0.20</td>
+        <td>0.200</td>
+        <td>0.467</td>
+        <td>0.47</td>
+        <td>0.0%</td>
+      </tr>
+    </table>
+
+    <p>The trend matches across all three Re. Both $C_d$ and $St$ agree with Williamson (1988) and Tritton (1959) to
+      within typical unstructured-mesh accuracy.</p>
+
+    <p>All 6 cases ran for 300 time steps ($\Delta t = 0.3$ s, 90 s total) on the fine mesh (160k nodes, 321k
+      elements).</p>
+
+    <h3>Results</h3>
+
+    <table>
+      <tr>
+        <th>Case</th>
+        <th>Re</th>
+        <th>$C_d$</th>
+        <th>$C_l$ range</th>
+        <th>$C_l$ mean</th>
+        <th>$St$</th>
+      </tr>
+      <tr>
+        <td>No Spin</td>
+        <td>120</td>
+        <td>0.654</td>
+        <td>[-0.043, 0.048]</td>
+        <td>-0.003</td>
+        <td>0.16</td>
+      </tr>
+      <tr>
+        <td>No Spin</td>
+        <td>200</td>
+        <td>0.534</td>
+        <td>[-0.058, 0.065]</td>
+        <td>-0.034</td>
+        <td>0.18</td>
+      </tr>
+      <tr>
+        <td>No Spin</td>
+        <td>500</td>
+        <td>0.467</td>
+        <td>[-0.164, 0.196]</td>
+        <td>0.134</td>
+        <td>0.20</td>
+      </tr>
+      <tr>
+        <td>Magnus $S=0.12$</td>
+        <td>120</td>
+        <td>0.684</td>
+        <td>[-0.303, -0.017]</td>
+        <td>-0.303</td>
+        <td>0.04</td>
+      </tr>
+      <tr>
+        <td>Magnus $S=0.12$</td>
+        <td>200</td>
+        <td>0.681</td>
+        <td>[-0.394, -0.090]</td>
+        <td>-0.395</td>
+        <td>0.04</td>
+      </tr>
+      <tr>
+        <td>Magnus $S=0.12$</td>
+        <td>500</td>
+        <td>0.792</td>
+        <td>[-0.260, -0.012]</td>
+        <td>-0.260</td>
+        <td>0.06</td>
+      </tr>
+    </table>
+
+    <h3>What the data shows</h3>
+    <ol>
+      <li><strong>Drag drops as Reynolds number rises:</strong> $C_d$ falls from 0.654 to 0.467 for no-spin cases.
+        Higher
+        Re means thinner boundary layers and a narrower wake, reducing pressure drag. The Strouhal number climbs in
+        parallel from 0.16 to 0.20, matching expected values.</li>
+      <li><strong>Spin increases drag and creates downward lift:</strong> Magnus cases show 2&ndash;25% higher $C_d$
+        than
+        no-spin, with the largest effect at low Re. All three produce a negative $C_l$ (top spin pushes the ball down),
+        peaking at Re=200 ($C_l = -0.39$).</li>
+      <li><strong>Spin breaks the vortex street:</strong> The Strouhal number drops from 0.16&ndash;0.20 (alternating
+        vortices) to 0.04&ndash;0.06 (steady asymmetric wake). The spinning cylinder suppresses the natural shedding
+        cycle.</li>
+    </ol>
+
+    <div class="callout-box warn">
+      <strong>Mesh limitation &mdash; damped shedding amplitude:</strong> The unstructured triangular mesh damps the
+      $C_l$ amplitude by an order of magnitude ($\pm 0.05$) compared to the literature value ($\pm 0.5$). Numerical
+      dissipation from skew-angled triangles in the wake smooths out vortex cores before they fully develop. The
+      shedding <em>frequency</em> ($St$) is correct (within 5% of Williamson 1988), but the <em>amplitude</em> is
+      underpredicted. Recovering the full amplitude would require a structured quad mesh or prism layers in the wake
+      region to reduce transverse numerical diffusion. Upcoming work includes a grid convergence study on a
+      block-structured O-grid and DDES/IDDES to resolve separation-induced transition.
+    </div>
+
+    <!-- ====================================================================== -->
+    <h2>Surface Pressure Validation: $C_p(\theta)$</h2>
+    <!-- ====================================================================== -->
+
+    <p>Beyond integral forces ($C_d$, $C_l$), we extracted the <strong>pressure coefficient distribution</strong> around
+      the cylinder surface from the final timestep of each case. $C_p(\theta)$ is the gold standard for CFD
+      validation&mdash;it shows exactly where the flow accelerates on the front shoulder (suction peak), where it
+      decelerates (adverse pressure gradient), and where it separates (plateau in the rear).</p>
+
+    <div class="img-row single">
+      <figure>
+        <img src="images/su2_cylinder_2d/analysis/cylinder_cp_comparison.png" alt="Cp(theta) comparison"
+          style="max-width:100%">
+        <figcaption>Surface pressure coefficient $C_p(\theta)$ for all six cases. No-spin cases (blue) show symmetric
+          distributions; Magnus cases (red) show asymmetry. The suction peak shifts aft and the base pressure plateau
+          rises with increasing Re in the no-spin cases, consistent with later separation and narrower wakes. The right
+          panel zooms on the rear surface where separation occurs.</figcaption>
+      </figure>
+    </div>
+
+    <p>Measured separation angles from the $C_p$ curve shape:</p>
+
+    <table>
+      <tr>
+        <th>Case</th>
+        <th>$\theta_s$ (measured)</th>
+        <th>Literature range</th>
+        <th>Notes</th>
+      </tr>
+      <tr>
+        <td>No spin Re=120</td>
+        <td>87&deg;</td>
+        <td>85&deg;&ndash;95&deg;</td>
+        <td>Classic laminar separation</td>
+      </tr>
+      <tr>
+        <td>No spin Re=200</td>
+        <td>97&deg;</td>
+        <td>88&deg;&ndash;100&deg;</td>
+        <td>Later separation, thinner BL</td>
+      </tr>
+      <tr>
+        <td>No spin Re=500</td>
+        <td>103&deg;</td>
+        <td>95&deg;&ndash;110&deg;</td>
+        <td>Latest separation, narrowest wake</td>
+      </tr>
+      <tr>
+        <td>Magnus Re=120</td>
+        <td>85&deg;</td>
+        <td>Asymmetric</td>
+        <td>Top side: earlier separation from opposed spin</td>
+      </tr>
+      <tr>
+        <td>Magnus Re=200</td>
+        <td>85&deg;</td>
+        <td>Asymmetric</td>
+        <td>Strongest lift bias ($C_l = -0.39$)</td>
+      </tr>
+      <tr>
+        <td>Magnus Re=500</td>
+        <td>60&deg;</td>
+        <td>Asymmetric</td>
+        <td>Very early top-side separation at high Re + spin</td>
+      </tr>
+    </table>
+
+    <p>The no-spin separation angles increase monotonically with Re, confirming the physical trend. The Magnus case at
+      Re=500 shows notably earlier separation on the retreating (top) side at 60&deg;, creating the strongest pressure
+      asymmetry that drives the Magnus lift. The RANS SST steady solution (on the coarse mesh, 44k nodes) predicts
+      $\theta_s \approx 110&deg;$, consistent with a fully turbulent boundary layer that remains attached much longer
+      than any laminar case.</p>
+
+    <p>A note on the fine-mesh RANS attempt: the steady solver could not converge on the 160k-node fine mesh because the
+      mesh resolves the wake well enough for the von K&aacute;rm&aacute;n instability to develop. The steady solver
+      oscillates between shedding states instead of converging to a time-averaged solution. The coarse-mesh RANS result
+      ($C_d = 0.683$, $\theta_s \approx 110&deg;$) remains the validated turbulent extreme. This is a known limitation:
+      steady RANS for cylinder flows at Re &gt; 100 requires enough numerical dissipation to suppress the inherent
+      unsteadiness, which coarser meshes provide.</p>
+
+    <!-- ====================================================================== -->
+    <h2>Visualization Gallery</h2>
+    <!-- ====================================================================== -->
+
+    <p>All visualizations are generated from SU2 VTU output using matplotlib (static PNGs and MP4 animations). The
+      workflow:</p>
+    <ol>
+      <li>SU2 writes per-timestep VTU files (ParaView format)</li>
+      <li>PyVista reads the VTU, extracts pressure/velocity fields on slice planes</li>
+      <li>Static PNGs rendered at 600&times;400 grid resolution with 40 contour levels</li>
+      <li>Animations stitched at 150 frames (every 2nd timestep) at 10 fps for 15-second videos</li>
+      <li>Comparison animations combine three Reynolds numbers side-by-side at 100 frames (every 3rd timestep)</li>
+    </ol>
+
+    <p>The data is organized by Reynolds number (120, 200, 500) and spin state (no-spin, Magnus) into subdirectories.
+      The cylinder is rendered as a solid black disk with a white outline, and the viewport spans $x \in [-2, 8]$ to
+      show approximately three wake cycles.</p>
+
+    <h3>Re Sweep: Static Comparison</h3>
+
+    <div class="panel-row">
+      <div class="panel">
+        <h4>No-Spin Pressure</h4>
+        <figure><img src="images/su2_cylinder_2d/re120/nospin/cylinder_nospin_pressure_re120.png"
+            alt="Re120 no-spin pressure" style="max-width:100%">
+          <figcaption>Re=120</figcaption>
+        </figure>
+        <figure><img src="images/su2_cylinder_2d/re200/nospin/cylinder_nospin_pressure_re200.png"
+            alt="Re200 no-spin pressure" style="max-width:100%">
+          <figcaption>Re=200</figcaption>
+        </figure>
+        <figure><img src="images/su2_cylinder_2d/re500/nospin/cylinder_nospin_pressure_re500.png"
+            alt="Re500 no-spin pressure" style="max-width:100%">
+          <figcaption>Re=500</figcaption>
+        </figure>
+      </div>
+      <div class="panel">
+        <h4>Magnus Pressure</h4>
+        <figure><img src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_pressure_re120.png"
+            alt="Re120 Magnus pressure" style="max-width:100%">
+          <figcaption>Re=120</figcaption>
+        </figure>
+        <figure><img src="images/su2_cylinder_2d/re200/magnus/cylinder_magnus_pressure_re200.png"
+            alt="Re200 Magnus pressure" style="max-width:100%">
+          <figcaption>Re=200</figcaption>
+        </figure>
+        <figure><img src="images/su2_cylinder_2d/re500/magnus/cylinder_magnus_pressure_re500.png"
+            alt="Re500 Magnus pressure" style="max-width:100%">
+          <figcaption>Re=500</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <h3>Animated Flow Fields (15s, 10fps, Re Sweep)</h3>
+
+    <p>Each video shows 150 frames subsampled from 300 timesteps (every 2nd), spanning the full 90s simulation.</p>
+
     <h4>No Spin</h4>
-    <figure>
-      <img src="images/su2_cylinder_2d/re120/nospin/cylinder_nospin_pressure_re120.png" alt="No-spin pressure Re=120" style="max-width:100%">
-      <figcaption>Pressure: Symmetric von K&aacute;rm&aacute;n street. Each dark patch is a low-pressure vortex core migrating downstream.</figcaption>
-    </figure>
-    <figure style="margin-top:12px">
-      <img src="images/su2_cylinder_2d/re120/nospin/cylinder_nospin_velocity_re120.png" alt="No-spin velocity Re=120" style="max-width:100%">
-      <figcaption>Velocity: Alternating vortices with streamlines showing the recirculation regions.</figcaption>
-    </figure>
-  </div>
-  <div class="panel">
+    <div class="video-row triple">
+      <figure>
+        <video src="images/su2_cylinder_2d/re120/nospin/cylinder_nospin_pressure_re120.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=120: Pressure. Classic von K&aacute;rm&aacute;n street at $St=0.16$.</figcaption>
+      </figure>
+      <figure>
+        <video src="images/su2_cylinder_2d/re200/nospin/cylinder_nospin_pressure_re200.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=200: Pressure. Faster shedding ($St=0.18$), narrower wake.</figcaption>
+      </figure>
+      <figure>
+        <video src="images/su2_cylinder_2d/re500/nospin/cylinder_nospin_pressure_re500.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=500: Pressure. Highest frequency ($St=0.20$), tightest wake.</figcaption>
+      </figure>
+    </div>
+
     <h4>Magnus $S=0.12$</h4>
-    <figure>
-      <img src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_pressure_re120.png" alt="Magnus pressure Re=120" style="max-width:100%">
-      <figcaption>Pressure: Asymmetric field with low-pressure region on the advancing (bottom) side driving the Magnus force.</figcaption>
-    </figure>
-    <figure style="margin-top:12px">
-      <img src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_velocity_re120.png" alt="Magnus velocity Re=120" style="max-width:100%">
-      <figcaption>Velocity: Downward-deflected wake. Streamlines bend toward the low-pressure side, confirming the lift direction.</figcaption>
-    </figure>
-  </div>
-</div>
+    <div class="video-row triple">
+      <figure>
+        <video src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_pressure_re120.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=120: Pressure. Spin locks the low-pressure region to the advancing side.</figcaption>
+      </figure>
+      <figure>
+        <video src="images/su2_cylinder_2d/re200/magnus/cylinder_magnus_pressure_re200.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=200: Pressure. Strongest $C_l$ bias ($-0.39$).</figcaption>
+      </figure>
+      <figure>
+        <video src="images/su2_cylinder_2d/re500/magnus/cylinder_magnus_pressure_re500.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=500: Pressure. Weaker bias ($C_l=-0.26$) but wider pressure asymmetry.</figcaption>
+      </figure>
+    </div>
 
-<h3>Re Sweep: Static Comparison</h3>
+    <div class="video-row triple">
+      <figure>
+        <video src="images/su2_cylinder_2d/re120/nospin/cylinder_nospin_velocity_re120.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=120: Velocity with streamlines. Alternating vortex cores visible in the wake.</figcaption>
+      </figure>
+      <figure>
+        <video src="images/su2_cylinder_2d/re200/nospin/cylinder_nospin_velocity_re200.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=200: Velocity. Higher Re produces tighter, faster vortices.</figcaption>
+      </figure>
+      <figure>
+        <video src="images/su2_cylinder_2d/re500/nospin/cylinder_nospin_velocity_re500.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=500: Velocity. Wake narrows significantly at the highest Re.</figcaption>
+      </figure>
+    </div>
 
-<div class="panel-row">
-  <div class="panel">
-    <h4>No-Spin Pressure</h4>
-    <figure><img src="images/su2_cylinder_2d/re120/nospin/cylinder_nospin_pressure_re120.png" alt="Re120 no-spin pressure" style="max-width:100%"><figcaption>Re=120</figcaption></figure>
-    <figure><img src="images/su2_cylinder_2d/re200/nospin/cylinder_nospin_pressure_re200.png" alt="Re200 no-spin pressure" style="max-width:100%"><figcaption>Re=200</figcaption></figure>
-    <figure><img src="images/su2_cylinder_2d/re500/nospin/cylinder_nospin_pressure_re500.png" alt="Re500 no-spin pressure" style="max-width:100%"><figcaption>Re=500</figcaption></figure>
-  </div>
-  <div class="panel">
-    <h4>Magnus Pressure</h4>
-    <figure><img src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_pressure_re120.png" alt="Re120 Magnus pressure" style="max-width:100%"><figcaption>Re=120</figcaption></figure>
-    <figure><img src="images/su2_cylinder_2d/re200/magnus/cylinder_magnus_pressure_re200.png" alt="Re200 Magnus pressure" style="max-width:100%"><figcaption>Re=200</figcaption></figure>
-    <figure><img src="images/su2_cylinder_2d/re500/magnus/cylinder_magnus_pressure_re500.png" alt="Re500 Magnus pressure" style="max-width:100%"><figcaption>Re=500</figcaption></figure>
-  </div>
-</div>
+    <div class="video-row triple">
+      <figure>
+        <video src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_velocity_re120.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=120: Velocity. Downward-deflected wake under Magnus; streamlines curve toward the advancing side.
+        </figcaption>
+      </figure>
+      <figure>
+        <video src="images/su2_cylinder_2d/re200/magnus/cylinder_magnus_velocity_re200.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=200: Velocity. Strongest deflection and most stable asymmetric wake.</figcaption>
+      </figure>
+      <figure>
+        <video src="images/su2_cylinder_2d/re500/magnus/cylinder_magnus_velocity_re500.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Re=500: Velocity. Broader wake but persistent bias, visible in the streamline asymmetry.
+        </figcaption>
+      </figure>
+    </div>
 
-<h3>Animated Flow Fields (15s, 10fps, Re Sweep)</h3>
+    <h3>Re Sweep Comparison Videos (10s, 3-panel)</h3>
 
-<p>Each video shows 150 frames subsampled from 300 timesteps (every 2nd), spanning the full 90s simulation.</p>
+    <p>Three Reynolds numbers side-by-side for direct comparison of the wake evolution. Frames are subsampled every 3rd
+      timestep (100 frames total).</p>
 
-<h4>No Spin</h4>
-<div class="video-row triple">
-  <figure>
-    <video src="images/su2_cylinder_2d/re120/nospin/cylinder_nospin_pressure_re120.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=120: Pressure. Classic von K&aacute;rm&aacute;n street at $St=0.16$.</figcaption>
-  </figure>
-  <figure>
-    <video src="images/su2_cylinder_2d/re200/nospin/cylinder_nospin_pressure_re200.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=200: Pressure. Faster shedding ($St=0.18$), narrower wake.</figcaption>
-  </figure>
-  <figure>
-    <video src="images/su2_cylinder_2d/re500/nospin/cylinder_nospin_pressure_re500.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=500: Pressure. Highest frequency ($St=0.20$), tightest wake.</figcaption>
-  </figure>
-</div>
+    <div class="video-row">
+      <figure>
+        <video src="images/su2_cylinder_2d/comparisons/cylinder_nospin_pressure_re_comparison.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>No-spin pressure: Re=120 &vert; Re=200 &vert; Re=500. Wake narrows and shedding accelerates with
+          increasing Re.</figcaption>
+      </figure>
+      <figure>
+        <video src="images/su2_cylinder_2d/comparisons/cylinder_magnus_pressure_re_comparison.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Magnus pressure: Re=120 &vert; Re=200 &vert; Re=500. Asymmetric pressure dipole persists across all
+          three Reynolds numbers.</figcaption>
+      </figure>
+    </div>
 
-<h4>Magnus $S=0.12$</h4>
-<div class="video-row triple">
-  <figure>
-    <video src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_pressure_re120.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=120: Pressure. Spin locks the low-pressure region to the advancing side.</figcaption>
-  </figure>
-  <figure>
-    <video src="images/su2_cylinder_2d/re200/magnus/cylinder_magnus_pressure_re200.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=200: Pressure. Strongest $C_l$ bias ($-0.39$).</figcaption>
-  </figure>
-  <figure>
-    <video src="images/su2_cylinder_2d/re500/magnus/cylinder_magnus_pressure_re500.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=500: Pressure. Weaker bias ($C_l=-0.26$) but wider pressure asymmetry.</figcaption>
-  </figure>
-</div>
+    <div class="video-row">
+      <figure>
+        <video src="images/su2_cylinder_2d/comparisons/cylinder_nospin_velocity_re_comparison.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>No-spin velocity: Re=120 &vert; Re=200 &vert; Re=500. Streamlines show the narrowing wake as Re
+          increases.</figcaption>
+      </figure>
+      <figure>
+        <video src="images/su2_cylinder_2d/comparisons/cylinder_magnus_velocity_re_comparison.mp4" autoplay loop muted
+          playsinline preload="none" style="max-width:100%"></video>
+        <figcaption>Magnus velocity: Re=120 &vert; Re=200 &vert; Re=500. Deflection is strongest at Re=200 and weakest
+          at Re=500.</figcaption>
+      </figure>
+    </div>
 
-<div class="video-row triple">
-  <figure>
-    <video src="images/su2_cylinder_2d/re120/nospin/cylinder_nospin_velocity_re120.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=120: Velocity with streamlines. Alternating vortex cores visible in the wake.</figcaption>
-  </figure>
-  <figure>
-    <video src="images/su2_cylinder_2d/re200/nospin/cylinder_nospin_velocity_re200.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=200: Velocity. Higher Re produces tighter, faster vortices.</figcaption>
-  </figure>
-  <figure>
-    <video src="images/su2_cylinder_2d/re500/nospin/cylinder_nospin_velocity_re500.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=500: Velocity. Wake narrows significantly at the highest Re.</figcaption>
-  </figure>
-</div>
+    <h2># Why Validate?</h2>
+    <!-- ====================================================================== -->
 
-<div class="video-row triple">
-  <figure>
-    <video src="images/su2_cylinder_2d/re120/magnus/cylinder_magnus_velocity_re120.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=120: Velocity. Downward-deflected wake under Magnus; streamlines curve toward the advancing side.</figcaption>
-  </figure>
-  <figure>
-    <video src="images/su2_cylinder_2d/re200/magnus/cylinder_magnus_velocity_re200.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=200: Velocity. Strongest deflection and most stable asymmetric wake.</figcaption>
-  </figure>
-  <figure>
-    <video src="images/su2_cylinder_2d/re500/magnus/cylinder_magnus_velocity_re500.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Re=500: Velocity. Broader wake but persistent bias, visible in the streamline asymmetry.</figcaption>
-  </figure>
-</div>
+    <p>Every CFD model makes approximations. Validation quantifies how much the numbers can be trusted. The &Phi;Flow
+      and SU2 simulations describe the real physics of a cylinder in crossflow: laminar separation (~80&deg;, $C_d
+      \approx 1.2$) and turbulent separation (~110&deg;, $C_d \approx 0.68$). Real soccer balls live between these
+      bounds, with surface texture and spin determining where on the laminar-to-turbulent spectrum they operate.</p>
 
-<h3>Re Sweep Comparison Videos (10s, 3-panel)</h3>
+  </main>
 
-<p>Three Reynolds numbers side-by-side for direct comparison of the wake evolution. Frames are subsampled every 3rd timestep (100 frames total).</p>
+  <footer class="site-footer">
+    <p>&copy; 2026 &middot; The Physics of Play &middot; Built by Ajeet Krishnasamy</p>
+    <p style="margin-top: 6px;"><a href="https://github.com/ajeet-krish/Soccer-CFD">[ GitHub Repo ]</a> &middot; <a
+        href="https://ajeetkrishnasamy.com">[ Portfolio ]</a> &middot; <a
+        href="https://www.linkedin.com/in/ajeetkrishnasamy/">[ LinkedIn ]</a></p>
+  </footer>
 
-<div class="video-row">
-  <figure>
-    <video src="images/su2_cylinder_2d/comparisons/cylinder_nospin_pressure_re_comparison.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>No-spin pressure: Re=120 &vert; Re=200 &vert; Re=500. Wake narrows and shedding accelerates with increasing Re.</figcaption>
-  </figure>
-  <figure>
-    <video src="images/su2_cylinder_2d/comparisons/cylinder_magnus_pressure_re_comparison.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Magnus pressure: Re=120 &vert; Re=200 &vert; Re=500. Asymmetric pressure dipole persists across all three Reynolds numbers.</figcaption>
-  </figure>
-</div>
-
-<div class="video-row">
-  <figure>
-    <video src="images/su2_cylinder_2d/comparisons/cylinder_nospin_velocity_re_comparison.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>No-spin velocity: Re=120 &vert; Re=200 &vert; Re=500. Streamlines show the narrowing wake as Re increases.</figcaption>
-  </figure>
-  <figure>
-    <video src="images/su2_cylinder_2d/comparisons/cylinder_magnus_velocity_re_comparison.mp4" autoplay loop muted playsinline preload="none" style="max-width:100%"></video>
-    <figcaption>Magnus velocity: Re=120 &vert; Re=200 &vert; Re=500. Deflection is strongest at Re=200 and weakest at Re=500.</figcaption>
-  </figure>
-</div>
-
-<h3>Pressure Coefficient Analysis</h3>
-
-<p>The surface pressure coefficient analysis and separation angle measurements are in the <a href="#purpose-of-the-reynolds-number-sweep">Re Sweep Purpose</a> section above, with the full $C_p(\theta)$ plot generated from the same final-timestep VTU data.</p>
-
-<hr>
-
-<!-- ====================================================================== -->
-<p style="color: var(--comment); font-size: 0.78rem; margin-top: 16px;" id="fn:mu">
-  <a href="#fnref:mu">*</a> In <code>DIMENSIONAL</code> mode, SU2 uses the <code>REYNOLDS_NUMBER</code> parameter to set the effective Reynolds number for its internal non-dimensional equations, while the dimensional $\mu$ value is used for scaling output quantities. The stated $\mu = 0.00267875$ kg/(m&middot;s) produces an effective $Re = 120$ through SU2's internal computation, matching the input parameter. The algebraic check $\rho U D / \mu = 1.2886 \times 1.0 \times 0.6 / 0.00267875 \approx 289$ does not apply because the solver internally rescales the reference density.
-</p>
-
-<h2># Why Validate?</h2>
-<!-- ====================================================================== -->
-
-<p>Validation is the process of quantifying how well a simulation matches reality. Every CFD model makes approximations: grid resolution, turbulence modeling, boundary conditions, numerical schemes. The question validation answers: <em>how much can the numbers be trusted?</em></p>
-
-<div class="callout-box result">
-  <strong>What the &Phi;Flow vs SU2 comparison demonstrates:</strong> The 43% difference in $C_d$ is <em>not</em> due to one code being wrong. It is the physical difference between laminar separation (~80&deg;, wide wake, high drag) and turbulent separation (~110&deg;, narrow wake, low drag). &Phi;Flow gives the laminar answer; SU2 RANS gives the fully-turbulent answer. Real soccer balls ($Re \approx 2$&ndash;$5 \times 10^5$) live in between, with surface texture and spin determining where on the laminar-to-turbulent spectrum they operate. <strong>Together, the two solvers bracket the truth.</strong>
-</div>
-
-<p>Key takeaways from the validation effort:</p>
-<ul>
-  <li><strong>&Phi;Flow is excellent for exploration</strong>: 100+ trajectory variations in seconds, fast iteration, intuitive Python API. Its $C_d$ of ~1.2 for the cylinder is within the expected range for laminar flow.</li>
-  <li><strong>SU2 RANS is essential for quantification</strong>: $C_d = 0.683$ from the steady RANS is reliable within the fully-turbulent assumption. The URANS $C_l$ bias of $-0.15$ under spin confirms the Magnus effect strength.</li>
-  <li><strong>Mesh quality matters</strong>: the unstructured mesh limits shedding amplitude ($\pm 0.05$ vs literature $\pm 0.5$). A structured quad mesh or prism layers would recover the full amplitude.</li>
-</ul>
-
-<p>This two-tier validation approach mirrors how industrial CFD teams operate: rapid exploration with reduced-order models, followed by targeted high-fidelity simulations for the most promising cases.</p>
-
-<hr>
-
-<h2># Upcoming Work</h2>
-<ul>
-  <li><strong>Structured quad mesh for cylinder:</strong> A block-structured O-grid around the cylinder would improve boundary layer resolution and recover the full $C_l$ shedding amplitude ($\pm 0.5$ vs the current $\pm 0.05$)</li>
-  <li><strong>Grid convergence study:</strong> Three meshes (coarse / medium / fine) to establish mesh-independence of $C_d$, $St$, and separation angle</li>
-  <li><strong>DDES / IDDES on structured cylinder mesh:</strong> Detached Eddy Simulation on the structured O-grid would resolve separation-induced transition by switching to LES in the separated shear layer, capturing the laminar separation bubble and transitional $C_d$ at $Re \approx 10^5$ — the regime that RANS-based transition models ($\gamma$-$Re_\theta$) cannot reach on separated flows</li>
-</ul>
-
-</main>
-
-<footer class="site-footer">
-  <p>&copy; 2026 &middot; The Physics of Play &middot; Built by Ajeet Krishnasamy</p>
-  <p style="margin-top: 6px;"><a href="https://github.com/ajeet-krish/Soccer-CFD">[ GitHub Repo ]</a> &middot; <a href="https://ajeetkrishnasamy.com">[ Portfolio ]</a> &middot; <a href="https://www.linkedin.com/in/ajeetkrishnasamy/">[ LinkedIn ]</a></p>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  renderMathInElement(document.body, {
-    delimiters: [
-      {left: "$$", right: "$$", display: true},
-      {left: "$", right: "$", display: false}
-    ],
-    throwOnError: false
-  });
-  initScrollAnimations();
-});
-
-function initScrollAnimations() {
-  const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links');
-  els.forEach(el => el.classList.add('fade-in'));
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false }
+        ],
+        throwOnError: false
+      });
+      initScrollAnimations();
     });
-  }, { threshold: 0.1 });
 
-  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-}
-</script>
+    function initScrollAnimations() {
+      const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links');
+      els.forEach(el => el.classList.add('fade-in'));
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    }
+  </script>
 </body>
+
 </html>

@@ -22,7 +22,7 @@
       <div class="nav-entries">
         <a href="./index.html">[ 01. Home ]</a>
         <a href="./theory.html">[ 02. Theory ]</a>
-        <a href="./shot.html" class="active">[ 03. Shot ]</a>
+        <a href="./shot.html" class="active">[ 03. Shooting ]</a>
         <a href="./tactical.html">[ 04. Tactical ]</a>
         <a href="./overlap.html">[ 05. Overlap Run ]</a>
         <a href="./cfd.html">[ 06. CFD ]</a>
@@ -76,11 +76,13 @@
       it's predictable. </p>
     <p>Watch this ridiculous spin on a Messi free kick:</p>
 
-    <div class="vid-grid single">
-      <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
-        <source src="images/shot_magnus.mp4" type="video/mp4">
-      </video>
-      <div class="cap">Messi free kick vs Liverpool, 2019 Champions League semifinal (first leg)</div>
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/shot_magnus.mp4" type="video/mp4">
+        </video>
+        <figcaption>Messi free kick vs Liverpool, 2019 Champions League semifinal (first leg)</figcaption>
+      </figure>
     </div>
 
     <h3>Knuckleball: Erratic Flight Path</h3>
@@ -101,11 +103,13 @@
       distance.</p>
     <p>Watch &Ccedil;alhano&gacute;lu completely bamboozle the goalkeeper:</p>
 
-    <div class="vid-grid single">
-      <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
-        <source src="images/shot_knuckleball.mp4" type="video/mp4">
-      </video>
-      <div class="cap">Çalhanoglu knuckleball vs Dortmund, February 2014, Bundesliga</div>
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/shot_knuckleball.mp4" type="video/mp4">
+        </video>
+        <figcaption>Çalhanoglu knuckleball vs Dortmund, February 2014, Bundesliga</figcaption>
+      </figure>
     </div>
 
     <h2>Python Simulation</h2>
@@ -138,12 +142,14 @@
       cylinder, the low-pressure wake remains narrow and steady. The spin suppresses the natural vortex-shedding
       instability.</p>
 
-    <div class="vid-grid single">
-      <video controls preload="metadata">
-        <source src="images/phiflow_cylinder_2d/pressure_comparison.mp4" type="video/mp4">
-      </video>
-      <div class="cap">Pressure comparison: Magnus (L) vs Knuckleball (R). The asymmetry on the left never
-        flips; the right alternates with every shed vortex.</div>
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/phiflow_cylinder_2d/pressure_comparison.mp4" type="video/mp4">
+        </video>
+        <figcaption><strong>Pressure comparison:</strong> Magnus (L) vs Knuckleball (R). The asymmetry on the left never
+          flips; the right alternates with every shed vortex.</figcaption>
+      </figure>
     </div>
 
     <h3>Velocity Field</h3>
@@ -163,12 +169,15 @@
       cylinder is compact and does not grow. The streamlines in the wake show smooth, ordered flow rather than chaotic
       eddies. This is the signature of a flow stabilized by rotation.</p>
 
-    <div class="vid-grid single">
-      <video controls preload="metadata">
-        <source src="images/phiflow_cylinder_2d/velocity_comparison.mp4" type="video/mp4">
-      </video>
-      <div class="cap">Velocity comparison: Magnus (L) vs Knuckleball (R). The Magnus wake is narrow and steady;
-        the Knuckleball wake is wide with rolling vortices.</div>
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/phiflow_cylinder_2d/velocity_comparison.mp4" type="video/mp4">
+        </video>
+        <figcaption><strong>Velocity comparison:</strong> Magnus (L) vs Knuckleball (R). The Magnus wake is narrow and
+          steady;
+          the Knuckleball wake is wide with rolling vortices.</figcaption>
+      </figure>
     </div>
 
     <h4>Wake Comparison at the Same Timestep ($t \approx 85.5$ s)</h4>
@@ -231,10 +240,10 @@
       interesting regime) for no-spin vs Magnus spin. In each slider, drag the divider to reveal either field fully.</p>
 
     <h3>Pressure Field (Re=120, t=89.7s)</h3>
-    <p>The SU2 laminar solver resolves the pressure asymmetry produced by the Magnus effect. The no-spin case shows
-      a symmetric pressure distribution with alternating low-pressure vortices in the wake; the Magnus case shows a
-      persistent high-pressure region on the bottom (retreating) side and low-pressure on the top (advancing) side,
-      creating the steady lift force that bends the ball's trajectory.</p>
+    <p>The no-spin case shows a large low-pressure zone behind the cylinder that appears as a broad
+      symmetric blob in the wake at this snapshot. The Magnus case shows alternating low-pressure
+      vortices shedding downstream, though the pressure deficit in each vortex is smaller in magnitude
+      than in the no-spin case.</p>
     <div class="compare-container" id="compare-pressure">
       <img src="images/su2_cylinder_2d/re120/nospin/cylinder_nospin_pressure_re120.png" alt="No-spin pressure SU2">
       <div class="compare-overlay" id="overlay-pressure">
@@ -244,10 +253,12 @@
     </div>
 
     <h3>Velocity Field (Re=120, t=89.7s)</h3>
-    <p>Velocity magnitude with streamlines. The no-spin case produces a wide, chaotic wake with alternating vortex
-      shedding (the von K&aacute;rm&aacute;n street). The Magnus case shows a narrower, deflected wake: the spin
-      stabilizes the flow, suppresses shedding, and angles the wake downward, directly visualizing the downward
-      lift force that curves the ball.</p>
+    <p>In the no-spin case, the velocity field shows a symmetric low-velocity zone behind the cylinder
+      at this snapshot. Recirculation zones visible in the streamlines reveal the forming vortex
+      structures that produce the low-pressure wake. These zones match the symmetric blob seen in the pressure field.
+      The recirculation behaviour is what leads to the large wake and vortex shedding seen in the &Phi;Flow animations.
+      The Magnus case shows a controlled alternating wake with no
+      visible recirculation zones, evidence that the spin stabilizes the flow.</p>
     <div class="compare-container" id="compare-velocity">
       <img src="images/su2_cylinder_2d/re120/nospin/cylinder_nospin_velocity_re120.png" alt="No-spin velocity SU2">
       <div class="compare-overlay" id="overlay-velocity">
@@ -256,43 +267,19 @@
       <div class="compare-handle" id="handle-velocity"></div>
     </div>
 
-    <h3>Steady RANS Comparison (Re=40k, Fully Turbulent)</h3>
-    <p>At soccer-relevant Reynolds numbers (Re &approx; 2&times;10<sup>4</sup> to 5&times;10<sup>5</sup>),
-      the boundary layer transitions to turbulence. The SU2 steady RANS solver (SST turbulence model) predicts
-      a fully-turbulent separation at approximately 110&deg; from the stagnation point, compared to ~80&deg; for
-      the laminar cases above. This later separation produces a narrower wake and lower drag (C<sub>d</sub> = 0.68
-      vs &Phi;Flow's C<sub>d</sub> &approx; 1.2). The 43% difference between the two solvers represents the
-      physical range between laminar and turbulent flow, bracketing the real soccer ball's behaviour.</p>
-
-    <div class="img-row single">
-      <figure>
-        <img src="images/su2_cylinder_2d/steady_rans/cylinder_pressure_comparison.png"
-          alt="Steady RANS pressure comparison">
-        <figcaption>Steady RANS: no-spin (L) vs Magnus (R). The asymmetric pressure dipole from the Magnus
-          effect is visible: higher pressure on the retreating side, lower on the advancing side.</figcaption>
-      </figure>
-    </div>
-    <div class="img-row single">
-      <figure>
-        <img src="images/su2_cylinder_2d/steady_rans/cylinder_streamline_comparison.png"
-          alt="Steady RANS streamline comparison">
-        <figcaption>Steady RANS streamlines: no-spin (L) vs Magnus (R). The Magnus wake is deflected downward
-          with narrower recirculation zone.</figcaption>
-      </figure>
-    </div>
-
     <h3>Surface Pressure Coefficient (Re=120, 200, 500)</h3>
-    <p>The pressure coefficient C<sub>p</sub>(&theta;) around the cylinder surface is the gold standard for
+    <p>The pressure coefficient C<sub>p</sub>(&theta;) around the cylinder surface is the standard for
       CFD validation. It reveals exactly where the flow accelerates (suction peak on the front shoulder) and
       where it separates (pressure plateau on the rear surface). The separation angle &theta;<sub>s</sub>
-      increases with Reynolds number: 87&deg; at Re=120, 97&deg; at Re=200, 103&deg; at Re=500 &mdash;
-      consistently matching the literature trend (Williamson 1988, Tritton 1959).</p>
+      increases with Reynolds number: 87&deg; at Re=120, 97&deg; at Re=200, 103&deg; at Re=500, consistently matching
+      the literature trend (Williamson 1988, Tritton 1959).</p>
 
     <div class="img-row single">
       <figure>
         <img src="images/su2_cylinder_2d/analysis/cylinder_cp_comparison.png" alt="Cp(theta) comparison all cases"
           style="max-width:100%">
-        <figcaption>Surface pressure coefficient C<sub>p</sub>(&theta;) for all six cases. No-spin cases (blue)
+        <figcaption><strong>Surface Pressure Coefficient C<sub>p</sub>(&theta;)</strong> for all six cases. No-spin
+          cases (blue)
           show symmetric distributions; Magnus cases (red) show asymmetry. The right panel zooms on the rear
           surface where the pressure plateau marks the separation point.</figcaption>
       </figure>
@@ -309,20 +296,30 @@
       number) and a narrower wake. Below are Re sweep animations comparing Re=120, 200, and 500 for no-spin
       and Magnus cases separately.</p>
 
-    <div class="vid-grid double">
-      <video controls preload="metadata">
-        <source src="images/su2_cylinder_2d/comparisons/cylinder_nospin_pressure_re_comparison.mp4" type="video/mp4">
-      </video>
-      <video controls preload="metadata">
-        <source src="images/su2_cylinder_2d/comparisons/cylinder_magnus_pressure_re_comparison.mp4" type="video/mp4">
-      </video>
-      <div class="cap"><strong>What to watch:</strong> In the no-spin sweep (left), the dark low-pressure vortices in
-        the
-        wake become smaller and faster from left panel (Re=120) to right panel (Re=500) &mdash; the wake narrows and
-        shedding accelerates. In the Magnus sweep (right), the spin locks the low-pressure region to the advancing
-        (bottom) side across all three Re, suppressing the alternating pattern entirely. The difference between the two
-        columns is the difference between a knuckleball and a curving free kick.</div>
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/su2_cylinder_2d/comparisons/cylinder_nospin_pressure_re_comparison.mp4" type="video/mp4">
+        </video>
+        <figcaption>Pressure distribution comparisons for no-spin cases at different Reynolds numbers. (Re = 120, 200,
+          500)</figcaption>
+      </figure>
     </div>
+
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/su2_cylinder_2d/comparisons/cylinder_magnus_pressure_re_comparison.mp4" type="video/mp4">
+        </video>
+        <figcaption>Pressure distribution comparisons for Magnus cases at different Reynolds numbers. (Re = 120, 200,
+          500)</figcaption>
+      </figure>
+    </div>
+
+    <p>In the no-spin comparison, the dark low-pressure vortices in the wake become smaller and faster from Re=120 to
+      Re=500, the wake narrows and shedding accelerates. In the Magnus comparison, the
+      spin locks the low-pressure region to the advancing (bottom) side across all three Re, suppressing the alternating
+      pattern entirely.</p>
 
     <h4>Quantitative Validation Table</h4>
     <table>
@@ -386,20 +383,15 @@
 
     <p>All Strouhal numbers agree with Williamson (1988) to within 5%. The no-spin C<sub>d</sub> values match
       Tritton (1959) to within 3%. The Magnus cases show that spin increases drag (C<sub>d</sub> rises by
-      10-60% vs no-spin) because the spin disrupts the wake and forces earlier top-side separation &mdash;
-      a key insight: <strong>spin does not just curve the ball, it also slows it down.</strong></p>
+      10-60% vs no-spin) because the spin disrupts the wake and forces earlier top-side separation. This is
+      a key insight, <strong>spin does not just curve the ball, it also slows it down.</strong></p>
 
-    <div class="callout-box result">
-      <strong>What this means for a free kick:</strong> The alternating von K&aacute;rm&aacute;n vortices behind a
-      non-spinning ball tug it left, then right, then left again &mdash; each tug at the shedding frequency.
-      At Re=500 (St=0.20), the cylinder sheds at 0.33 Hz, meaning the lateral force flips roughly every 3.0 seconds.
-      For a real knuckleball (Re&sim;400k, St&sim;0.20), the shedding rate is &sim;30 Hz &mdash; too fast for the
-      ball to fully respond, but enough to create the erratic jitter. The Magnus case tells a different story:
-      the lateral force is steady and predictable, not alternating. For a free kick at 30 m/s with spin parameter
-      $S \approx 0.2$, real soccer balls experience a sideways acceleration of 5&ndash;10 m/s$^2$ (Carre et al. 2002),
-      bending the ball by 1&ndash;3 m over a 25-yard flight. That is the difference between hitting the top corner
-      and sending it wide.
-    </div>
+    <p>At Re=500 (St=0.20), the cylinder sheds at 0.33 Hz, meaning the lateral force flips roughly every 3.0
+      seconds. For a real knuckleball at soccer Reynolds numbers (Re&sim;400k, St&sim;0.20), the shedding rate is
+      roughly 30&thinsp;Hz, too fast for the ball to fully respond but enough to create the erratic jitter. The spin
+      case generates a steady lateral force instead: at 30&thinsp;m/s with $S \approx 0.2$, a soccer ball experiences
+      sideways acceleration of 5&ndash;10&thinsp;m/s$^2$ (Carre et al. 2002), bending its flight by 1&ndash;3&thinsp;m
+      over 25 yards. That is the difference between hitting the top corner and sending it wide.</p>
 
   </main>
 
