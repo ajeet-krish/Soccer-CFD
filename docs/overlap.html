@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="CFD analysis of the overlapping fullback: drafting, wake dynamics, drag reduction, and energy savings in soccer">
+  <title>Overlap Run | The Physics of Play</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/meslo-lg.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="custom.css">
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="./index.html">Physics of Soccer</a>
+      <button class="nav-toggle" aria-label="Toggle navigation"
+        onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
+      <div class="nav-entries">
+        <a href="./index.html">[ 01. Home ]</a>
+        <a href="./theory.html">[ 02. Theory ]</a>
+        <a href="./shot.html">[ 03. Shot ]</a>
+        <a href="./tactical.html">[ 04. Tactical ]</a>
+        <a href="./overlap.html" class="active">[ 05. Overlap Run ]</a>
+        <a href="./cfd.html">[ 06. CFD ]</a>
+        <a href="./code.html">[ 07. Code ]</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+
+    <h1>The Physics of the Overlapping Run</h1>
+
+    <p>An overlapping run is one of the most common attacking patterns in football. The fullback sprints past the winger
+      on the outside, creating a 2v1 overload against the opposing fullback. The winger draws the defender inward by
+      holding width or cutting inside, and the fullback exploits the space on the outside. This pattern appears across
+      every formation. In a 4-3-3 the fullback times the run as the winger checks inside. In a 3-5-2 the wing-back
+      covers the entire flank from deep. In a 4-4-2 the fullback provides the wide outlet when the wide midfielder tucks
+      in.</p>
+
+    <p>The tactical benefit of overloading is evident, but can physics further explain the advantage? When the fullback
+      runs directly behind
+      the winger, they enter a low-velocity wake that reduces the aerodynamic drag they must overcome. The first
+      analysis compares three configurations: an isolated winger running alone, a fullback running directly behind the
+      winger (inline, 2 m gap), and a fullback with a lateral offset (echelon, 0.35 m). Based on these
+      results, we then examine how the benefit changes with distance by testing the inline configuration at three gaps:
+      2 m, 3 m, and 4 m.</p>
+
+    <div class="callout-box theory">
+      <strong>Why overlapping runs work: drafting.</strong> When a fullback sprints past a winger, they enter the
+      winger's low-velocity wake. It's the same drafting effect that Formula 1 drivers use for slipstream
+      passes and cyclists use in a time-trial pace line. The inline trailing player experiences
+      <strong>42.2% less drag</strong> at a 2 m gap (0.087 vs 0.151 for the isolated winger),
+      while a 0.35 m lateral offset (echelon) drops the benefit to just 3.9%, showing how
+      critically the wake shield depends on direct alignment.
+    </div>
+
+    <h2>The Winger and the Fullback</h2>
+
+    <p>The three-panel video below shows $\Phi$Flow velocity fields for these three configurations at
+      $Re \approx 2 \times 10^4$ (8 m &times; 4 m domain, $U = 1\ \text{m/s}$):
+      an isolated winger, an inline fullback (2 m centre-to-centre gap), and an echelon offset
+      (2 m longitudinal, 0.35 m lateral). In all three cases, the incoming flow is uniform
+      from left to right. The colour map encodes velocity magnitude: dark regions are low-velocity wake,
+      bright regions are freestream flow. The solo runner sheds a wide, energetic wake with strong
+      velocity deficits extending several body lengths downstream. When a second runner is positioned
+      directly behind in the inline case, the leader&rsquo;s wake engulfs the trailer, dramatically
+      reducing the dynamic pressure on its leading face. A lateral offset of just 0.35 m places
+      the trailer at the wake shear layer, where it remains partially exposed to the freestream.</p>
+
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/tactical/drafting/drafting_wake_comparison.mp4" type="video/mp4">
+        </video>
+        <figcaption><strong>Velocity Field Comparison:</strong> Isolated Winger (left), Inline Fullback at 2&thinsp;m
+          gap
+          (centre), Offset Fullback at 2&thinsp;m gap + 0.35&thinsp;m lateral (right). The inline fullback sits
+          deep in the winger's wake (dark low-velocity zone), while the offset fullback sits at the
+          wake-freestream interface. Bodies are rendered as black rectangles with white borders.</figcaption>
+      </figure>
+    </div>
+
+    <h3>Individual Case Analysis</h3>
+
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/drafting/drafting_solo_wake_t25.png" alt="Isolated winger velocity field"
+          style="max-width:100%">
+        <figcaption><strong>Isolated Winger</strong> velocity field with streamlines.</figcaption>
+      </figure>
+    </div>
+
+    <p>The solo runner sheds a wide, energetic wake stretching across the full height of the domain.
+      Strong vortices form behind the body, visible as chevron-shaped low-velocity bands in the velocity field.
+      The velocity deficit extends well beyond the frame, creating a broad drafting zone. Any trailing runner
+      who can position directly behind this wake will experience maximum pressure shielding.</p>
+
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/drafting/drafting_inline_wake_t25.png" alt="Inline fullback velocity field"
+          style="max-width:100%">
+        <figcaption><strong>Inline Fullback</strong> velocity field with streamlines.</figcaption>
+      </figure>
+    </div>
+
+    <p>With an inline trailing runner at a 2&thinsp;m gap, the two bodies share a single unified low-velocity
+      zone. The leader&rsquo;s wake completely engulfs the trailer, visible as the dark region that
+      seamlessly wraps around both runners. The trailer&rsquo;s leading face experiences significantly reduced
+      dynamic pressure, yielding a drag of just 0.087, a <strong>42.2% reduction</strong> from the isolated
+      case. The streamlines show smooth flow around both bodies with no additional separation induced by the
+      trailer.</p>
+
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/drafting/drafting_offset_wake_t25.png" alt="Offset fullback velocity field"
+          style="max-width:100%">
+        <figcaption><strong>Offset Fullback (2&thinsp;m + 0.35&thinsp;m lateral)</strong> velocity field with
+          streamlines.</figcaption>
+      </figure>
+    </div>
+
+    <p>A small lateral offset of 0.35&thinsp;m places the trailing runner at the shear layer between the
+      leader&rsquo;s wake and the freestream. The velocity field shows the trailer&rsquo;s right side exposed
+      to high-velocity freestream flow (bright yellow/green), while the left side sits in the wake (dark
+      purple/blue). This asymmetric exposure largely cancels the pressure differential across the body,
+      resulting in a drag of 0.145, just a <strong>3.9% reduction</strong>. The streamlines reveal the
+      offset trailer cutting through the wake boundary, shedding its own secondary wake.</p>
+
+    <div class="callout-box detail">
+      <strong>Drag comparison (pressure-integrated):</strong> The isolated winger sets the baseline at 0.151.
+      The inline trailing runner sees a <strong>42.2% reduction</strong> at 2&thinsp;m gap (inline=0.087).
+      The offset trailing runner shows negligible change at <strong>3.9%</strong> (offset=0.145).
+      A gap distance sweep (2&thinsp;m / 3&thinsp;m / 4&thinsp;m) shows the drag reduction decays from
+      42.2% &rarr; 37.3% &rarr; 27.8% as the trailer moves further from the leader&rsquo;s wake, confirming
+      that optimal drafting occurs at 1&ndash;2&thinsp;m.
+    </div>
+
+    <table>
+      <tr>
+        <th>Configuration</th>
+        <th>Gap (m)</th>
+        <th>Lateral Offset (m)</th>
+        <th>Drag</th>
+        <th>Drag Reduction</th>
+        <th>Wake Interaction</th>
+      </tr>
+      <tr>
+        <td>Isolated Winger</td>
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+        <td>0.151</td>
+        <td>baseline</td>
+        <td>Wide, energetic wake; strong vortex shedding</td>
+      </tr>
+      <tr>
+        <td>Inline Fullback</td>
+        <td>2.0</td>
+        <td>0.0</td>
+        <td>0.087</td>
+        <td>42.2%</td>
+        <td>Fully immersed in leader&rsquo;s wake</td>
+      </tr>
+      <tr>
+        <td>Offset Fullback</td>
+        <td>2.0</td>
+        <td>0.35</td>
+        <td>0.145</td>
+        <td>3.9%</td>
+        <td>At wake-freestream shear layer</td>
+      </tr>
+    </table>
+
+    <p>The inline configuration at 2&thinsp;m gap delivers the maximum 42.2% drag reduction. But how does this advantage
+      decay as the trailing fullback drops further behind the winger? The comparison below maps the drag reduction curve
+      from the optimal drafting zone out to 4&thinsp;m, where the wake has largely dissipated.</p>
+
+    <h2>Fullback Distance Analysis</h2>
+
+    <p>The inline configuration at 2&thinsp;m produced the maximum 42.2% drag reduction, but the optimal gap for an
+      overlap depends on how early the fullback starts the run. Does the benefit persist at longer distances, or does it
+      decay quickly? To answer this, we tested the inline configuration at three longitudinal gaps (2&thinsp;m,
+      3&thinsp;m, and 4&thinsp;m centre-to-centre) at 256&thinsp;&times;&thinsp;128 resolution. As the gap increases,
+      the trailing runner moves progressively out of the leader&rsquo;s low-velocity wake. This is visible as a
+      shrinking dark (low-velocity) region around the trailer&rsquo;s leading face and a corresponding increase in drag,
+      from 0.087 at 2&thinsp;m to 0.109 at 4&thinsp;m. The streamlines in the static images below reveal how the wake
+      structure changes with distance.</p>
+
+    <div class="video-row">
+      <figure>
+        <video controls preload="metadata" style="width:100%;border-radius:6px;border:1px solid var(--current-line);">
+          <source src="images/tactical/drafting/drafting_gap_comparison.mp4" type="video/mp4">
+        </video>
+        <figcaption><strong>Fullback Distance Comparison:</strong> 2&thinsp;m (top), 3&thinsp;m (middle), 4&thinsp;m
+          (bottom).
+          The dark low-velocity zone around the fullback's leading face shrinks progressively as the gap
+          increases, confirming monotonic decay of the drafting benefit with distance from the winger's wake.
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/drafting/drafting_gap_2m.png" alt="2m gap velocity field with streamlines"
+          style="max-width:100%">
+        <figcaption>2 m gap between leading winger and trailing fullback.</figcaption>
+      </figure>
+    </div>
+
+    <p>The trailer is fully immersed in the leader&rsquo;s wake at 2&thinsp;m. The low-velocity region (dark
+      purple) completely surrounds the trailing runner, with no freestream penetration reaching its leading face.
+      The two bodies behave almost as a single streamlined object, producing maximum drag reduction.</p>
+
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/drafting/drafting_gap_3m.png" alt="3m gap velocity field with streamlines"
+          style="max-width:100%">
+        <figcaption>3 m gap between leading winger and trailing fullback.</figcaption>
+      </figure>
+    </div>
+
+    <p>At 3&thinsp;m the wake begins to recover. Higher-velocity fluid from the freestream wraps around the
+      leader and reaches the trailer&rsquo;s leading face, visible as the lighter (green/yellow) region between
+      the two bodies. The dark low-velocity zone no longer fully engulfs the trailer, and the drag reduction
+      drops to 37.3%.</p>
+
+    <div class="img-row single">
+      <figure>
+        <img src="images/tactical/drafting/drafting_gap_4m.png" alt="4m gap velocity field with streamlines"
+          style="max-width:100%">
+        <figcaption>4 m gap between leading winger and trailing fullback.</figcaption>
+      </figure>
+    </div>
+
+    <p>By 4&thinsp;m the wake has largely dissipated before reaching the trailer. Only the lower half of the
+      trailer&rsquo;s leading face remains partially shielded; the upper half experiences near-freestream
+      velocity. The streamlines show the wake reattaching well before the trailer, confirming that the drafting
+      benefit has decayed to near baseline (27.8% reduction).</p>
+
+    <table>
+      <tr>
+        <th>Gap (m)</th>
+        <th>Drag</th>
+        <th>Drag Reduction</th>
+        <th>Wake Interaction</th>
+      </tr>
+      <tr>
+        <td>2.0</td>
+        <td>0.087</td>
+        <td>42.2%</td>
+        <td>Fully immersed; bodies behave as a single streamlined object</td>
+      </tr>
+      <tr>
+        <td>3.0</td>
+        <td>0.095</td>
+        <td>37.3%</td>
+        <td>Wake begins recovering; freestream reaches trailer leading face</td>
+      </tr>
+      <tr>
+        <td>4.0</td>
+        <td>0.109</td>
+        <td>27.8%</td>
+        <td>Wake largely dissipated; near-baseline drag</td>
+      </tr>
+    </table>
+
+    <p>Having mapped the monotonic decay from 42.2% at 2&thinsp;m to 27.8% at 4&thinsp;m, what does that 42% reduction
+      mean in tangible terms for a sprinting player?</p>
+
+    <h2>Energy Model</h2>
+
+    <p>Drag power is $P = F_D \cdot v = \frac{1}{2} \rho C_D A v^3$. At $v = 5\ \text{m/s}$ (a sprinting fullback
+      at ~18&thinsp;km/h), a 42.2% drag reduction saves roughly 70&ndash;95&thinsp;J over a 30&thinsp;m overlapping
+      run, about 15&ndash;22% of the kinetic energy of a sprinting player. This is the marginal energy that makes
+      the difference between a firm cross to the far post and a limp ball that reaches the goalkeeper first. This is a
+      simplified energy model; future work would integrate metabolic cost estimates from biomechanics literature to
+      account for muscle efficiency and recovery between sprints.</p>
+
+    <p>How do these energy savings translate to on-pitch decisions?</p>
+
+    <h2>Tactical Connection</h2>
+
+    <p>The drafting benefit is strongest when the trailing player sits 1&ndash;2&thinsp;m behind the lead runner,
+      roughly the distance between a winger holding width and an overlapping fullback accelerating on the outside.
+      The gap sweep confirms this: 2&thinsp;m yields 42.2%, 3&thinsp;m drops to 37.3%, and 4&thinsp;m decays to
+      27.8%. Beyond 4&thinsp;m the wake has largely dissipated and the benefit approaches the solo baseline.
+      Formations with <strong>advanced wing-backs</strong> (3-5-2) create the longest overlapping runs. The
+      wing-back sprints from deep, covering 40+&thinsp;m while the winger draws defenders centrally, though the
+      initial 15&ndash;20&thinsp;m sees negligible drafting benefit before the wing-back reaches the 1&ndash;2&thinsp;m
+      window. The 4-3-3 and 4-4-2 produce shorter, sharper overlaps at the edge of the final third, where the optimal
+      drafting distance aligns naturally with the geometry of the attacking shape. The 4-2-3-1&rsquo;s wide attackers
+      push high and narrow, requiring the fullback to cover more ground. These overlaps may see a reduced benefit
+      as the gap opens beyond 3&thinsp;m.</p>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 &middot; The Physics of Play &middot; Built by Ajeet Krishnasamy</p>
+    <p style="margin-top: 6px;"><a href="https://github.com/ajeet-krish/Soccer-CFD">[ GitHub Repo ]</a> &middot; <a
+        href="https://ajeetkrishnasamy.com">[ Portfolio ]</a> &middot; <a
+        href="https://www.linkedin.com/in/ajeetkrishnasamy/">[ LinkedIn ]</a></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false }
+        ],
+        throwOnError: false
+      });
+      initScrollAnimations();
+    });
+
+    function initScrollAnimations() {
+      const els = document.querySelectorAll('.card-grid, .stats, .img-row, .video-row, .vid-grid, .iframe-row, table, .callout-box, .eq-box, .nav-links, .pitch-diagram-wrap');
+      els.forEach(el => el.classList.add('fade-in'));
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    }
+  </script>
+</body>
+
+</html>

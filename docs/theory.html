@@ -24,8 +24,9 @@
         <a href="./theory.html" class="active">[ 02. Theory ]</a>
         <a href="./shot.html">[ 03. Shot ]</a>
         <a href="./tactical.html">[ 04. Tactical ]</a>
-        <a href="./cfd.html">[ 05. CFD ]</a>
-        <a href="./code.html">[ 06. Code ]</a>
+        <a href="./overlap.html">[ 05. Overlap Run ]</a>
+        <a href="./cfd.html">[ 06. CFD ]</a>
+        <a href="./code.html">[ 07. Code ]</a>
       </div>
     </div>
   </nav>
@@ -109,13 +110,33 @@
     <p>where $U$ is the freestream velocity, $L$ is the characteristic length (ball diameter or cylinder diameter), and
       $\mu$ is dynamic viscosity.</p>
 
+    <h3>Bernoulli's Principle</h3>
+    <p>Bernoulli's principle states that in a steady, inviscid flow, an increase in velocity occurs simultaneously with
+      a decrease in pressure. It follows directly from conservation of energy along a streamline:</p>
+
+    <div class="eq-box">
+      $$ p + \frac{1}{2} \rho U^2 = \text{constant} $$
+      <div class="eq-label">(3) Bernoulli's equation along a streamline</div>
+    </div>
+
+    <p>where $p$ is static pressure, $\frac{1}{2} \rho U^2$ is the dynamic pressure, and their sum is the total
+      pressure. When velocity increases, static pressure decreases. This inverse relationship is what generates the lift
+      force in the Magnus effect and the drag reduction in drafting.</p>
+
+    <p>On a soccer pitch, Bernoulli's principle explains three separate phenomena. A spinning ball curves because the
+      spin accelerates the air on one side, lowering static pressure and creating a net force (the Magnus effect,
+      detailed below). A knuckleball moves unpredictably because alternating vortex shedding creates rapidly changing
+      pressure differentials across the ball. When a fullback runs directly behind a winger, they sit in the
+      leader's low-pressure wake, reducing the pressure differential across their own body and lowering drag by 42.2%
+      (analysed in the <a href="./overlap.html">Overlap Run Analysis</a>).</p>
+
     <h3>Gaussian Influence Fields</h3>
     <p>Every defender generates a zone of influence around their position. The strength of that influence decays
       smoothly with distance following a Gaussian (bell-shaped) curve:</p>
 
     <div class="eq-box">
       $$ G_i(\mathbf{x}) = \exp\left(-\frac{\|\mathbf{x} - \mathbf{x}_i\|^2}{2\sigma_i^2}\right) $$
-      <div class="eq-label">(3) Gaussian influence of defender $i$</div>
+      <div class="eq-label">(4) Gaussian influence of defender $i$</div>
     </div>
 
     <p>where $\mathbf{x}_i$ is the defender's position and $\sigma_i$ controls the radius of influence. A centre-back
@@ -125,7 +146,7 @@
 
     <div class="eq-box">
       $$ p(\mathbf{x}) = \sum_{i=1}^{11} G_i(\mathbf{x}) $$
-      <div class="eq-label">(4) Total defensive pressure field (superposition)</div>
+      <div class="eq-label">(5) Total defensive pressure field (superposition)</div>
     </div>
 
     <p>This is the <strong>superposition principle</strong>: the same mathematical framework used in CFD to solve
@@ -146,7 +167,7 @@
 
     <div class="eq-box">
       $$ F_L = C_L \cdot \frac{1}{2} \rho A U^2 $$
-      <div class="eq-label">(5) Magnus lift force</div>
+      <div class="eq-label">(6) Magnus lift force</div>
     </div>
 
     <p>The spin creates an asymmetric boundary layer: faster flow on one side reduces pressure (Bernoulli), slower flow
@@ -156,9 +177,10 @@
       Positional play creates <strong>pressure gradients</strong> — areas of congestion and space — that determine
       passing options and defensive solidity. Just as a pressure field drives fluid motion, the cumulative influence
       of 11 defenders creates a <strong>defensive stress field</strong> that channels attackers away from dangerous
-      areas. The superposition equations ((3)–(4)) define how those individual player influences combine into a total
+      areas. The superposition equations ((4)–(5)) define how those individual player influences combine into a total
       defensive pressure field. The full model is implemented on the
-      <a href="./tactical.html">Tactical Positioning</a> page.</p>
+      <a href="./tactical.html">Tactical Positioning</a> page.
+    </p>
 
   </main>
 

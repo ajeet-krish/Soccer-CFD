@@ -216,8 +216,9 @@ hr {
 .nav-entries a:nth-child(2).active { color: var(--cyan); background: rgba(139,233,253,0.1); }
 .nav-entries a:nth-child(3).active { color: var(--green); background: rgba(80,250,123,0.1); }
 .nav-entries a:nth-child(4).active { color: var(--orange); background: rgba(255,184,108,0.1); }
-.nav-entries a:nth-child(5).active { color: var(--purple); background: rgba(189,147,249,0.1); }
-.nav-entries a:nth-child(6).active { color: var(--comment); background: rgba(98,114,164,0.1); }
+.nav-entries a:nth-child(5).active { color: var(--pink); background: rgba(255,121,198,0.1); }
+.nav-entries a:nth-child(6).active { color: var(--purple); background: rgba(189,147,249,0.1); }
+.nav-entries a:nth-child(7).active { color: var(--comment); background: rgba(98,114,164,0.1); }
 
 @media (max-width: 720px) {
   .nav-toggle { display: block; }
@@ -458,6 +459,8 @@ hr {
 .card-grid .card.mod-theory .tag { border-color: var(--purple); color: var(--purple); }
 .card-grid .card.mod-shot { border-left-color: var(--pink); }
 .card-grid .card.mod-shot .tag { border-color: var(--pink); color: var(--pink); }
+.card-grid .card.mod-overlap { border-left-color: var(--green); }
+.card-grid .card.mod-overlap .tag { border-color: var(--green); color: var(--green); }
 .card-grid .card.mod-tactical { border-left-color: var(--orange); }
 .card-grid .card.mod-tactical .tag { border-color: var(--orange); color: var(--orange); }
 
