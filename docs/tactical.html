@@ -17,7 +17,7 @@
 
   <nav class="site-nav">
     <div class="nav-inner">
-      <a class="nav-brand" href="./index.html"><span class="highlight">$</span> physics-of-play</a>
+      <a class="nav-brand" href="./index.html">Physics of Soccer</a>
       <button class="nav-toggle" aria-label="Toggle navigation"
         onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
       <div class="nav-entries">
@@ -32,10 +32,6 @@
   </nav>
 
   <main class="main-content">
-
-    <div class="breadcrumb">
-      ~ / physics-of-play / <span style="color: var(--orange);">tactical.py</span>
-    </div>
 
     <h1>Tactical Positioning</h1>
 
@@ -138,7 +134,7 @@
 
     <p>Every formation creates a distinct <strong>defensive pressure field</strong>. Each defender is modelled as an
       influence zone whose strength drops off with distance (a Gaussian bell curve) — the same superposition principle
-      detailed in the <a href="./theory.html#continuum-mechanics">theory section</a> (equations 3&ndash;6). Stack all 11
+      detailed in the <a href="./theory.html">theory section</a> (equations 3&ndash;4). Stack all 11
       players together and
       you get a map that shows exactly where the defence is compact and where gaps exist. A centre-back controls a wide
       zone spanning the penalty area. A winger's influence is narrow and concentrated, reflecting their touchline role.
@@ -461,6 +457,42 @@
       that optimal drafting occurs at 1&ndash;2&thinsp;m.
     </div>
 
+    <h4>Individual Case Summary</h4>
+    <table>
+      <tr>
+        <th>Configuration</th>
+        <th>Gap (m)</th>
+        <th>Lateral Offset (m)</th>
+        <th>Drag</th>
+        <th>Drag Reduction</th>
+        <th>Wake Interaction</th>
+      </tr>
+      <tr>
+        <td>Isolated Winger</td>
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+        <td>0.151</td>
+        <td>baseline</td>
+        <td>Wide, energetic wake; strong vortex shedding</td>
+      </tr>
+      <tr>
+        <td>Inline Fullback</td>
+        <td>2.0</td>
+        <td>0.0</td>
+        <td>0.087</td>
+        <td>42.2%</td>
+        <td>Fully immersed in leader&rsquo;s wake</td>
+      </tr>
+      <tr>
+        <td>Offset Fullback</td>
+        <td>2.0</td>
+        <td>0.35</td>
+        <td>0.145</td>
+        <td>3.9%</td>
+        <td>At wake-freestream shear layer</td>
+      </tr>
+    </table>
+
     <h3>Energy Model</h3>
     <p>Drag power is $P = F_D \cdot v = \frac{1}{2} \rho C_D A v^3$. At $v = 5\ \text{m/s}$ (a sprinting fullback
       at ~18&thinsp;km/h), a 42.2% drag reduction saves roughly 70&ndash;95&thinsp;J over a 30&thinsp;m overlapping
@@ -528,6 +560,34 @@
       trailer&rsquo;s leading face remains partially shielded; the upper half experiences near-freestream
       velocity. The streamlines show the wake reattaching well before the trailer, confirming that the drafting
       benefit has decayed to near baseline (27.8% reduction).</p>
+
+    <h4>Distance Analysis Summary</h4>
+    <table>
+      <tr>
+        <th>Gap (m)</th>
+        <th>Drag</th>
+        <th>Drag Reduction</th>
+        <th>Wake Interaction</th>
+      </tr>
+      <tr>
+        <td>2.0</td>
+        <td>0.087</td>
+        <td>42.2%</td>
+        <td>Fully immersed; bodies behave as a single streamlined object</td>
+      </tr>
+      <tr>
+        <td>3.0</td>
+        <td>0.095</td>
+        <td>37.3%</td>
+        <td>Wake begins recovering; freestream reaches trailer leading face</td>
+      </tr>
+      <tr>
+        <td>4.0</td>
+        <td>0.109</td>
+        <td>27.8%</td>
+        <td>Wake largely dissipated; near-baseline drag</td>
+      </tr>
+    </table>
 
   </main>
 
