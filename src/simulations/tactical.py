@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from phi import geom
 from phi.jax.flow import Obstacle, StaggeredGrid, CenteredGrid, fluid, advect, vec, field, math, ZERO_GRADIENT
 
-from src.utils import setup_theme, ASSETS, IMAGES
+from src.core.utils import setup_theme, ASSETS, IMAGES
 
 setup_theme()
 

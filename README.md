@@ -111,11 +111,11 @@ uv run python su2_runs/sphere_3d/run_sphere.py
 uv run python su2_runs/sphere_3d/run_roughness.py
 
 # Tactical formation pressure maps
-uv run python su2_runs/tactical_formations/generate_formation_pressure.py
+uv run python src/tactical_formations/generate_formation_pressure.py
 
 # Overlap drafting analysis
-uv run python su2_runs/tactical_formations/wake_drafting.py
-uv run python su2_runs/tactical_formations/gap_sweep.py
+uv run python src/tactical_formations/wake_drafting.py
+uv run python src/tactical_formations/gap_sweep.py
 
 # Preview the site locally
 python -m http.server -d docs 8000

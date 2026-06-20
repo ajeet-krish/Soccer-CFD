@@ -2,7 +2,7 @@
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.su2_runner import SU2Config, MeshGenerator, SU2Solver
+from src.core.su2_runner import SU2Config, MeshGenerator, SU2Solver
 from pathlib import Path
 
 WORKDIR = Path(__file__).parent

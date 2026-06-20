@@ -228,14 +228,14 @@ uv run python su2_runs/cylinder_2d/analyze_cylinder.py
 uv run python su2_runs/sphere_3d/run_roughness.py
 
 # Generate tactical formation pressure maps
-uv run python su2_runs/tactical_formations/generate_formation_pressure.py
+uv run python src/tactical_formations/generate_formation_pressure.py
 
 # Run overlap drafting sweep (ΦFlow, 124×93, ~7 min)
-uv run python su2_runs/tactical_formations/run_drafting.py
+uv run python src/tactical_formations/run_drafting.py
 
 # Generate drafting solo/inline/offset comparison (13 outputs, 256×128, ~5 min)
-uv run python su2_runs/tactical_formations/wake_drafting.py
+uv run python src/tactical_formations/wake_drafting.py
 
 # Generate gap distance sweep (2m/3m/4m inline only, 7 outputs, ~4 min)
-uv run python su2_runs/tactical_formations/gap_sweep.py
+uv run python src/tactical_formations/gap_sweep.py
 ```

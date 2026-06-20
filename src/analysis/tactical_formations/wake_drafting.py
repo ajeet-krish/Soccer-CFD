@@ -7,7 +7,7 @@ Generates:
   - Static pressure PNGs at t~25s
 
 Usage:
-    uv run python su2_runs/tactical_formations/wake_drafting.py
+    uv run python src/tactical_formations/wake_drafting.py
 """
 
 import sys, os

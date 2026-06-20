@@ -3,12 +3,12 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.shot_aero import run_cylinder, animate_velocity_comparison, animate_pressure_comparison
-from src.tactical import run_tactical, run_macro_stress, run_team_heatmaps, run_formation_fluid_arrays, run_lateral_shift, run_up_back_through, run_rapid_circulation
+from src.simulations.shot_aero import run_cylinder, animate_velocity_comparison, animate_pressure_comparison
+from src.simulations.tactical import run_tactical, run_macro_stress, run_team_heatmaps, run_formation_fluid_arrays, run_lateral_shift, run_up_back_through, run_rapid_circulation
 from phi.jax.flow import Obstacle, vec
 
-from src.domain import CYLINDER
-from src.utils import IMAGES
+from src.core.domain import CYLINDER
+from src.core.utils import IMAGES
 
 
 def main():

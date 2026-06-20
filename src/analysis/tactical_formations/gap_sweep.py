@@ -6,7 +6,7 @@ Generates:
   - Stacked 3×1 comparison MP4 (velocity only, no streamlines)
 
 Usage:
-    uv run python su2_runs/tactical_formations/gap_sweep.py
+    uv run python src/tactical_formations/gap_sweep.py
 """
 
 import sys, os, json

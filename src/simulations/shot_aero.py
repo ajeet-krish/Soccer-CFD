@@ -6,8 +6,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from phi.jax.flow import Obstacle, StaggeredGrid, CenteredGrid, fluid, advect, vec, field, ZERO_GRADIENT
 
-from src.utils import setup_theme, ASSETS, IMAGES
-from src.domain import BOX, BOUNDARY, CENTER, RADIUS, CYLINDER, CENTERED, DT, N_STEPS, SAVE_EVERY
+from src.core.utils import setup_theme, ASSETS, IMAGES
+from src.core.domain import BOX, BOUNDARY, CENTER, RADIUS, CYLINDER, CENTERED, DT, N_STEPS, SAVE_EVERY
 
 setup_theme()
 

@@ -3,7 +3,7 @@ The distance curve and bar chart are dropped due to coarse-grid artifacts
 at this resolution. Pressure fields show the qualitative wake-shielding effect.
 
 Usage:
-    uv run python su2_runs/tactical_formations/viz_drafting.py
+    uv run python src/tactical_formations/viz_drafting.py
 """
 from pathlib import Path
 import json

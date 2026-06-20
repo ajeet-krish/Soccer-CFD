@@ -13,7 +13,7 @@ to defending shape (compact), showing space closing as the team
 gets into defensive structure.
 
 Usage:
-    uv run python su2_runs/tactical_formations/generate_formation_pressure.py
+    uv run python src/tactical_formations/generate_formation_pressure.py
 """
 
 from pathlib import Path

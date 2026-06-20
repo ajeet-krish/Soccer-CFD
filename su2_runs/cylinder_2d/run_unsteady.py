@@ -4,7 +4,7 @@ Each case writes to its own output directory for clean VTU preservation.
 import sys, os, json, shutil
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.su2_runner import SU2Config, SU2Solver, MeshGenerator
+from src.core.su2_runner import SU2Config, SU2Solver, MeshGenerator
 from pathlib import Path
 import csv
 import matplotlib
