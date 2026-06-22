@@ -1,10 +1,13 @@
-# Project Context — Sports Aerodynamics
+# Project Context  --  Sports Aerodynamics
+
+## Style Rule
+- **No em dashes (---) in any file in this project.** Use two regular dashes (--) or rephrase.
 
 ## Goal
 Integrate SU2 high-fidelity RANS/URANS validation alongside existing ΦFlow simulations and publish as a standalone HTML portfolio on GitHub Pages.
 
 ## SU2 v8.4 Critical Knowledge (Harrier, Rosetta x86_64)
-- **Binary**: `/Users/ajeet/SU2_CFD/bin/SU2_CFD` — x86_64 under Rosetta 2 on ARM Mac
+- **Binary**: `/Users/ajeet/SU2_CFD/bin/SU2_CFD`  --  x86_64 under Rosetta 2 on ARM Mac
 - **Quarantine cleared** on all binaries in that directory
 
 ### Config option quirks (v8.4, incompressible INC_RANS / INC_NAVIER_STOKES)
@@ -20,7 +23,7 @@ Integrate SU2 high-fidelity RANS/URANS validation alongside existing ΦFlow simu
 - `MARKER_MONITORING= ( wall )` required for force output (Cd, Cl)
 - `INC_VELOCITY_INIT= ( 1.0, 0.0, 0.0 )` space-separated
 - `OUTPUT_FILES= (RESTART, PARAVIEW)` for `.vtu` output
-- `HISTORY_OUTPUT= (TIME_ITER, INNER_ITER, RMS_RES, AERO_COEFF, CUR_TIME)` — use AERO_COEFF group, not individual fields
+- `HISTORY_OUTPUT= (TIME_ITER, INNER_ITER, RMS_RES, AERO_COEFF, CUR_TIME)`  --  use AERO_COEFF group, not individual fields
 - `TIME_DOMAIN= YES`, `TIME_MARCHING= DUAL_TIME_STEPPING-2ND_ORDER`, `TIME_STEP`, `TIME_ITER`, `INNER_ITER`
 - `OUTPUT_WRT_FREQ= 1` for per-timestep VTU output
 - Unsteady: remove `ITER` from config; remove `ITER` from HISTORY_OUTPUT fields
@@ -57,7 +60,7 @@ docs/                          # GitHub Pages site (standalone HTML)
       mesh/                    #   Mesh visualizations
     su2_sphere/                # SU2 3D sphere (PNG)
 su2_runs/
-  cylinder_2d/                 # Phase 3+ — 2D cylinder validation
+  cylinder_2d/                 # Phase 3+  --  2D cylinder validation
     run_cylinder.py            # Steady-state mesh → config → SU2 → results
     run_unsteady.py            # Unsteady laminar Re=120/200/500 (no-spin + magnus)
     generate_viz.py            # Static plots + animation renderer
@@ -66,14 +69,14 @@ su2_runs/
     cylinder_magnus.cfg        # Steady RANS magnus config
     cylinder_fine_rans.cfg     # (attempted) Fine-mesh RANS config
     output_*_lam_re*_fine/     # 6 dirs, each 42MB (1 VTU + 1 DAT + history CSV)
-  sphere_3d/                   # Phase 4+5 — 3D sphere
+  sphere_3d/                   # Phase 4+5  --  3D sphere
     run_sphere.py              # Smooth sphere Re sweep
     run_roughness.py           # 4 balls × 5 Re roughness sweep
     viz_sphere.py              # PyVista visualization pipeline
     sphere.su2                 # 282K tetrahedral mesh
   tactical_formations/
     generate_formation_pressure.py  # Gaussian pressure field generator
-    run_drafting.py                 # ΦFlow drafting sweep (obsolete — use wake_drafting.py)
+    run_drafting.py                 # ΦFlow drafting sweep (obsolete  --  use wake_drafting.py)
     wake_drafting.py                # ΦFlow wake drafting: solo/inline/offset comparison (main)
     gap_sweep.py                    # Gap distance sweep: 2m/3m/4m inline only
     viz_drafting.py                 # Legacy drafting visualization (obsolete)
@@ -144,7 +147,7 @@ AGENTS.md                      # This file
 | 3+ | Unsteady URANS SST + laminar NS (no-spin vs magnus) | ✅ Both regimes done |
 | 4 | 3D sphere drag crisis (Re sweep) | ✅ Cd≈0.87 constant (no drag crisis) |
 | 5 | Textured sphere roughness sweep (4 balls × 5 Re) | ✅ No effect (Cd varies &lt;0.001) |
-| 6 | γ-Reθ transition model study | ❌ Negative — see below |
+| 6 | γ-Reθ transition model study | ❌ Negative  --  see below |
 | 7 | Deformed ball, altitude effects | ⏳ |
 | O | Overlap drafting study (ΦFlow sweep + 3-panel velocity/streamline video) | ✅ 42.2% (256×128, 2m gap, 48s sim) + inline/echelon/solo comparison + gap sweep 2m/3m/4m |
 
@@ -157,9 +160,9 @@ AGENTS.md                      # This file
 - **3D sphere SST**: Cd≈0.87 constant (no drag crisis); 282k tets, y⁺≈13 insufficient
 - **Steady magnus (S=0.2)**: Cl=-0.172 (steady bias)
 - **Overlapping fullback**: 42.2% drag reduction (256×128, 2m gap, 48s sim); offset (0.35m lateral) yields 3.9%
-- **Gap distance sweep**: 2m=42.2%, 3m=37.3%, 4m=27.8% — monotonic decay as trailer exits leader's wake
+- **Gap distance sweep**: 2m=42.2%, 3m=37.3%, 4m=27.8%  --  monotonic decay as trailer exits leader's wake
 - **Formation pressure maps**: 4-3-3 center 81% (wings open), 4-4-2 half-spaces 68% (balanced), 4-2-3-1 center 93% (congested middle, wings 32%), 3-5-2 center 100% (five-player central wall) with wings at 21% (extremely exposed flanks)
-- **γ-Reθ on 2D cylinder — negative (3 attempts)**: (1) y+≈13 coarse mesh → Cd=0.645 (all 3 Re, identical to SST fully turbulent; sensors don't trigger). (2) y+≈1 structured mesh steady → Cd drifts 1.36→1.34/8k iters, never converges (mesh too well-resolved, von Kármán develops but steady solver suppresses it). (3) y+≈1 URANS → Cd decays 3.92→-0.04 over 300 steps, Cl=0 always (SST eddy viscosity precludes separation, no LSB forms). **Root cause**: γ-Reθ works for attached-flow transition only. Cylinder separation-induced transition requires DDES/LES — RANS-based transition models pre-emptively damp the separated shear layer, preventing LSB formation. Correct approaches for this toolchain: laminar NS (Re<500, St validated), steady RANS SST (Re>40k, Cd validated).
+- **γ-Reθ on 2D cylinder  --  negative (3 attempts)**: (1) y+≈13 coarse mesh → Cd=0.645 (all 3 Re, identical to SST fully turbulent; sensors don't trigger). (2) y+≈1 structured mesh steady → Cd drifts 1.36→1.34/8k iters, never converges (mesh too well-resolved, von Kármán develops but steady solver suppresses it). (3) y+≈1 URANS → Cd decays 3.92→-0.04 over 300 steps, Cl=0 always (SST eddy viscosity precludes separation, no LSB forms). **Root cause**: γ-Reθ works for attached-flow transition only. Cylinder separation-induced transition requires DDES/LES  --  RANS-based transition models pre-emptively damp the separated shear layer, preventing LSB formation. Correct approaches for this toolchain: laminar NS (Re<500, St validated), steady RANS SST (Re>40k, Cd validated).
 
 ## Tactical Page Structure
 ```
@@ -174,7 +177,7 @@ h1 Tactical Positioning
   h2 Formation Aerodynamics
     (3-panel wake comparison video + individual case analysis)
     h3 Individual Case Analysis
-      (solo / inline / offset — stacked figure+paragraph per case)
+      (solo / inline / offset  --  stacked figure+paragraph per case)
     h3 Callout detail (drag comparison)
     h3 Energy Model
     h3 Tactical Connection
@@ -188,7 +191,7 @@ Four ball types compared via SU2 `WALL_ROUGHNESS` model:
 
 | Ball | Year | Panels | Seam Depth | kₛ/D | Source |
 |------|------|--------|-----------|------|--------|
-| Smooth | — | ∞ | 0.0 mm | 0.0 | — |
+| Smooth |  --  | ∞ | 0.0 mm | 0.0 |  --  |
 | Jabulani | 2010 | 8 | ~1.5 mm | 0.007 | Goff et al. 2022 |
 | Brazuca | 2014 | 6 | ~3.0 mm | 0.014 | Alam et al. 2016 |
 | Trionda | 2026 | 4 | ~4.5 mm | 0.020 | MDPI Appl Sci 2026 |

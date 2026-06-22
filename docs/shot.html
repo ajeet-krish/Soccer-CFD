@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Magnus effect vs Knuckleball: spin and its absence in soccer ball flight">
   <title>Ball Aerodynamics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xz/fonts@1/serve/meslo-lg.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
@@ -14,24 +17,36 @@
 
 <body>
 
+  <!-- Background layers -->
+  <div class="bg-pitch" aria-hidden="true">
+    <svg viewBox="0 0 105 68" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <rect class="pitch-outline" x="2" y="2" width="101" height="64" rx="1"/>
+      <line class="pitch-line" x1="52.5" y1="2" x2="52.5" y2="66"/>
+      <circle class="pitch-circle" cx="52.5" cy="34" r="9.15"/>
+      <rect class="pitch-line" x="2" y="13.84" width="16.5" height="40.32"/>
+      <rect class="pitch-line" x="86.5" y="13.84" width="16.5" height="40.32"/>
+    </svg>
+  </div>
+  <div class="bg-motif" aria-hidden="true"></div>
+
   <nav class="site-nav">
     <div class="nav-inner">
       <a class="nav-brand" href="./index.html">Physics of Soccer</a>
       <button class="nav-toggle" aria-label="Toggle navigation"
         onclick="this.parentElement.classList.toggle('open')">&#9776;</button>
       <div class="nav-entries">
-        <a href="./index.html">[ 01. Home ]</a>
-        <a href="./theory.html">[ 02. Theory ]</a>
-        <a href="./shot.html" class="active">[ 03. Shooting ]</a>
-        <a href="./tactical.html">[ 04. Tactical ]</a>
-        <a href="./overlap.html">[ 05. Overlap Run ]</a>
-        <a href="./cfd.html">[ 06. CFD ]</a>
-        <a href="./code.html">[ 07. Code ]</a>
+        <a href="./index.html">01. Home</a>
+        <a href="./theory.html">02. Theory</a>
+        <a href="./shot.html" class="active">03. Shooting</a>
+        <a href="./tactical.html">04. Tactical</a>
+        <a href="./overlap.html">05. Overlap Run</a>
+        <a href="./cfd.html">06. CFD</a>
+        <a href="./code.html">07. Code</a>
       </div>
     </div>
   </nav>
 
-  <main class="main-content">
+  <main class="main-content with-toc">
 
     <h1>Ball Aerodynamics</h1>
 
@@ -416,9 +431,80 @@
         ],
         throwOnError: false
       });
+      initBgMotif();
+      initTOC();
       initCompareSliders();
       initScrollAnimations();
     });
+
+    /* ── Background hexagon motif ── */
+    function initBgMotif() {
+      const container = document.querySelector('.bg-motif');
+      if (!container) return;
+      const colors = ['var(--cyan)', 'var(--purple)', 'var(--green)', 'var(--pink)'];
+      const count = Math.min(28, Math.floor(window.innerHeight / 40));
+      for (let i = 0; i < count; i++) {
+        const hex = document.createElement('div');
+        hex.className = 'hex';
+        const size = 8 + Math.random() * 12;
+        hex.style.cssText =
+          `width:${size}px;height:${size * 0.866}px;` +
+          `left:${Math.random() * 100}%;` +
+          `top:${Math.random() * document.body.scrollHeight}px;` +
+          `background:${colors[i % 4]};` +
+          `opacity:${0.03 + Math.random() * 0.06};` +
+          `animation-delay:${Math.random() * 4}s;` +
+          `animation-duration:${5 + Math.random() * 3}s;`;
+        container.appendChild(hex);
+      }
+      let ticking = false;
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            container.style.transform = 'translateY(' + (window.scrollY * 0.04) + 'px)';
+            ticking = false;
+          });
+          ticking = true;
+        }
+      });
+    }
+
+    /* ── Sidebar TOC ── */
+    function initTOC() {
+      const main = document.querySelector('.main-content.with-toc');
+      if (!main) return;
+      const headings = main.querySelectorAll('h2, h3, h4');
+      if (headings.length === 0) return;
+
+      let pageTitleEl = main.querySelector('h1') || main.querySelector('h2');
+      let pageTitle = pageTitleEl ? pageTitleEl.textContent : 'On this page';
+      let tocHTML = '<div class="toc-title">' + pageTitle + '</div><ul>';
+      headings.forEach(function (h) {
+        if (!h.id) {
+          h.id = h.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        }
+        var level = h.tagName.toLowerCase();
+        tocHTML += '<li><a href="#' + h.id + '" class="toc-' + level + '">' + h.textContent + '</a></li>';
+      });
+      tocHTML += '</ul>';
+
+      var sidebar = document.createElement('aside');
+      sidebar.className = 'toc-sidebar';
+      sidebar.innerHTML = tocHTML;
+      main.parentNode.insertBefore(sidebar, main);
+
+      var links = sidebar.querySelectorAll('a');
+      var observer = new IntersectionObserver(function (entries) {
+        var active = null;
+        entries.forEach(function (e) {
+          if (e.isIntersecting) active = e.target;
+        });
+        links.forEach(function (l) {
+          l.classList.toggle('active', l.getAttribute('href') === '#' + (active ? active.id : ''));
+        });
+      }, { rootMargin: '-80px 0px -60% 0px' });
+      headings.forEach(function (h) { observer.observe(h); });
+    }
 
     /* ── Interactive Comparison Slider ── */
     function initCompareSliders() {

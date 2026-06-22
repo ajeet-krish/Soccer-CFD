@@ -111,12 +111,20 @@ tr.hl td { color: var(--foreground) !important; }
 
 body {
   margin: 0;
-  font-family: 'Meslo LG L', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--background);
   color: var(--foreground);
-  line-height: 1.7;
-  font-size: 14px;
+  line-height: 1.6;
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Keep monospace for headings, nav, code, TOC */
+.site-nav, .nav-entries,
+.main-content h1, .main-content h2, .main-content h3, .main-content h4, .main-content h5,
+.main-content pre, .main-content code, .main-content :not(pre) > code,
+.toc-sidebar {
+  font-family: 'Meslo LG L', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 }
 
 a {
@@ -140,6 +148,53 @@ hr {
   border: 0;
   border-top: 1px solid var(--current-line);
   margin: 2.5rem 0;
+}
+
+/* --- 2a. Background Layers --- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse at 50% 15%, rgba(80, 250, 123, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 85%, rgba(80, 250, 123, 0.02) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 50%, rgba(189, 147, 249, 0.03) 0%, transparent 50%),
+    var(--background);
+}
+
+.bg-pitch {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.035;
+}
+.bg-pitch svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.bg-pitch .pitch-outline { fill: none; stroke: var(--green); stroke-width: 0.3; }
+.bg-pitch .pitch-line { fill: none; stroke: var(--green); stroke-width: 0.2; stroke-dasharray: 0.3 0.2; }
+.bg-pitch .pitch-circle { fill: none; stroke: var(--green); stroke-width: 0.2; stroke-dasharray: 0.3 0.2; }
+.bg-pitch .pitch-spot { fill: var(--green); }
+
+.bg-motif {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: visible;
+}
+.bg-motif .hex {
+  position: absolute;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  animation: hexPulse 6s ease-in-out infinite alternate;
+}
+@keyframes hexPulse {
+  0% { opacity: 0.02; transform: scale(0.85); }
+  100% { opacity: 0.1; transform: scale(1); }
 }
 
 /* --- 3. Navigation (Bracketed Code Style) --- */
@@ -195,12 +250,13 @@ hr {
 .nav-entries a {
   color: var(--comment);
   text-decoration: none;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
   padding: 5px 10px;
   border-radius: 4px;
   transition: all 0.15s;
   white-space: nowrap;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.02em;
 }
 .nav-entries a:hover {
   color: var(--foreground);
@@ -313,6 +369,66 @@ hr {
   margin: 0 auto;
   padding: 2rem 20px 4rem;
 }
+
+/* --- 6a. TOC Sidebar --- */
+.main-content.with-toc {
+  margin-left: 260px;
+  max-width: 1060px;
+}
+.toc-sidebar {
+  position: fixed;
+  left: 20px;
+  top: 68px;
+  width: 220px;
+  max-height: calc(100vh - 84px);
+  overflow-y: auto;
+  font-size: 0.75rem;
+  background: #21222c;
+  border-left: 3px solid var(--purple);
+  border-radius: 0 6px 6px 0;
+  padding: 14px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--current-line) transparent;
+}
+.toc-sidebar::-webkit-scrollbar { width: 4px; }
+.toc-sidebar::-webkit-scrollbar-thumb { background: var(--current-line); border-radius: 2px; }
+.toc-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.toc-sidebar li {
+  margin: 0;
+}
+.toc-sidebar .toc-title {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--comment);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--current-line);
+}
+.toc-sidebar a {
+  display: block;
+  color: var(--comment);
+  text-decoration: none;
+  padding: 3px 0 3px 8px;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+  line-height: 1.5;
+}
+.toc-sidebar a:hover {
+  color: var(--foreground);
+  border-left-color: var(--comment);
+}
+.toc-sidebar a.active {
+  color: var(--cyan);
+  border-left-color: var(--cyan);
+  background: rgba(139, 233, 253, 0.06);
+}
+.toc-sidebar a.toc-h3 { padding-left: 24px; font-size: 0.7rem; }
+.toc-sidebar a.toc-h4 { padding-left: 40px; font-size: 0.65rem; }
 
 /* --- 7. Footer --- */
 .site-footer {
@@ -828,6 +944,13 @@ hr {
 }
 
 /* --- 23. Responsive --- */
+@media (max-width: 900px) {
+  .main-content.with-toc {
+    margin-left: 0;
+    max-width: 1000px;
+  }
+  .toc-sidebar { display: none; }
+}
 @media (max-width: 720px) {
   .main-content { padding: 1.5rem 16px 3rem; }
   .vid-grid { grid-template-columns: 1fr; }

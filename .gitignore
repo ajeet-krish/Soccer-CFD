@@ -34,7 +34,7 @@ graphify-out/
 # docs/site_libs
 # docs/search.json
 
-# SU2 run artifacts — regeneratable by re-running scripts
+# SU2 run artifacts -- regeneratable by re-running scripts
 su2_runs/**/*.vtu
 su2_runs/**/*.dat
 su2_runs/**/*.csv
